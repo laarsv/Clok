@@ -1,0 +1,28 @@
+# Secrets / lokale Konfiguration
+.env
+.env.local
+*.local
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Node / Vite
+node_modules/
+dist/
+*.log
+
+# Datenbanken / Volumes
+*.db
+*.sqlite
+db_data/
+
+# IDE
+.vscode/
+.idea/

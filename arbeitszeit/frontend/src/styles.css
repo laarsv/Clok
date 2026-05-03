@@ -1,0 +1,196 @@
+/* Fin.Co-inspired colors. Roboto via system fallback for now;
+   bei Bedarf später Google-Fonts-Embed im index.html ergänzen. */
+
+:root {
+  --bg: #1d1d1b;
+  --surface: #2a2a28;
+  --accent: #00a984;
+  --accent-hover: #00c599;
+  --text: #f5f5f3;
+  --text-muted: #a8a8a3;
+  --error: #ff6b6b;
+  --warning: #ffcc4d;
+  --border: #3a3a37;
+  --radius: 8px;
+}
+
+* { box-sizing: border-box; }
+
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Roboto", system-ui, -apple-system, sans-serif;
+}
+
+button {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+button:hover { background: var(--accent-hover); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+input, select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  width: 100%;
+  font-size: 0.95rem;
+}
+input:focus, select:focus {
+  outline: 2px solid var(--accent);
+  border-color: var(--accent);
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.8rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* Layout */
+.center {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 2rem;
+  width: 360px;
+  border: 1px solid var(--border);
+}
+.card h1 { margin-top: 0; }
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+header h1 { margin: 0; color: var(--accent); }
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Summaries */
+.summaries {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.summary-card h3 { margin: 0 0 0.5rem; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.summary-hours { font-size: 2rem; font-weight: 700; color: var(--accent); }
+.summary-meta { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem; line-height: 1.4; }
+
+/* Timer */
+.timer {
+  background: var(--surface);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.timer button.start, .timer button.stop {
+  font-size: 1.1rem;
+  padding: 0.8rem 2rem;
+}
+.timer button.stop { background: var(--error); color: var(--text); }
+
+/* Issues */
+.issues { margin-bottom: 1.5rem; }
+.issue {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  border-left: 4px solid;
+}
+.issue.error { background: rgba(255, 107, 107, 0.1); border-color: var(--error); }
+.issue.warning { background: rgba(255, 204, 77, 0.1); border-color: var(--warning); }
+
+/* Manual entry */
+.manual {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  margin-bottom: 2rem;
+}
+.manual-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.manual-grid .full { grid-column: 1 / -1; }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 0.6rem 0.5rem; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+td button { background: transparent; color: var(--text-muted); padding: 0.3rem 0.6rem; }
+td button:hover { color: var(--error); background: transparent; }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+}
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  width: 420px;
+  max-width: 90vw;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.modal-actions button:first-child {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.error {
+  color: var(--error);
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
