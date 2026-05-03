@@ -2,10 +2,10 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -14,16 +14,26 @@ from app.models import User
 
 settings = get_settings()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+# bcrypt hat ein hartes 72-Byte-Limit für das zu hashende Passwort.
+_BCRYPT_MAX_BYTES = 72
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    pw_bytes = password.encode("utf-8")
+    if len(pw_bytes) > _BCRYPT_MAX_BYTES:
+        raise ValueError(
+            f"Passwort darf maximal {_BCRYPT_MAX_BYTES} Bytes (UTF-8) lang sein."
+        )
+    return bcrypt.hashpw(pw_bytes, bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except ValueError:
+        return False
 
 
 def create_access_token(subject: str, expires_minutes: Optional[int] = None) -> str:
