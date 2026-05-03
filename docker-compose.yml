@@ -8,6 +8,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks: [internal]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
@@ -18,8 +19,7 @@ services:
     build: ./backend
     restart: unless-stopped
     depends_on:
-      db:
-        condition: service_healthy
+      db: { condition: service_healthy }
     environment:
       SECRET_KEY: ${SECRET_KEY}
       JWT_ALGORITHM: ${JWT_ALGORITHM}
@@ -30,8 +30,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
-    ports:
-      - "8000:8000"
+    networks: [internal]
 
   frontend:
     build:
@@ -39,10 +38,14 @@ services:
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     restart: unless-stopped
-    depends_on:
-      - backend
-    ports:
-      - "8080:80"
+    depends_on: [backend]
+    networks: [internal, proxy]
 
 volumes:
   db_data:
+
+networks:
+  internal:
+  proxy:
+    external: true
+    name: proxy-net
