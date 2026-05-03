@@ -29,7 +29,7 @@ export default function Login({ onLogin }: Props) {
   return (
     <div className="center">
       <div className="card">
-        <h1>Arbeitszeiterfassung</h1>
+        <h1>Clok</h1>
         <label>
           Benutzername
           <input

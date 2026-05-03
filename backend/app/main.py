@@ -8,7 +8,7 @@ from app.routers import auth, entries, exports, stats
 # Rohfassung: Tabellen direkt anlegen. Später durch Alembic ersetzen.
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Arbeitszeiterfassung", version="0.1.0")
+app = FastAPI(title="Clok", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,

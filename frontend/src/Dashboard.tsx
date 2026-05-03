@@ -56,7 +56,7 @@ export default function Dashboard({ user, onLogout, onUserUpdate }: Props) {
   return (
     <div className="app">
       <header>
-        <h1>Arbeitszeit</h1>
+        <h1>Clok</h1>
         <div className="header-actions">
           <span>{user.full_name || user.username}</span>
           <button onClick={() => setShowSettings(true)}>Profil</button>

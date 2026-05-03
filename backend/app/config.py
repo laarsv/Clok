@@ -9,9 +9,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 720
     timezone: str = "Europe/Berlin"
 
-    postgres_user: str = "arbeitszeit"
-    postgres_password: str = "arbeitszeit"
-    postgres_db: str = "arbeitszeit"
+    postgres_user: str = "clok"
+    postgres_password: str = "clok"
+    postgres_db: str = "clok"
     postgres_host: str = "db"
     postgres_port: int = 5432
 

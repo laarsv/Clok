@@ -87,7 +87,7 @@ def monthly_csv(
         writer.writerow(["Differenz zu Soll (h)", "", "", "", "", _fmt_num(diff)])
 
     buf.seek(0)
-    filename = f"arbeitszeit_{user.username}_{year}-{month:02d}.csv"
+    filename = f"clok_{user.username}_{year}-{month:02d}.csv"
     return StreamingResponse(
         iter([buf.getvalue()]),
         media_type="text/csv; charset=utf-8",
