@@ -56,8 +56,8 @@ docker compose exec backend python -m app.cli create-user \
 1. Repo auf den Proxmox-Host pushen (oder via Git auf den LXC ziehen)
 2. `.env` mit produktiven Werten anlegen (starkes `SECRET_KEY`!)
 3. `docker compose up -d`
-4. In Nginx Proxy Manager: `clok.f-lv.de` → `http://<lxc-ip>:8080`
-   (SSL via Let's Encrypt DNS-01, wie bei deinen anderen Services)
+4. In Nginx Proxy Manager: `clok.home.f-lv.de` → `http://clok-frontend-1:80`
+   (Container im gemeinsamen `proxy-net`, SSL via Let's Encrypt DNS-01)
 5. Optional später: Authentik als OIDC-Provider davorschalten
 
 ## Architekturhinweise für Claude Code
