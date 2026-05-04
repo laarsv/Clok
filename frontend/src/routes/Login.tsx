@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { api, setToken, type User } from "./api";
+import { useNavigate } from "react-router-dom";
+import { api, setToken } from "../api";
+import { homeForRole, useCurrentUser } from "../auth/CurrentUser";
 
-interface Props {
-  onLogin: (user: User) => void;
-}
-
-export default function Login({ onLogin }: Props) {
+export default function Login() {
+  const { setUser } = useCurrentUser();
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +18,8 @@ export default function Login({ onLogin }: Props) {
       const { access_token } = await api.login(username, password);
       setToken(access_token);
       const me = await api.me();
-      onLogin(me);
+      setUser(me);
+      navigate(homeForRole(me.role), { replace: true });
     } catch (e: any) {
       setError(e.message ?? "Login fehlgeschlagen");
     } finally {
@@ -30,27 +31,14 @@ export default function Login({ onLogin }: Props) {
     <div className="center">
       <div className="card">
         <h1>Clok</h1>
-        <label>
-          Benutzername
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoFocus
-          />
-        </label>
-        <label>
-          Passwort
-          <input
-            type="password"
-            value={password}
+        <label>Benutzername<input value={username} onChange={(e) => setUsername(e.target.value)} autoFocus /></label>
+        <label>Passwort
+          <input type="password" value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-          />
+            onKeyDown={(e) => e.key === "Enter" && submit()} />
         </label>
         {error && <div className="error">{error}</div>}
-        <button onClick={submit} disabled={busy}>
-          {busy ? "Anmelden…" : "Anmelden"}
-        </button>
+        <button onClick={submit} disabled={busy}>{busy ? "Anmelden…" : "Anmelden"}</button>
       </div>
     </div>
   );
