@@ -91,6 +91,39 @@ class User(Base):
     supervisor = relationship("User", remote_side=[id], backref="reports")
 
 
+class AbsenceType(str, Enum):
+    VACATION = "vacation"
+    SICK = "sick"
+    UNPAID = "unpaid"
+
+
+class AbsenceStatus(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+class Absence(Base):
+    __tablename__ = "absences"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    type = Column(SAEnum(AbsenceType, name="absence_type"), nullable=False)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+    status = Column(
+        SAEnum(AbsenceStatus, name="absence_status"),
+        default=AbsenceStatus.PENDING,
+        nullable=False,
+    )
+    requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    decided_at = Column(DateTime, nullable=True)
+    decided_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
 class AuditAction(str, Enum):
     CREATE = "create"
     UPDATE = "update"

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db_migrate import upgrade_to_head
-from app.routers import auth, entries, exports, stats
+from app.routers import absences, auth, entries, exports, stats
 
 
 @asynccontextmanager
@@ -26,6 +26,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(entries.router)
+app.include_router(absences.router)
 app.include_router(stats.router)
 app.include_router(exports.router)
 

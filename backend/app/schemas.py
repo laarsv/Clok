@@ -4,7 +4,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
-from app.models import BillingMode, FederalState, Role
+from app.models import AbsenceStatus, AbsenceType, BillingMode, FederalState, Role
 
 
 # ---------- Auth ----------
@@ -113,6 +113,38 @@ class ValidationIssueOut(BaseModel):
 class TimeEntryCreateResponse(BaseModel):
     entry: TimeEntryOut
     issues: list[ValidationIssueOut] = []
+
+
+# ---------- Stats ----------
+
+# ---------- Absences ----------
+
+class AbsenceIn(BaseModel):
+    type: AbsenceType
+    start_date: date
+    end_date: date
+    note: Optional[str] = None
+    user_id: Optional[int] = None  # nur relevant, wenn Arbeitgeber für MA krank meldet
+
+
+class AbsenceDecision(BaseModel):
+    note: Optional[str] = None
+
+
+class AbsenceOut(BaseModel):
+    id: int
+    user_id: int
+    type: AbsenceType
+    start_date: date
+    end_date: date
+    status: AbsenceStatus
+    requested_at: datetime
+    decided_at: Optional[datetime] = None
+    decided_by: Optional[int] = None
+    note: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 
 # ---------- Stats ----------
