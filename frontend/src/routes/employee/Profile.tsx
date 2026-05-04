@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Shell from "../../components/Shell";
+import MonthDownloads from "../../components/MonthDownloads";
 import { api, type NotificationSettings, type Role, type User } from "../../api";
 import { useCurrentUser } from "../../auth/CurrentUser";
 
@@ -185,6 +186,11 @@ export default function Profile() {
             );
           })()}
           {savedNote && <div className="muted">{savedNote}</div>}
+        </section>
+
+        <section className="card-section">
+          <h3>Stundenzettel-Export</h3>
+          <MonthDownloads />
         </section>
 
         <section className="card-section">

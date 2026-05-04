@@ -4,6 +4,7 @@ import Shell from "../../components/Shell";
 import AuditLogViewer from "../../components/AuditLogViewer";
 import BalanceAdjustments from "../../components/BalanceAdjustments";
 import EmployeeMasterDataForm from "../../components/EmployeeMasterDataForm";
+import MonthDownloads from "../../components/MonthDownloads";
 import EntriesLog from "../../components/EntriesLog";
 import ImportPanel from "../../components/ImportPanel";
 import TermsForm from "../../components/TermsForm";
@@ -237,6 +238,11 @@ export default function EmployeeDetail() {
         <section className="card-section">
           <h3>Alle Einträge &amp; Abwesenheiten</h3>
           <EntriesLog employeeId={employee.id} canEditAll={true} />
+        </section>
+
+        <section className="card-section">
+          <h3>Stundenzettel-Export</h3>
+          <MonthDownloads employeeId={employee.id} />
         </section>
 
         <section className="card-section">
