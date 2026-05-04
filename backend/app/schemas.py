@@ -2,9 +2,9 @@
 from datetime import datetime
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
-from app.models import BillingMode
+from app.models import BillingMode, Role
 
 
 # ---------- Auth ----------
@@ -24,8 +24,10 @@ class LoginIn(BaseModel):
 class UserOut(BaseModel):
     id: int
     username: str
+    email: EmailStr
     full_name: Optional[str] = None
-    is_admin: bool
+    role: Role
+    supervisor_id: Optional[int] = None
     billing_mode: BillingMode
     hourly_rate_eur: float
     monthly_target_hours: float
@@ -36,6 +38,7 @@ class UserOut(BaseModel):
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
     billing_mode: Optional[BillingMode] = None
     hourly_rate_eur: Optional[float] = Field(None, ge=0)
     monthly_target_hours: Optional[float] = Field(None, ge=0)

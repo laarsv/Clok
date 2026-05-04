@@ -16,14 +16,22 @@ class BillingMode(str, Enum):
     SALARY = "salary"   # Festgehalt mit Soll-Stunden
 
 
+class Role(str, Enum):
+    ADMIN = "admin"
+    EMPLOYER = "employer"
+    EMPLOYEE = "employee"
+
+
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
     username = Column(String(64), unique=True, nullable=False, index=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(128))
-    is_admin = Column(Boolean, default=False, nullable=False)
+    role = Column(SAEnum(Role, name="user_role"), nullable=False, default=Role.EMPLOYEE)
+    supervisor_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -33,12 +41,11 @@ class User(Base):
         default=BillingMode.SALARY,
         nullable=False,
     )
-    # Bei HOURLY: Stundensatz in EUR (brutto, ohne USt)
     hourly_rate_eur = Column(Float, default=0.0, nullable=False)
-    # Bei SALARY: Soll-Stunden pro Monat (z. B. 160)
     monthly_target_hours = Column(Float, default=160.0, nullable=False)
 
     entries = relationship("TimeEntry", back_populates="user", cascade="all, delete-orphan")
+    supervisor = relationship("User", remote_side=[id], backref="reports")
 
 
 class TimeEntry(Base):
