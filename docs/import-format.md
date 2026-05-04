@@ -27,7 +27,7 @@ Falscher oder fehlender Header → harter Reject mit Fehlermeldung
 
 | Spalte | Format | Pflicht | Beispiel |
 |---|---|---|---|
-| `datum` | `TT.MM.JJJJ` | ja | `04.05.2026` |
+| `datum` | `TT.MM.JJJJ` (oder `TT.MM.JJ`) | ja | `04.05.2026` |
 | `start` | `HH:MM` (24h) | ja | `09:00` |
 | `ende` | `HH:MM` (24h) | ja | `17:30` |
 | `pause_min` | Ganzzahl, 0 erlaubt | ja | `30` |
@@ -91,7 +91,7 @@ art;von;bis;notiz
 | Spalte | Werte / Format | Pflicht | Beispiel |
 |---|---|---|---|
 | `art` | `vacation` · `sick` · `unpaid` | ja | `vacation` |
-| `von` | `TT.MM.JJJJ` | ja | `01.07.2026` |
+| `von` | `TT.MM.JJJJ` (oder `TT.MM.JJ`) | ja | `01.07.2026` |
 | `bis` | `TT.MM.JJJJ` (inklusiv, ≥ von) | ja | `12.07.2026` |
 | `notiz` | Freitext | nein | `Sommerurlaub` |
 

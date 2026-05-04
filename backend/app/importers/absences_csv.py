@@ -47,6 +47,17 @@ def _parse_type(raw: str) -> AbsenceType:
     return AbsenceType(raw)
 
 
+def _parse_date(s: str):
+    """Akzeptiert TT.MM.JJJJ und TT.MM.JJ (Excel-DE schreibt oft kurz)."""
+    s = s.strip()
+    for fmt in ("%d.%m.%Y", "%d.%m.%y"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            continue
+    raise ValueError(f"datum ungültig: {s!r} (erwartet TT.MM.JJJJ)")
+
+
 def parse_csv(content: bytes) -> tuple[list[dict], list[ImportError]]:
     """(Parsed rows, parse-errors). Header-Mismatch raised ValueError."""
     text = content.decode("utf-8-sig")
@@ -71,8 +82,8 @@ def parse_csv(content: bytes) -> tuple[list[dict], list[ImportError]]:
             continue
         try:
             atype = _parse_type(row[0])
-            d_from = datetime.strptime(row[1].strip(), "%d.%m.%Y").date()
-            d_to = datetime.strptime(row[2].strip(), "%d.%m.%Y").date()
+            d_from = _parse_date(row[1])
+            d_to = _parse_date(row[2])
         except ValueError as e:
             errors.append(ImportError(i, f"Format ungültig: {e}"))
             continue
