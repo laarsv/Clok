@@ -17,6 +17,7 @@ from app.models import Role, User
 from app.notifications.service import NotificationKind, notify
 from app.permissions import require_role, supervises, visible_user_ids
 from app.schemas import EmployeeCreate, UserOut, UserUpdate
+from app.terms import create_initial_terms
 from app.work_days import legal_min_vacation_days, normalize as normalize_work_days
 
 
@@ -131,6 +132,14 @@ def create_employee(
         onboarding_token_expires_at=expires_at,
     )
     db.add(user)
+    db.flush()
+
+    # Initialer Vertragseintrag (Stichtag: hire_date oder heute).
+    initial_valid_from = payload.hire_date or datetime.utcnow().date()
+    create_initial_terms(
+        db, user, valid_from=initial_valid_from, creator_id=actor.id,
+    )
+
     db.commit()
     db.refresh(user)
 

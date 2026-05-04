@@ -114,6 +114,33 @@ class User(Base):
         return self.onboarding_token is not None
 
 
+class EmploymentTerms(Base):
+    """Zeitlich versionierte Vertragsdaten eines Mitarbeiters.
+
+    Mehrere Einträge pro User möglich, getrennt durch `valid_from`.
+    Der zum Stichtag d gültige Eintrag ist der mit dem größten
+    valid_from <= d. Das Ende eines Eintrags ergibt sich implizit aus
+    dem nächsten – kein eigenes valid_to-Feld, damit Lücken/Überlappungen
+    nicht möglich sind.
+    """
+    __tablename__ = "employment_terms"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    valid_from = Column(Date, nullable=False)
+
+    billing_mode = Column(SAEnum(BillingMode, name="billing_mode", values_callable=_enum_values), nullable=False)
+    hourly_rate_eur = Column(Float, default=0.0, nullable=False)
+    monthly_target_hours = Column(Float, default=160.0, nullable=False)
+    weekly_hours = Column(Float, nullable=True)
+    work_days = Column(JSON, nullable=True)
+    annual_vacation_days = Column(Float, nullable=True)
+
+    note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+
 class AbsenceType(str, Enum):
     VACATION = "vacation"
     SICK = "sick"

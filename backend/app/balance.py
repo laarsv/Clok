@@ -20,6 +20,7 @@ from app.absences import working_days_in_range
 from app.models import (
     Absence, AbsenceStatus, AbsenceType, BillingMode, TimeEntry, User,
 )
+from app.terms import terms_at
 
 
 def _net_hours(entry: TimeEntry) -> float:
@@ -42,7 +43,12 @@ def _months_in_range(start: date, end: date) -> Iterable[tuple[date, date]]:
 
 
 def saldo_for_user(db: Session, user: User, until: date) -> float:
-    """Saldo (Über-/Minusstunden) bis einschließlich `until`. Nur Salary."""
+    """Saldo (Über-/Minusstunden) bis einschließlich `until`. Nur Salary.
+
+    Soll-Stunden werden monatlich anhand des zum Monatsbeginn gültigen
+    Vertrags ermittelt – damit verändert ein neuer Vertrag mit
+    valid_from in der Zukunft den historischen Saldo nicht.
+    """
     if user.billing_mode != BillingMode.SALARY:
         return 0.0
 
@@ -57,21 +63,26 @@ def saldo_for_user(db: Session, user: User, until: date) -> float:
     )
     saldo += sum(_net_hours(e) for e in rows)
 
-    # Soll-Stunden je voll-/teilangefangenem Monat ab hire_date
     if user.hire_date is None:
         return round(saldo, 2)
 
-    target_per_workday = (user.monthly_target_hours / 21.0) if user.monthly_target_hours else 0.0
-
     for m_start, m_end in _months_in_range(user.hire_date, until + timedelta(days=1)):
-        # nur Tage berücksichtigen, die ≤ until liegen
         eff_end = min(m_end, until + timedelta(days=1))
         eff_start = max(m_start, user.hire_date)
+
+        # Vertrag, der für diesen Monat gilt (Stichtag = Monatsstart oder
+        # eff_start, falls Eintrittsmonat).
+        terms = terms_at(db, user, eff_start)
+        target = (terms.monthly_target_hours if terms
+                  else user.monthly_target_hours) or 0.0
+        if target == 0.0 or terms is None or terms.billing_mode != BillingMode.SALARY:
+            continue
+        target_per_workday = target / 21.0
+
         workdays = working_days_in_range(
             db, user, eff_start, eff_end - timedelta(days=1),
             include_absences=False,
         )
-        # Urlaub/Krankheit reduzieren das Soll für diesen Monat anteilig
         absent_days = (
             db.query(Absence)
             .filter(
