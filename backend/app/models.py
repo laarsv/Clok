@@ -188,6 +188,22 @@ class AuditAction(str, Enum):
     DELETE = "delete"
 
 
+class BalanceAdjustment(Base):
+    """Manuelle Saldo-Korrektur mit Begründung. Wird auf den Saldo
+    addiert, sobald `effective_date` <= Stichtag der Berechnung ist.
+    Sinn: Auszahlungen Überstunden, Korrekturen aus Altsystem-Übernahme,
+    Anpassungen bei Vertragsende, Abgeltungs-Buchungen."""
+    __tablename__ = "balance_adjustments"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    effective_date = Column(Date, nullable=False)
+    hours = Column(Float, nullable=False)
+    reason = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+
 class NotificationSettings(Base):
     __tablename__ = "notification_settings"
 

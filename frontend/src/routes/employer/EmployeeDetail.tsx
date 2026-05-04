@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Shell from "../../components/Shell";
+import BalanceAdjustments from "../../components/BalanceAdjustments";
 import EmployeeMasterDataForm from "../../components/EmployeeMasterDataForm";
 import EntriesLog from "../../components/EntriesLog";
 import ImportPanel from "../../components/ImportPanel";
@@ -225,6 +226,11 @@ export default function EmployeeDetail() {
               )}
             </tbody>
           </table>
+        </section>
+
+        <section className="card-section">
+          <h3>Saldo-Korrekturen</h3>
+          <BalanceAdjustments employeeId={employee.id} />
         </section>
 
         <section className="card-section">

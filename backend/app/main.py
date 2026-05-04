@@ -28,8 +28,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.db_migrate import upgrade_to_head
 from app.routers import (
-    absences, admin, auth, employees, employer, entries, exports, holidays,
-    notifications, onboarding, stats, terms,
+    absences, admin, auth, balance_adjustments, employees, employer, entries,
+    exports, holidays, notifications, onboarding, stats, terms,
 )
 from app.scheduler import start_scheduler, stop_scheduler
 
@@ -98,6 +98,7 @@ app.include_router(employer.router)
 app.include_router(onboarding.router)
 app.include_router(terms.router)
 app.include_router(admin.router)
+app.include_router(balance_adjustments.router)
 
 
 @app.get("/api/health")

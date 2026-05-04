@@ -24,8 +24,8 @@ from sqlalchemy.orm import Session
 
 from app.holidays_de import is_holiday
 from app.models import (
-    Absence, AbsenceStatus, AbsenceType, BillingMode, EmploymentTerms,
-    TimeEntry, User,
+    Absence, AbsenceStatus, AbsenceType, BalanceAdjustment, BillingMode,
+    EmploymentTerms, TimeEntry, User,
 )
 from app.work_days import is_work_day, normalize as normalize_work_days
 
@@ -128,6 +128,17 @@ def saldo_for_user(db: Session, user: User, until: date) -> float:
         .all()
     )
     saldo += sum(_net_hours(e) for e in rows)
+
+    # Manuelle Korrekturen mit effective_date <= until
+    adj_sum = (
+        db.query(BalanceAdjustment)
+        .filter(
+            BalanceAdjustment.user_id == user.id,
+            BalanceAdjustment.effective_date <= until,
+        )
+        .all()
+    )
+    saldo += sum(a.hours for a in adj_sum)
 
     if user.hire_date is None:
         return round(saldo, 2)
