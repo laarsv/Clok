@@ -230,6 +230,15 @@ class AbsenceDecision(BaseModel):
     note: Optional[str] = None
 
 
+class AbsenceUpdate(BaseModel):
+    """Allgemeine Bearbeitung (Datum, Notiz, Typ).
+    Status-Übergänge laufen weiter über approve/reject."""
+    type: Optional[AbsenceType] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    note: Optional[str] = None
+
+
 class AbsenceOut(BaseModel):
     id: int
     user_id: int

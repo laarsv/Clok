@@ -70,3 +70,16 @@ def supervises(viewer: User, target: User) -> bool:
     if viewer.role == Role.EMPLOYER and target.supervisor_id == viewer.id:
         return True
     return False
+
+
+def is_in_editable_window(d) -> bool:
+    """True, wenn das Datum d im aktuellen oder direkt vorhergehenden
+    Kalendermonat liegt. Mitarbeiter dürfen ihre eigenen Einträge nur
+    in diesem Fenster ändern – ältere Daten gelten als abgeschlossen."""
+    from datetime import date
+    today = date.today()
+    if today.month == 1:
+        floor = date(today.year - 1, 12, 1)
+    else:
+        floor = date(today.year, today.month - 1, 1)
+    return d >= floor

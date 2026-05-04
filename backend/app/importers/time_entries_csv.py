@@ -98,10 +98,18 @@ def parse_csv(content: bytes) -> tuple[list[dict], list[ImportError]]:
         if len(row) < 6:
             errors.append(ImportError(i, "Zu wenige Spalten."))
             continue
+
+        start_raw = row[1].strip()
+        end_raw = row[2].strip()
+        # Tag ohne Arbeitszeit (Wochenende/Feiertag/Urlaub in der Excel-Liste)
+        # → still überspringen, nicht als Fehler werten.
+        if not start_raw and not end_raw:
+            continue
+
         try:
             d = _parse_date(row[0])
-            t_start = _parse_time(row[1])
-            t_end = _parse_time(row[2])
+            t_start = _parse_time(start_raw)
+            t_end = _parse_time(end_raw)
             pause = _parse_int(row[3]) if row[3].strip() else 0
         except ValueError as e:
             errors.append(ImportError(i, f"Format ungültig: {e}"))

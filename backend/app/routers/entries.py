@@ -10,10 +10,30 @@ from app.arbzg import gross_hours, validate_entry
 from app.audit import log_change
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import AuditAction, TimeEntry, User
+from app.models import AuditAction, Role, TimeEntry, User
+from app.permissions import is_in_editable_window, supervises, visible_user_ids
 from app.schemas import (
     TimeEntryCreateResponse, TimeEntryIn, TimeEntryOut, ValidationIssueOut,
 )
+
+
+def _check_entry_write(entry: TimeEntry, actor: User, db: Session) -> User:
+    """Prüft, ob actor den Eintrag bearbeiten/löschen darf.
+    Liefert das Target-User-Objekt (für Audit/Validation)."""
+    target = db.query(User).filter(User.id == entry.user_id).first()
+    if target is None:
+        raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden.")
+    if actor.role == Role.ADMIN or supervises(actor, target):
+        return target
+    if actor.id == entry.user_id:
+        if is_in_editable_window(entry.start_at.date()):
+            return target
+        raise HTTPException(
+            status_code=403,
+            detail="Eintrag liegt außerhalb des Bearbeitungs-Fensters "
+                   "(aktueller + letzter Monat).",
+        )
+    raise HTTPException(status_code=403, detail="Kein Zugriff.")
 
 router = APIRouter(prefix="/api/entries", tags=["entries"])
 
@@ -93,10 +113,15 @@ def _validate(db: Session, user: User, payload: TimeEntryIn,
 def list_entries(
     from_: Optional[datetime] = Query(None, alias="from"),
     to: Optional[datetime] = None,
+    user_id: Optional[int] = Query(None),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    q = db.query(TimeEntry).filter(TimeEntry.user_id == user.id)
+    target_id = user_id if user_id is not None else user.id
+    if target_id != user.id:
+        if target_id not in visible_user_ids(user, db):
+            raise HTTPException(status_code=403, detail="Kein Zugriff.")
+    q = db.query(TimeEntry).filter(TimeEntry.user_id == target_id)
     if from_:
         q = q.filter(TimeEntry.start_at >= from_)
     if to:
@@ -137,13 +162,13 @@ def update_entry(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    entry = db.query(TimeEntry).filter(
-        TimeEntry.id == entry_id, TimeEntry.user_id == user.id
-    ).first()
+    entry = db.query(TimeEntry).filter(TimeEntry.id == entry_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Eintrag nicht gefunden")
+    target = _check_entry_write(entry, user, db)
 
-    issues = _validate(db, user, payload, exclude_id=entry_id)
+    # ArbZG gegen Daten des Eintrag-Eigentümers prüfen, nicht gegen actor.
+    issues = _validate(db, target, payload, exclude_id=entry_id)
     if any(i.severity == "error" for i in issues):
         raise HTTPException(status_code=422, detail=[i.model_dump() for i in issues])
 
@@ -171,11 +196,10 @@ def delete_entry(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    entry = db.query(TimeEntry).filter(
-        TimeEntry.id == entry_id, TimeEntry.user_id == user.id
-    ).first()
+    entry = db.query(TimeEntry).filter(TimeEntry.id == entry_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Eintrag nicht gefunden")
+    _check_entry_write(entry, user, db)
     before_snapshot = {c.name: getattr(entry, c.name) for c in entry.__table__.columns}
     log_change(
         db,

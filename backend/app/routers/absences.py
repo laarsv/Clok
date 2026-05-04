@@ -11,8 +11,8 @@ from app.config import get_settings
 from app.database import get_db
 from app.models import Absence, AbsenceStatus, AbsenceType, AuditAction, Role, User
 from app.notifications.service import NotificationKind, notify
-from app.permissions import supervises, visible_user_ids
-from app.schemas import AbsenceDecision, AbsenceIn, AbsenceOut
+from app.permissions import is_in_editable_window, supervises, visible_user_ids
+from app.schemas import AbsenceDecision, AbsenceIn, AbsenceOut, AbsenceUpdate
 
 router = APIRouter(prefix="/api/absences", tags=["absences"])
 
@@ -202,6 +202,64 @@ def _notify_decision(db: Session, absence: Absence, decided_by: User) -> None:
     notify(db, kind=NotificationKind.VACATION_DECIDED, recipient=requester, ctx=ctx)
 
 
+def _check_absence_write(absence: Absence, actor: User, db: Session) -> User:
+    target = db.query(User).filter(User.id == absence.user_id).first()
+    if target is None:
+        raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden.")
+    if actor.role == Role.ADMIN or supervises(actor, target):
+        return target
+    if actor.id == absence.user_id:
+        if is_in_editable_window(absence.start_date):
+            return target
+        raise HTTPException(
+            status_code=403,
+            detail="Eintrag liegt außerhalb des Bearbeitungs-Fensters "
+                   "(aktueller + letzter Monat).",
+        )
+    raise HTTPException(status_code=403, detail="Kein Zugriff.")
+
+
+@router.patch("/{absence_id}", response_model=AbsenceOut)
+def update_absence(
+    absence_id: int,
+    payload: AbsenceUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    absence = db.query(Absence).filter(Absence.id == absence_id).first()
+    if absence is None:
+        raise HTTPException(status_code=404, detail="Antrag nicht gefunden.")
+    _check_absence_write(absence, user, db)
+
+    updates = payload.model_dump(exclude_unset=True)
+    if "start_date" in updates and "end_date" in updates:
+        if updates["end_date"] < updates["start_date"]:
+            raise HTTPException(status_code=422, detail="Ende vor Start.")
+    elif "start_date" in updates:
+        if absence.end_date < updates["start_date"]:
+            raise HTTPException(status_code=422, detail="Ende vor Start.")
+    elif "end_date" in updates:
+        if updates["end_date"] < absence.start_date:
+            raise HTTPException(status_code=422, detail="Ende vor Start.")
+
+    before_snapshot = {c.name: getattr(absence, c.name) for c in absence.__table__.columns}
+    for field, value in updates.items():
+        setattr(absence, field, value)
+    db.flush()
+    log_change(
+        db,
+        actor_user_id=user.id,
+        action=AuditAction.UPDATE,
+        entity_type="absence",
+        entity_id=absence.id,
+        before=before_snapshot,
+        after=absence,
+    )
+    db.commit()
+    db.refresh(absence)
+    return _to_out(absence)
+
+
 @router.patch("/{absence_id}/approve", response_model=AbsenceOut)
 def approve_absence(
     absence_id: int,
@@ -235,10 +293,7 @@ def delete_absence(
     absence = db.query(Absence).filter(Absence.id == absence_id).first()
     if absence is None:
         raise HTTPException(status_code=404, detail="Antrag nicht gefunden.")
-    is_admin = user.role == Role.ADMIN
-    is_own_pending = absence.user_id == user.id and absence.status == AbsenceStatus.PENDING
-    if not (is_admin or is_own_pending):
-        raise HTTPException(status_code=403, detail="Kein Zugriff.")
+    _check_absence_write(absence, user, db)
     before_snapshot = {c.name: getattr(absence, c.name) for c in absence.__table__.columns}
     log_change(
         db,
