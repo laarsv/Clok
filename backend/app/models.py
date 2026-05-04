@@ -237,6 +237,9 @@ class AuditLog(Base):
     )
     entity_type = Column(String(64), nullable=False)
     entity_id = Column(Integer, nullable=False)
+    # Welcher Mitarbeiter ist von der Änderung betroffen? Erlaubt Filter pro
+    # User im Audit-Viewer, ohne pro entity_type eine eigene Subquery zu fahren.
+    subject_user_id = Column(Integer, nullable=True)
     before = Column(JSON, nullable=True)
     after = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

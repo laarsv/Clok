@@ -189,6 +189,16 @@ export const api = {
   resendInvite: (id: number) =>
     request<User>(`/employees/${id}/resend-invite`, { method: "POST" }),
 
+  // Audit-Log
+  listAuditLog: (params: { user_id?: number; entity_type?: string; limit?: number; offset?: number } = {}) => {
+    const q = new URLSearchParams();
+    if (params.user_id != null) q.set("user_id", String(params.user_id));
+    if (params.entity_type) q.set("entity_type", params.entity_type);
+    if (params.limit != null) q.set("limit", String(params.limit));
+    if (params.offset != null) q.set("offset", String(params.offset));
+    return request<AuditLogEntry[]>(`/audit-log?${q}`);
+  },
+
   // Saldo-Korrekturen
   listBalanceAdjustments: (employeeId: number) =>
     request<BalanceAdjustment[]>(`/employees/${employeeId}/balance-adjustments`),
@@ -332,6 +342,20 @@ export interface TermsPayload {
   work_days?: WeekDay[];
   annual_vacation_days?: number;
   note?: string;
+}
+
+export interface AuditLogEntry {
+  id: number;
+  actor_user_id?: number | null;
+  actor_username?: string | null;
+  actor_full_name?: string | null;
+  action: "create" | "update" | "delete";
+  entity_type: string;
+  entity_id: number;
+  subject_user_id?: number | null;
+  before?: Record<string, unknown> | null;
+  after?: Record<string, unknown> | null;
+  created_at: string;
 }
 
 export interface BalanceAdjustment {

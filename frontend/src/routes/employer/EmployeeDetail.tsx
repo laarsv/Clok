@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Shell from "../../components/Shell";
+import AuditLogViewer from "../../components/AuditLogViewer";
 import BalanceAdjustments from "../../components/BalanceAdjustments";
 import EmployeeMasterDataForm from "../../components/EmployeeMasterDataForm";
 import EntriesLog from "../../components/EntriesLog";
@@ -236,6 +237,11 @@ export default function EmployeeDetail() {
         <section className="card-section">
           <h3>Alle Einträge &amp; Abwesenheiten</h3>
           <EntriesLog employeeId={employee.id} canEditAll={true} />
+        </section>
+
+        <section className="card-section">
+          <h3>Änderungs-Historie</h3>
+          <AuditLogViewer employeeId={employee.id} />
         </section>
 
         <section className="card-section">
