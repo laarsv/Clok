@@ -130,6 +130,28 @@ class AuditAction(str, Enum):
     DELETE = "delete"
 
 
+class NotificationSettings(Base):
+    __tablename__ = "notification_settings"
+
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    reminder_no_entry = Column(Boolean, default=True, nullable=False)
+    reminder_remaining_vacation = Column(Boolean, default=True, nullable=False)
+    vacation_decided = Column(Boolean, default=True, nullable=False)
+    incoming_vacation_request = Column(Boolean, default=True, nullable=False)
+    incoming_sick_note = Column(Boolean, default=True, nullable=False)
+    month_complete = Column(Boolean, default=True, nullable=False)
+
+
+class NotificationLog(Base):
+    __tablename__ = "notification_log"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    kind = Column(String(64), nullable=False)
+    period_key = Column(String(32), nullable=False)
+    sent_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class AuditLog(Base):
     __tablename__ = "audit_log"
 

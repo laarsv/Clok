@@ -1,7 +1,7 @@
 """Absences-Tabelle (Urlaub, Krankheit, unbezahlt).
 
 Revision ID: 0005
-Revises: 0004
+Revises: 0004 (heads: 0004)
 Create Date: 2026-05-04
 """
 from typing import Sequence, Union

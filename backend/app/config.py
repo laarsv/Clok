@@ -15,12 +15,22 @@ class Settings(BaseSettings):
     postgres_host: str = "db"
     postgres_port: int = 5432
 
+    # Resend / Mailing
+    resend_api_key: str = ""
+    resend_from_email: str = "clok@send.f-lv.de"
+    resend_reply_to: str = ""
+    app_base_url: str = "https://clok.home.f-lv.de"
+
     @property
     def database_url(self) -> str:
         return (
             f"postgresql+psycopg2://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+
+    @property
+    def email_dev_mode(self) -> bool:
+        return not self.resend_api_key.strip()
 
     class Config:
         env_file = ".env"

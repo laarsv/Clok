@@ -10,3 +10,5 @@ bcrypt==4.2.1
 python-multipart==0.0.20
 typer==0.15.1
 holidays==0.62
+httpx==0.28.1
+jinja2==3.1.4
