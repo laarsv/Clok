@@ -28,8 +28,8 @@ Falscher oder fehlender Header → harter Reject mit Fehlermeldung
 | Spalte | Format | Pflicht | Beispiel |
 |---|---|---|---|
 | `datum` | `TT.MM.JJJJ` (oder `TT.MM.JJ`) | ja | `04.05.2026` |
-| `start` | `HH:MM` (24h) | ja | `09:00` |
-| `ende` | `HH:MM` (24h) | ja | `17:30` |
+| `start` | `HH:MM` (24h, auch `H:MM` oder `HH:MM:SS`) | ja | `09:00` |
+| `ende` | `HH:MM` (24h, auch `H:MM` oder `HH:MM:SS`) | ja | `17:30` |
 | `pause_min` | Ganzzahl, 0 erlaubt | ja | `30` |
 | `projekt` | Freitext | nein | `Kunde A` |
 | `notiz` | Freitext | nein | `Sprint Planning` |
