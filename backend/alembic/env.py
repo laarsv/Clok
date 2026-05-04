@@ -1,6 +1,13 @@
-"""Alembic environment. Liest die DB-URL aus app.config.Settings."""
-from logging.config import fileConfig
+"""Alembic environment. Liest die DB-URL aus app.config.Settings.
 
+WICHTIG: alembic.ini hat eine [loggers]-Sektion, die wir hier
+**nicht** über fileConfig laden. Grund: fileConfig würde den
+Root-Logger auf WARN setzen (Wert aus der ini) und damit alle INFO-
+Logs von uvicorn/clok/app stumm schalten – inkl. „Application
+startup complete." und Lifespan-Stage-Markern. Alembic-eigene Logs
+funktionieren auch ohne ini-Konfiguration über die normale
+Logger-Hierarchie.
+"""
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
@@ -9,13 +16,6 @@ from app.database import Base
 from app import models  # noqa: F401  – sorgt dafür, dass alle Tabellen registriert sind
 
 config = context.config
-if config.config_file_name is not None:
-    # WICHTIG: disable_existing_loggers=False, sonst killt fileConfig
-    # alle Logger, die uvicorn/FastAPI vor dem Lifespan registriert hat
-    # (`uvicorn`, `uvicorn.error`, `uvicorn.access`). Folge: nach dem
-    # alembic-Run ist der Server-Log stumm und „Application startup
-    # complete." erscheint nie, obwohl der Prozess läuft.
-    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 config.set_main_option("sqlalchemy.url", get_settings().database_url)
 
