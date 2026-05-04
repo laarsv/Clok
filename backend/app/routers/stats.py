@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
+from app.balance import target_hours_for_period
 from app.database import get_db
 from app.models import BillingMode, TimeEntry, User
 from app.schemas import PeriodSummary
@@ -22,7 +23,7 @@ def _net(entries: list[TimeEntry]) -> float:
     return total
 
 
-def _summary(user: User, period: str, start: datetime, end: datetime,
+def _summary(db: Session, user: User, period: str, start: datetime, end: datetime,
              entries: list[TimeEntry]) -> PeriodSummary:
     net = _net(entries)
     target = None
@@ -30,7 +31,9 @@ def _summary(user: User, period: str, start: datetime, end: datetime,
     billable = None
 
     if user.billing_mode == BillingMode.SALARY and period == "month":
-        target = user.monthly_target_hours
+        target = target_hours_for_period(
+            db, user, start.date(), (end - timedelta(days=1)).date(),
+        )
         remaining = round(target - net, 2)
 
     if user.billing_mode == BillingMode.HOURLY:
@@ -72,7 +75,7 @@ def summary(
         ).all()
 
     return [
-        _summary(user, "day", day_start, day_end, fetch(day_start, day_end)),
-        _summary(user, "week", week_start, week_end, fetch(week_start, week_end)),
-        _summary(user, "month", month_start, month_end, fetch(month_start, month_end)),
+        _summary(db, user, "day", day_start, day_end, fetch(day_start, day_end)),
+        _summary(db, user, "week", week_start, week_end, fetch(week_start, week_end)),
+        _summary(db, user, "month", month_start, month_end, fetch(month_start, month_end)),
     ]

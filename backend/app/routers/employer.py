@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.absences import remaining_vacation_days
 from app.auth import get_current_user
-from app.balance import saldo_for_user
+from app.balance import saldo_for_user, target_hours_for_period
 from app.database import get_db
 from app.models import (
     Absence, AbsenceStatus, AbsenceType, BillingMode, Role, TimeEntry, User,
@@ -102,7 +102,14 @@ def dashboard(
             TimeEntry.start_at < m_end,
         ).all()
         actual = _net(entries)
-        target = emp.monthly_target_hours if emp.billing_mode == BillingMode.SALARY else 0.0
+        # Soll wird dynamisch aus weekly_hours + work_days + BL-Feiertagen
+        # ermittelt; berücksichtigt Vertragsverlauf tagesgenau.
+        if emp.billing_mode == BillingMode.SALARY:
+            target = target_hours_for_period(
+                db, emp, m_start.date(), m_end.date() - timedelta(days=1),
+            )
+        else:
+            target = 0.0
         last = (
             db.query(TimeEntry.start_at)
             .filter(TimeEntry.user_id == emp.id)

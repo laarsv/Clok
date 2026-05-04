@@ -70,7 +70,6 @@ class User(Base):
         nullable=False,
     )
     hourly_rate_eur = Column(Float, default=0.0, nullable=False)
-    monthly_target_hours = Column(Float, default=160.0, nullable=False)
 
     # Stammdaten
     date_of_birth = Column(Date, nullable=True)
@@ -135,7 +134,6 @@ class EmploymentTerms(Base):
 
     billing_mode = Column(SAEnum(BillingMode, name="billing_mode", values_callable=_enum_values), nullable=False)
     hourly_rate_eur = Column(Float, default=0.0, nullable=False)
-    monthly_target_hours = Column(Float, default=160.0, nullable=False)
     weekly_hours = Column(Float, nullable=True)
     work_days = Column(JSON, nullable=True)
     annual_vacation_days = Column(Float, nullable=True)

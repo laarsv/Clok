@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from app.balance import saldo_for_user
 from app.models import BillingMode, FederalState, Role, TimeEntry, User
@@ -11,7 +11,8 @@ def _make_user(db, **kwargs):
         password_hash="x",
         role=Role.EMPLOYEE,
         billing_mode=BillingMode.SALARY,
-        monthly_target_hours=168.0,
+        weekly_hours=40.0,
+        work_days=["mon", "tue", "wed", "thu", "fri"],
         federal_state=FederalState.BW,
         hire_date=date(2026, 1, 1),
     )
@@ -38,8 +39,8 @@ def test_initialer_uebertrag_ohne_eintraege(db_session):
 
 
 def test_arbeitsstunden_erhoehen_saldo(db_session):
-    user = _make_user(db_session, hire_date=None, monthly_target_hours=0)
-    # 1 Eintrag mit 8h netto am 02.01.2026
+    # weekly_hours=0 → kein Soll-Abzug, der Eintrag erhöht den Saldo
+    user = _make_user(db_session, hire_date=None, weekly_hours=0)
     db_session.add(TimeEntry(
         user_id=user.id,
         start_at=datetime(2026, 1, 2, 9, 0),

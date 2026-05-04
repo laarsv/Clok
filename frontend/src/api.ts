@@ -259,7 +259,6 @@ export interface User {
   supervisor_id?: number | null;
   billing_mode: BillingMode;
   hourly_rate_eur: number;
-  monthly_target_hours: number;
   date_of_birth?: string | null;
   address_line1?: string | null;
   address_line2?: string | null;
@@ -290,7 +289,6 @@ export interface EmployeeCreatePayload {
   supervisor_id?: number;
   billing_mode?: BillingMode;
   hourly_rate_eur?: number;
-  monthly_target_hours?: number;
   weekly_hours?: number;
   work_days?: WeekDay[];
   annual_vacation_days?: number;
@@ -306,7 +304,6 @@ export interface EmploymentTerms {
   valid_from: string; // YYYY-MM-DD
   billing_mode: BillingMode;
   hourly_rate_eur: number;
-  monthly_target_hours: number;
   weekly_hours?: number | null;
   work_days?: WeekDay[] | null;
   annual_vacation_days?: number | null;
@@ -319,7 +316,6 @@ export interface TermsPayload {
   valid_from: string;
   billing_mode?: BillingMode;
   hourly_rate_eur?: number;
-  monthly_target_hours?: number;
   weekly_hours?: number;
   work_days?: WeekDay[];
   annual_vacation_days?: number;

@@ -207,7 +207,7 @@ export default function EmployeeDetail() {
                 <tr key={t.id} className={t.id === currentTerms?.id ? "current-terms" : ""}>
                   <td>{t.valid_from}{t.id === currentTerms?.id && <span className="badge small" style={{ marginLeft: 6 }}>aktuell</span>}</td>
                   <td>{t.billing_mode === "hourly" ? "Stundenbasis" : "Festgehalt"}</td>
-                  <td>{t.billing_mode === "hourly" ? `${t.hourly_rate_eur.toFixed(2)} €/h` : `${t.monthly_target_hours} h/Monat`}</td>
+                  <td>{t.billing_mode === "hourly" ? `${t.hourly_rate_eur.toFixed(2)} €/h` : "Festgehalt"}</td>
                   <td>{t.weekly_hours ?? "–"}</td>
                   <td>{(t.work_days ?? []).join(", ") || "–"}</td>
                   <td>{t.annual_vacation_days ?? "–"}</td>

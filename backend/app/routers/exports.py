@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
+from app.balance import target_hours_for_period
 from app.database import get_db
 from app.models import BillingMode, TimeEntry, User
 
@@ -51,7 +52,10 @@ def monthly_csv(
     if user.billing_mode == BillingMode.HOURLY:
         writer.writerow([f"# Stundensatz: {_fmt_num(user.hourly_rate_eur)} EUR"])
     else:
-        writer.writerow([f"# Soll-Stunden/Monat: {_fmt_num(user.monthly_target_hours)}"])
+        target = target_hours_for_period(
+            db, user, start.date(), (end - timedelta(days=1)).date(),
+        )
+        writer.writerow([f"# Soll-Stunden in diesem Monat: {_fmt_num(target)}"])
     writer.writerow([])
 
     writer.writerow([
@@ -83,7 +87,10 @@ def monthly_csv(
         writer.writerow(["Abrechnungsbetrag (EUR)", "", "", "", "",
                          _fmt_num(total_net * user.hourly_rate_eur)])
     else:
-        diff = total_net - user.monthly_target_hours
+        target = target_hours_for_period(
+            db, user, start.date(), (end - timedelta(days=1)).date(),
+        )
+        diff = total_net - target
         writer.writerow(["Differenz zu Soll (h)", "", "", "", "", _fmt_num(diff)])
 
     buf.seek(0)

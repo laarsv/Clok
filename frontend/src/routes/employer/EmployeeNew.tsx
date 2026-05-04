@@ -34,7 +34,6 @@ export default function EmployeeNew() {
     email: "",
     full_name: "",
     billing_mode: "salary",
-    monthly_target_hours: 160,
     weekly_hours: 40,
     work_days: DEFAULT_WORK_DAYS,
     annual_vacation_days: 30,
@@ -153,10 +152,17 @@ export default function EmployeeNew() {
                 <option value="hourly">Stundenbasis</option>
               </select>
             </label>
-            {form.billing_mode === "hourly"
-              ? <label>Stundensatz (EUR)<input type="number" step="0.01" value={form.hourly_rate_eur ?? 0} onChange={(e) => set("hourly_rate_eur", parseFloat(e.target.value || "0"))} /></label>
-              : <label>Soll-Stunden/Monat<input type="number" step="0.5" value={form.monthly_target_hours ?? 160} onChange={(e) => set("monthly_target_hours", parseFloat(e.target.value || "0"))} /></label>}
+            {form.billing_mode === "hourly" && (
+              <label>Stundensatz (EUR)<input type="number" step="0.01" value={form.hourly_rate_eur ?? 0} onChange={(e) => set("hourly_rate_eur", parseFloat(e.target.value || "0"))} /></label>
+            )}
           </div>
+          {form.billing_mode === "salary" && (
+            <p className="muted small">
+              Soll-Stunden pro Monat ergeben sich automatisch aus Wochen-
+              stunden, Arbeitstagen und den Feiertagen des Bundeslandes.
+            </p>
+          )}
+        </section>
         </section>
 
         <section className="card-section">

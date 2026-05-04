@@ -30,7 +30,6 @@ class UserOut(BaseModel):
     supervisor_id: Optional[int] = None
     billing_mode: BillingMode
     hourly_rate_eur: float
-    monthly_target_hours: float
 
     # Stammdaten
     date_of_birth: Optional[date] = None
@@ -77,7 +76,6 @@ class EmployeeCreate(BaseModel):
     supervisor_id: Optional[int] = None  # bei Admin: explizit setzbar
     billing_mode: BillingMode = BillingMode.SALARY
     hourly_rate_eur: float = 0.0
-    monthly_target_hours: float = 160.0
     weekly_hours: Optional[float] = None
     work_days: list[str] = Field(default_factory=lambda: ["mon", "tue", "wed", "thu", "fri"])
     annual_vacation_days: Optional[float] = None
@@ -119,7 +117,6 @@ class UserUpdate(BaseModel):
     supervisor_id: Optional[int] = None  # nur Admin darf das ändern
     billing_mode: Optional[BillingMode] = None
     hourly_rate_eur: Optional[float] = Field(None, ge=0)
-    monthly_target_hours: Optional[float] = Field(None, ge=0)
     date_of_birth: Optional[date] = None
     address_line1: Optional[str] = None
     address_line2: Optional[str] = None
@@ -148,7 +145,6 @@ class TermsIn(BaseModel):
     valid_from: date
     billing_mode: Optional[BillingMode] = None
     hourly_rate_eur: Optional[float] = Field(None, ge=0)
-    monthly_target_hours: Optional[float] = Field(None, ge=0)
     weekly_hours: Optional[float] = Field(None, ge=0, le=80)
     work_days: Optional[list[str]] = None
     annual_vacation_days: Optional[float] = Field(None, ge=0, le=60)
@@ -160,7 +156,6 @@ class TermsPatch(BaseModel):
     valid_from: Optional[date] = None
     billing_mode: Optional[BillingMode] = None
     hourly_rate_eur: Optional[float] = Field(None, ge=0)
-    monthly_target_hours: Optional[float] = Field(None, ge=0)
     weekly_hours: Optional[float] = Field(None, ge=0, le=80)
     work_days: Optional[list[str]] = None
     annual_vacation_days: Optional[float] = Field(None, ge=0, le=60)
@@ -173,7 +168,6 @@ class TermsOut(BaseModel):
     valid_from: date
     billing_mode: BillingMode
     hourly_rate_eur: float
-    monthly_target_hours: float
     weekly_hours: Optional[float] = None
     work_days: Optional[list[str]] = None
     annual_vacation_days: Optional[float] = None

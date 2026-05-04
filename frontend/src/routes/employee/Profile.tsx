@@ -219,8 +219,8 @@ function ProfileGrid({ user }: { user: User }) {
     { label: "Abrechnungsmodell", value: user.billing_mode === "hourly" ? "Stundenbasis" : "Festgehalt" },
     user.billing_mode === "hourly"
       ? { label: "Stundensatz (EUR)", value: user.hourly_rate_eur }
-      : { label: "Soll-Stunden / Monat", value: user.monthly_target_hours },
-  ];
+      : null,
+  ].filter(Boolean) as { label: string; value: string | number | null | undefined }[];
   return (
     <div className="profile-grid">
       {fields.map((f, i) => (

@@ -21,7 +21,6 @@ from app.work_days import normalize as normalize_work_days
 _MIRROR_FIELDS = (
     "billing_mode",
     "hourly_rate_eur",
-    "monthly_target_hours",
     "weekly_hours",
     "work_days",
     "annual_vacation_days",
@@ -95,7 +94,6 @@ def create_initial_terms(
         valid_from=valid_from,
         billing_mode=user.billing_mode,
         hourly_rate_eur=user.hourly_rate_eur,
-        monthly_target_hours=user.monthly_target_hours,
         weekly_hours=user.weekly_hours,
         work_days=user.work_days,
         annual_vacation_days=user.annual_vacation_days,

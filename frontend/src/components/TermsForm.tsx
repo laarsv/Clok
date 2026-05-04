@@ -19,7 +19,6 @@ export default function TermsForm({ initial, defaultValidFrom, onSubmit, onCance
   );
   const [billingMode, setBillingMode] = useState(initial?.billing_mode ?? "salary");
   const [hourlyRate, setHourlyRate] = useState(initial?.hourly_rate_eur ?? 0);
-  const [monthlyTarget, setMonthlyTarget] = useState(initial?.monthly_target_hours ?? 160);
   const [weeklyHours, setWeeklyHours] = useState(initial?.weekly_hours ?? 40);
   const [workDays, setWorkDays] = useState<WeekDay[]>(
     (initial?.work_days as WeekDay[] | null | undefined) ?? DEFAULT_WORK_DAYS,
@@ -34,7 +33,6 @@ export default function TermsForm({ initial, defaultValidFrom, onSubmit, onCance
       setValidFrom(initial.valid_from);
       setBillingMode(initial.billing_mode);
       setHourlyRate(initial.hourly_rate_eur);
-      setMonthlyTarget(initial.monthly_target_hours);
       setWeeklyHours(initial.weekly_hours ?? 40);
       setWorkDays((initial.work_days as WeekDay[] | null | undefined) ?? DEFAULT_WORK_DAYS);
       setVacation(initial.annual_vacation_days ?? 30);
@@ -57,7 +55,6 @@ export default function TermsForm({ initial, defaultValidFrom, onSubmit, onCance
         valid_from: validFrom,
         billing_mode: billingMode,
         hourly_rate_eur: hourlyRate,
-        monthly_target_hours: monthlyTarget,
         weekly_hours: weeklyHours,
         work_days: workDays,
         annual_vacation_days: vacation,
@@ -82,13 +79,18 @@ export default function TermsForm({ initial, defaultValidFrom, onSubmit, onCance
             <option value="hourly">Stundenbasis</option>
           </select>
         </label>
-        {billingMode === "hourly"
-          ? <label>Stundensatz (EUR)<input type="number" step="0.01" value={hourlyRate}
-              onChange={(e) => setHourlyRate(parseFloat(e.target.value || "0"))} /></label>
-          : <label>Soll-Stunden / Monat<input type="number" step="0.5" value={monthlyTarget}
-              onChange={(e) => setMonthlyTarget(parseFloat(e.target.value || "0"))} /></label>}
-        <label>Wochenstunden<input type="number" step="0.5" value={weeklyHours}
-          onChange={(e) => setWeeklyHours(parseFloat(e.target.value || "0"))} /></label>
+        {billingMode === "hourly" && (
+          <label>Stundensatz (EUR)<input type="number" step="0.01" value={hourlyRate}
+            onChange={(e) => setHourlyRate(parseFloat(e.target.value || "0"))} /></label>
+        )}
+        <label>Wochenstunden
+          <input type="number" step="0.5" value={weeklyHours}
+            onChange={(e) => setWeeklyHours(parseFloat(e.target.value || "0"))} />
+          <span className="hint">
+            Soll/Monat wird automatisch aus Wochenstunden, Arbeitstagen und
+            Feiertagen des Bundeslandes berechnet.
+          </span>
+        </label>
         <div className="field full">
           <span className="field-label">Arbeitstage pro Woche</span>
           <WorkDaysPicker value={workDays} onChange={setWorkDays} />
