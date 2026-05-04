@@ -91,6 +91,25 @@ class User(Base):
     supervisor = relationship("User", remote_side=[id], backref="reports")
 
 
+class AuditAction(str, Enum):
+    CREATE = "create"
+    UPDATE = "update"
+    DELETE = "delete"
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_log"
+
+    id = Column(Integer, primary_key=True)
+    actor_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    action = Column(SAEnum(AuditAction, name="audit_action"), nullable=False)
+    entity_type = Column(String(64), nullable=False)
+    entity_id = Column(Integer, nullable=False)
+    before = Column(Text, nullable=True)  # JSON-encoded
+    after = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class TimeEntry(Base):
     __tablename__ = "time_entries"
 

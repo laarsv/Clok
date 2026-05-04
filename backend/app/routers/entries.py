@@ -7,9 +7,10 @@ from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app.arbzg import gross_hours, validate_entry
+from app.audit import log_change
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import TimeEntry, User
+from app.models import AuditAction, TimeEntry, User
 from app.schemas import (
     TimeEntryCreateResponse, TimeEntryIn, TimeEntryOut, ValidationIssueOut,
 )
@@ -115,6 +116,15 @@ def create_entry(
 
     entry = TimeEntry(user_id=user.id, **payload.model_dump())
     db.add(entry)
+    db.flush()
+    log_change(
+        db,
+        actor_user_id=user.id,
+        action=AuditAction.CREATE,
+        entity_type="time_entry",
+        entity_id=entry.id,
+        after=entry,
+    )
     db.commit()
     db.refresh(entry)
     return TimeEntryCreateResponse(entry=_to_out(entry), issues=issues)
@@ -137,8 +147,19 @@ def update_entry(
     if any(i.severity == "error" for i in issues):
         raise HTTPException(status_code=422, detail=[i.model_dump() for i in issues])
 
+    before_snapshot = {c.name: getattr(entry, c.name) for c in entry.__table__.columns}
     for field, value in payload.model_dump().items():
         setattr(entry, field, value)
+    db.flush()
+    log_change(
+        db,
+        actor_user_id=user.id,
+        action=AuditAction.UPDATE,
+        entity_type="time_entry",
+        entity_id=entry.id,
+        before=before_snapshot,
+        after=entry,
+    )
     db.commit()
     db.refresh(entry)
     return TimeEntryCreateResponse(entry=_to_out(entry), issues=issues)
@@ -155,6 +176,15 @@ def delete_entry(
     ).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Eintrag nicht gefunden")
+    before_snapshot = {c.name: getattr(entry, c.name) for c in entry.__table__.columns}
+    log_change(
+        db,
+        actor_user_id=user.id,
+        action=AuditAction.DELETE,
+        entity_type="time_entry",
+        entity_id=entry.id,
+        before=before_snapshot,
+    )
     db.delete(entry)
     db.commit()
 
