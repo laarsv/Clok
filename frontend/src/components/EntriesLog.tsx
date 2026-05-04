@@ -19,11 +19,7 @@ type Item =
   | { kind: "entry"; date: string; entry: TimeEntry }
   | { kind: "absence"; date: string; absence: Absence };
 
-const TYPE_LABEL = {
-  vacation: "Urlaub",
-  sick: "Krankheit",
-  unpaid: "Unbezahlt",
-} as const;
+const TYPE_LABEL = ABSENCE_TYPE_LABELS;
 
 export default function EntriesLog({ employeeId, canEditAll }: Props) {
   const [anchor, setAnchor] = useState<Date>(new Date());

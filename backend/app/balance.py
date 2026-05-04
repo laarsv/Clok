@@ -61,12 +61,15 @@ def _terms_lookup(db: Session, user: User):
 def _approved_absent_dates(
     db: Session, user: User, start: date, end_inclusive: date,
 ) -> set[date]:
+    """Tage, an denen approved Abwesenheit vorliegt – egal welcher Typ.
+    Diese Tage entfallen aus dem Soll: bei bezahlten Typen (Vacation,
+    Sick, Special, Training) wegen Lohnfortzahlung; bei unbezahlten
+    Typen (Unpaid, Parental) weil der MA effektiv nicht arbeitet."""
     rows = (
         db.query(Absence)
         .filter(
             Absence.user_id == user.id,
             Absence.status == AbsenceStatus.APPROVED,
-            Absence.type.in_((AbsenceType.VACATION, AbsenceType.SICK)),
             Absence.start_date <= end_inclusive,
             Absence.end_date >= start,
         )

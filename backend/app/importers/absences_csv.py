@@ -38,11 +38,15 @@ class ImportResult:
     errors: list[ImportError]
 
 
+_VALID_TYPES = {"vacation", "sick", "unpaid", "special", "parental", "training"}
+
+
 def _parse_type(raw: str) -> AbsenceType:
     raw = raw.strip().lower()
-    if raw not in {"vacation", "sick", "unpaid"}:
+    if raw not in _VALID_TYPES:
         raise ValueError(
-            f"art muss vacation, sick oder unpaid sein – gefunden: {raw!r}"
+            f"art muss einer von {', '.join(sorted(_VALID_TYPES))} sein – "
+            f"gefunden: {raw!r}"
         )
     return AbsenceType(raw)
 

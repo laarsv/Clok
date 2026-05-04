@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Shell from "../../components/Shell";
-import { api, type Absence, type User } from "../../api";
+import { api, ABSENCE_TYPE_LABELS, type Absence, type User } from "../../api";
 import { StatusBadge } from "../employee/Absences";
 
 export default function AbsenceInbox() {
@@ -54,7 +54,7 @@ export default function AbsenceInbox() {
               {pending.map((a) => (
                 <tr key={a.id}>
                   <td>{empById[a.user_id]?.full_name ?? `User #${a.user_id}`}</td>
-                  <td>{a.type === "vacation" ? "Urlaub" : a.type === "sick" ? "Krank" : "Unbezahlt"}</td>
+                  <td>{ABSENCE_TYPE_LABELS[a.type]}</td>
                   <td>{a.start_date}</td>
                   <td>{a.end_date}</td>
                   <td className="muted small">{a.note ?? ""}</td>
@@ -90,7 +90,7 @@ export default function AbsenceInbox() {
               {decided.map((a) => (
                 <tr key={a.id}>
                   <td>{empById[a.user_id]?.full_name ?? `User #${a.user_id}`}</td>
-                  <td>{a.type === "vacation" ? "Urlaub" : a.type === "sick" ? "Krank" : "Unbezahlt"}</td>
+                  <td>{ABSENCE_TYPE_LABELS[a.type]}</td>
                   <td>{a.start_date}</td>
                   <td>{a.end_date}</td>
                   <td><StatusBadge status={a.status} /></td>

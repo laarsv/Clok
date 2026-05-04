@@ -144,9 +144,12 @@ class EmploymentTerms(Base):
 
 
 class AbsenceType(str, Enum):
-    VACATION = "vacation"
-    SICK = "sick"
-    UNPAID = "unpaid"
+    VACATION = "vacation"     # Erholungsurlaub
+    SICK = "sick"             # Krankheit
+    UNPAID = "unpaid"         # Unbezahlte Freistellung
+    SPECIAL = "special"       # Bezahlter Sonderurlaub (Hochzeit, Umzug, Trauer, Kinderkrank …)
+    PARENTAL = "parental"     # Elternzeit
+    TRAINING = "training"     # Fortbildung / Schulung
 
 
 class AbsenceStatus(str, Enum):

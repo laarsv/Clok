@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api, type Absence, type AbsenceType } from "../api";
+import { api, ABSENCE_TYPE_LABELS, type Absence, type AbsenceType } from "../api";
 
 interface Props {
   initial: Absence;
@@ -43,9 +43,9 @@ export default function AbsenceForm({ initial, onSaved, onCancel }: Props) {
       <div className="manual-grid">
         <label>Art
           <select value={type} onChange={(e) => setType(e.target.value as AbsenceType)}>
-            <option value="vacation">Urlaub</option>
-            <option value="sick">Krankheit</option>
-            <option value="unpaid">Unbezahlt</option>
+            {(Object.keys(ABSENCE_TYPE_LABELS) as AbsenceType[]).map((k) => (
+              <option key={k} value={k}>{ABSENCE_TYPE_LABELS[k]}</option>
+            ))}
           </select>
         </label>
         <label>Von<input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></label>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Shell from "../../components/Shell";
-import { api, type Absence, type AbsenceType } from "../../api";
+import { api, ABSENCE_TYPE_LABELS, type Absence, type AbsenceType } from "../../api";
 
 export default function Absences() {
   const [list, setList] = useState<Absence[]>([]);
@@ -38,9 +38,9 @@ export default function Absences() {
           <div className="manual-grid">
             <label>Art
               <select value={type} onChange={(e) => setType(e.target.value as AbsenceType)}>
-                <option value="vacation">Urlaub</option>
-                <option value="sick">Krankheit</option>
-                <option value="unpaid">Unbezahlt</option>
+                {(Object.keys(ABSENCE_TYPE_LABELS) as AbsenceType[]).map((k) => (
+                  <option key={k} value={k}>{ABSENCE_TYPE_LABELS[k]}</option>
+                ))}
               </select>
             </label>
             <label>Von<input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></label>
@@ -52,9 +52,9 @@ export default function Absences() {
           </button>
           {error && <div className="error">{error}</div>}
           <p className="muted small">
-            {type === "vacation" && "Dein Antrag geht zur Genehmigung an deinen Arbeitgeber."}
-            {type === "sick" && "Krankmeldungen werden sofort verbucht. Dein Arbeitgeber wird informiert."}
-            {type === "unpaid" && "Unbezahlte Abwesenheit braucht ebenfalls Genehmigung."}
+            {type === "sick"
+              ? "Krankmeldungen werden sofort verbucht. Dein Arbeitgeber wird informiert."
+              : "Dein Antrag geht zur Genehmigung an deinen Arbeitgeber."}
           </p>
         </section>
 
@@ -67,7 +67,7 @@ export default function Absences() {
             <tbody>
               {list.map((a) => (
                 <tr key={a.id} id={String(a.id)}>
-                  <td>{a.type === "vacation" ? "Urlaub" : a.type === "sick" ? "Krank" : "Unbezahlt"}</td>
+                  <td>{ABSENCE_TYPE_LABELS[a.type]}</td>
                   <td>{a.start_date}</td>
                   <td>{a.end_date}</td>
                   <td><StatusBadge status={a.status} /></td>
