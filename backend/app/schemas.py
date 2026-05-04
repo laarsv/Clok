@@ -58,6 +58,36 @@ class UserOut(BaseModel):
         from_attributes = True
 
 
+class EmployeeCreate(BaseModel):
+    """Onboarding-Payload, den Arbeitgeber/Admin schickt."""
+    username: str
+    email: EmailStr
+    password: str
+    full_name: Optional[str] = None
+    role: Role = Role.EMPLOYEE
+    supervisor_id: Optional[int] = None  # bei Admin: explizit setzbar
+    billing_mode: BillingMode = BillingMode.SALARY
+    hourly_rate_eur: float = 0.0
+    monthly_target_hours: float = 160.0
+    weekly_hours: Optional[float] = None
+    annual_vacation_days: Optional[float] = None
+    initial_overtime_hours: float = 0.0
+    initial_remaining_vacation: float = 0.0
+    federal_state: Optional[FederalState] = None
+    hire_date: Optional[date] = None
+    date_of_birth: Optional[date] = None
+    address_line1: Optional[str] = None
+    address_line2: Optional[str] = None
+    postal_code: Optional[str] = None
+    city: Optional[str] = None
+    country: str = "DE"
+    social_security_number: Optional[str] = None
+    iban: Optional[str] = None
+    phone: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+
+
 class UserUpdate(BaseModel):
     """Allgemeines Update – wer was darf, entscheidet die Permission-Layer (Commit 4)."""
     full_name: Optional[str] = None
