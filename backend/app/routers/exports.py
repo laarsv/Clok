@@ -11,6 +11,8 @@ from app.auth import get_current_user
 from app.balance import target_hours_for_period
 from app.database import get_db
 from app.models import BillingMode, TimeEntry, User
+from app.pdf_timesheet import build_monthly_pdf
+from app.permissions import visible_user_ids
 
 router = APIRouter(prefix="/api/exports", tags=["exports"])
 
@@ -98,5 +100,33 @@ def monthly_csv(
     return StreamingResponse(
         iter([buf.getvalue()]),
         media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/monthly.pdf")
+def monthly_pdf(
+    year: int = Query(...),
+    month: int = Query(..., ge=1, le=12),
+    user_id: int | None = Query(None, description="Admin/AG: anderer MA"),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Stundenzettel als PDF (DIN A4) zur Vorlage in der Lohnbuchhaltung."""
+    target_id = user_id if user_id is not None else user.id
+    if target_id != user.id:
+        if target_id not in visible_user_ids(user, db):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=403, detail="Kein Zugriff.")
+    target = db.query(User).filter(User.id == target_id).first()
+    if target is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden.")
+
+    pdf_bytes = build_monthly_pdf(db, target, year, month)
+    filename = f"clok_{target.username}_{year}-{month:02d}.pdf"
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

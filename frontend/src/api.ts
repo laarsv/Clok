@@ -120,8 +120,14 @@ export const api = {
     if (userId) q.set("user_id", String(userId));
     return request<YearOverview>(`/stats/year-overview?${q}`);
   },
-  exportUrl: (year: number, month: number) =>
-    `${BASE}/exports/monthly.csv?year=${year}&month=${month}`,
+  exportUrl: (year: number, month: number, userId?: number) => {
+    const q = `year=${year}&month=${month}` + (userId ? `&user_id=${userId}` : "");
+    return `${BASE}/exports/monthly.csv?${q}`;
+  },
+  pdfUrl: (year: number, month: number, userId?: number) => {
+    const q = `year=${year}&month=${month}` + (userId ? `&user_id=${userId}` : "");
+    return `${BASE}/exports/monthly.pdf?${q}`;
+  },
 
   // Absences
   listAbsences: (userId?: number) => {
