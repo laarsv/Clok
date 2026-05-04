@@ -79,6 +79,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
     }),
+  sendTestEmail: () =>
+    request<{ dev_mode: boolean; success: boolean; sent_to: string; from_address: string }>(
+      "/auth/test-email", { method: "POST" },
+    ),
 
   me: () => request<User>("/auth/me"),
   updateMe: (payload: Partial<User>) =>

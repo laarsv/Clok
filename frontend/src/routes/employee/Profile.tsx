@@ -3,6 +3,64 @@ import Shell from "../../components/Shell";
 import { api, type NotificationSettings, type Role, type User } from "../../api";
 import { useCurrentUser } from "../../auth/CurrentUser";
 
+function TestEmailPanel() {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{
+    dev_mode: boolean; success: boolean; sent_to: string; from_address: string;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const send = async () => {
+    setError(null); setResult(null); setBusy(true);
+    try {
+      const r = await api.sendTestEmail();
+      setResult(r);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div>
+      <p className="muted small">
+        Schickt eine Test-Mail an deine eigene Adresse über die echte
+        Resend-Pipeline. Nützlich, um zu prüfen, ob DKIM/SPF und der
+        API-Key richtig sitzen.
+      </p>
+      <button onClick={send} disabled={busy}>
+        {busy ? "Sende…" : "Test-Mail senden"}
+      </button>
+      {error && <div className="error" style={{ marginTop: "0.75rem" }}>{error}</div>}
+      {result && (
+        <div className={`issue ${result.success ? "" : "warning"}`} style={{ marginTop: "0.75rem" }}>
+          {result.dev_mode ? (
+            <>
+              <strong>Dev-Modus aktiv.</strong> Mail wurde nicht versendet,
+              sondern ins Backend-Log geschrieben (RESEND_API_KEY ist leer).
+              Inhalt findest du mit <code>docker compose logs backend | grep email-dev-mode</code>.
+            </>
+          ) : result.success ? (
+            <>
+              <strong>Mail abgeschickt.</strong> Empfänger {result.sent_to},
+              Absender <code>{result.from_address}</code>. Schau ins Postfach –
+              wenn nichts ankommt, prüf Spam und das Resend-Dashboard.
+            </>
+          ) : (
+            <>
+              <strong>Resend-Fehler.</strong> Die API hat das Senden abgelehnt
+              (z. B. Domain nicht verifiziert). Details im Backend-Log:
+              <code>docker compose logs backend | grep Resend</code>.
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function ChangePasswordPanel() {
   const [oldPw, setOldPw] = useState("");
   const [newPw, setNewPw] = useState("");
@@ -133,6 +191,13 @@ export default function Profile() {
           <h3>Passwort ändern</h3>
           <ChangePasswordPanel />
         </section>
+
+        {(user.role === "admin" || user.role === "employer") && (
+          <section className="card-section">
+            <h3>E-Mail-Test</h3>
+            <TestEmailPanel />
+          </section>
+        )}
       </div>
     </Shell>
   );

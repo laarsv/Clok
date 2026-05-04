@@ -10,8 +10,10 @@ from sqlalchemy.orm import Session
 from app.auth import authenticate_user, create_access_token, get_current_user, hash_password, verify_password
 from app.config import get_settings
 from app.database import get_db
-from app.models import User
+from app.models import Role, User
+from app.notifications import resend
 from app.notifications.service import NotificationKind, notify
+from app.permissions import require_role
 from app.schemas import Token, UserOut, UserUpdate
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -148,3 +150,50 @@ def change_password(
         raise HTTPException(status_code=401, detail="Altes Passwort stimmt nicht.")
     user.password_hash = hash_password(payload.new_password)
     db.commit()
+
+
+class TestEmailOut(BaseModel):
+    dev_mode: bool
+    success: bool
+    sent_to: EmailStr
+    from_address: str
+
+
+@router.post("/test-email", response_model=TestEmailOut)
+def send_test_email(
+    user: User = Depends(require_role(Role.ADMIN, Role.EMPLOYER)),
+):
+    """Schickt eine Test-Mail an die eigene Adresse, durchläuft die echte
+    Resend-Pipeline. Verrät, ob das System gerade im Dev-Modus läuft
+    oder live versendet."""
+    settings = get_settings()
+    first_name = (user.full_name or user.username).split()[0]
+    text = (
+        f"Hi {first_name},\n\n"
+        f"das ist eine Test-Mail von deinem Clok-System.\n"
+        f"Wenn du sie liest, ist der Mailversand richtig konfiguriert.\n\n"
+        f"Absender: {settings.resend_from_email}\n"
+        f"App-URL: {settings.app_base_url}\n\n"
+        f"– Clok\n"
+    )
+    html = (
+        f"<p>Hi {first_name},</p>"
+        f"<p>das ist eine Test-Mail von deinem Clok-System. "
+        f"Wenn du sie liest, ist der Mailversand richtig konfiguriert.</p>"
+        f"<p style='color:#888;font-size:14px;'>"
+        f"Absender: <code>{settings.resend_from_email}</code><br>"
+        f"App-URL: <code>{settings.app_base_url}</code></p>"
+        f"<p>– Clok</p>"
+    )
+    ok = resend.send(
+        to=user.email,
+        subject="Clok – Test-Mail",
+        html=html,
+        text=text,
+    )
+    return TestEmailOut(
+        dev_mode=settings.email_dev_mode,
+        success=ok,
+        sent_to=user.email,
+        from_address=settings.resend_from_email,
+    )
