@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.audit import log_change
 from app.auth import get_current_user
+from app.config import get_settings
 from app.database import get_db
 from app.models import Absence, AbsenceStatus, AbsenceType, AuditAction, Role, User
+from app.notifications.service import NotificationKind, notify
 from app.permissions import supervises, visible_user_ids
 from app.schemas import AbsenceDecision, AbsenceIn, AbsenceOut
 
@@ -17,6 +19,50 @@ router = APIRouter(prefix="/api/absences", tags=["absences"])
 
 def _to_out(a: Absence) -> AbsenceOut:
     return AbsenceOut.model_validate(a)
+
+
+def _absence_link(absence_id: int) -> str:
+    base = get_settings().app_base_url.rstrip("/")
+    return f"{base}/employer/absences#{absence_id}"
+
+
+def _format_de(d) -> str:
+    return d.strftime("%d.%m.%Y")
+
+
+def _build_ctx(absence: Absence, requester: User, approver: User | None) -> dict:
+    from app.absences import working_days_in_range  # local import vermeidet circular
+    from app.database import SessionLocal
+    # workdays nur für die Subject-/Body-Templates
+    db_local = SessionLocal()
+    try:
+        workdays = working_days_in_range(
+            db_local, requester, absence.start_date, absence.end_date,
+            include_absences=False,
+        )
+    finally:
+        db_local.close()
+    return {
+        "requester": {
+            "id": requester.id,
+            "first_name": (requester.full_name or requester.username).split()[0],
+            "full_name": requester.full_name or requester.username,
+            "email": requester.email,
+        },
+        "approver": (
+            {
+                "id": approver.id,
+                "first_name": (approver.full_name or approver.username).split()[0],
+                "full_name": approver.full_name or approver.username,
+                "email": approver.email,
+            } if approver else {"first_name": "", "full_name": ""}
+        ),
+        "start": _format_de(absence.start_date),
+        "end": _format_de(absence.end_date),
+        "workdays": workdays,
+        "link": _absence_link(absence.id),
+        "note": absence.note,
+    }
 
 
 @router.get("", response_model=list[AbsenceOut])
@@ -88,6 +134,26 @@ def create_absence(
     )
     db.commit()
     db.refresh(absence)
+
+    # ---- Mail-Trigger ----
+    requester = db.query(User).filter(User.id == absence.user_id).first()
+    supervisor = (
+        db.query(User).filter(User.id == requester.supervisor_id).first()
+        if requester and requester.supervisor_id else None
+    )
+    if absence.type == AbsenceType.SICK and supervisor is not None:
+        ctx = _build_ctx(absence, requester, supervisor)
+        notify(db, kind=NotificationKind.INCOMING_SICK_NOTE,
+               recipient=supervisor, ctx=ctx)
+        if user.id != requester.id:
+            # Krankmeldung durch Dritte → Info-Mail an MA
+            notify(db, kind=NotificationKind.SICK_NOTE_FOR_YOU,
+                   recipient=requester, ctx=_build_ctx(absence, requester, user))
+    elif absence.type == AbsenceType.VACATION and supervisor is not None:
+        ctx = _build_ctx(absence, requester, supervisor)
+        notify(db, kind=NotificationKind.INCOMING_VACATION_REQUEST,
+               recipient=supervisor, ctx=ctx)
+
     return _to_out(absence)
 
 
@@ -127,6 +193,15 @@ def _decide(
     return absence
 
 
+def _notify_decision(db: Session, absence: Absence, decided_by: User) -> None:
+    requester = db.query(User).filter(User.id == absence.user_id).first()
+    if requester is None:
+        return
+    ctx = _build_ctx(absence, requester, decided_by)
+    ctx["approved"] = absence.status == AbsenceStatus.APPROVED
+    notify(db, kind=NotificationKind.VACATION_DECIDED, recipient=requester, ctx=ctx)
+
+
 @router.patch("/{absence_id}/approve", response_model=AbsenceOut)
 def approve_absence(
     absence_id: int,
@@ -134,7 +209,9 @@ def approve_absence(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return _to_out(_decide(absence_id, AbsenceStatus.APPROVED, payload, user, db))
+    absence = _decide(absence_id, AbsenceStatus.APPROVED, payload, user, db)
+    _notify_decision(db, absence, user)
+    return _to_out(absence)
 
 
 @router.patch("/{absence_id}/reject", response_model=AbsenceOut)
@@ -144,7 +221,9 @@ def reject_absence(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return _to_out(_decide(absence_id, AbsenceStatus.REJECTED, payload, user, db))
+    absence = _decide(absence_id, AbsenceStatus.REJECTED, payload, user, db)
+    _notify_decision(db, absence, user)
+    return _to_out(absence)
 
 
 @router.delete("/{absence_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -1,0 +1,8 @@
+{% extends "_layout.html.j2" %}
+{% block body %}
+<p>Hi {{ requester.first_name }},</p>
+<p>dein Urlaubsantrag für den <strong>{{ start }}–{{ end }}</strong> wurde {% if approved %}<strong>genehmigt</strong>{% else %}<strong>leider abgelehnt</strong>{% endif %}.</p>
+{% if note %}<p>Grund: „{{ note }}"</p>{% endif %}
+{% if not approved %}<p>Sprich am besten kurz mit {{ approver.first_name }}, ob ihr einen anderen Zeitraum findet.</p>{% endif %}
+<p><a href="{{ link }}" style="display:inline-block;padding:10px 18px;background:#1c1c1c;color:#fff;text-decoration:none;border-radius:8px;">Antrag öffnen →</a></p>
+{% endblock %}

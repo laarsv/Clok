@@ -1,0 +1,6 @@
+{% extends "_layout.html.j2" %}
+{% block body %}
+<p>Hi {{ requester.first_name }},</p>
+<p>du hast noch <strong>{{ remaining }} Urlaubstage</strong> übrig. Plane sie ein, bevor das Jahr durch ist – Resturlaub verfällt sonst.</p>
+<p><a href="{{ link }}" style="display:inline-block;padding:10px 18px;background:#1c1c1c;color:#fff;text-decoration:none;border-radius:8px;">Urlaub planen →</a></p>
+{% endblock %}

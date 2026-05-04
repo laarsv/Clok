@@ -1,0 +1,6 @@
+{% extends "_layout.html.j2" %}
+{% block body %}
+<p>Hi {{ requester.first_name }},</p>
+<p>{{ approver.full_name }} hat eine Krankmeldung für dich eingetragen ({{ start }}{% if end != start %} bis {{ end }}{% endif %}). Falls das nicht passt, melde dich kurz bei {{ approver.first_name }}.</p>
+<p><a href="{{ link }}" style="display:inline-block;padding:10px 18px;background:#1c1c1c;color:#fff;text-decoration:none;border-radius:8px;">In Clok ansehen →</a></p>
+{% endblock %}

@@ -1,0 +1,10 @@
+Hi {{ requester.first_name }},
+
+dein Urlaubsantrag für den {{ start }}–{{ end }} wurde {% if approved %}genehmigt{% else %}leider abgelehnt{% endif %}.{% if note %}
+Grund: "{{ note }}"
+{% endif %}{% if not approved %}
+Sprich am besten kurz mit {{ approver.first_name }}, ob ihr einen anderen Zeitraum findet.
+{% endif %}
+Antrag öffnen: {{ link }}
+
+– Clok
