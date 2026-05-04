@@ -712,3 +712,21 @@ td button:hover { color: var(--error); background: transparent; }
   .workdays { flex-wrap: wrap; }
   .workday { flex: 1 0 calc(14.28% - 0.4rem); min-width: 40px; padding: 0.5rem 0.4rem; }
 }
+
+/* Audit-Log */
+.audit-detail { background: var(--bg); padding: 0.75rem; }
+.audit-snapshots { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.audit-snapshots pre {
+  background: var(--surface);
+  padding: 0.6rem;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  max-height: 240px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+@media (max-width: 600px) {
+  .audit-snapshots { grid-template-columns: 1fr; }
+}
