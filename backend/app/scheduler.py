@@ -201,15 +201,17 @@ _scheduler: BackgroundScheduler | None = None
 def start_scheduler() -> None:
     global _scheduler
     if _scheduler is not None:
+        log.info("Scheduler bereits aktiv – skip")
         return
-    sched = BackgroundScheduler(timezone="Europe/Berlin")
+    sched = BackgroundScheduler(timezone="Europe/Berlin", daemon=True)
     sched.add_job(job_month_complete, CronTrigger(hour=23, minute=55), id="month_complete")
     sched.add_job(job_reminder_no_entry, CronTrigger(hour=18, minute=0), id="reminder_no_entry")
     sched.add_job(job_remaining_vacation, CronTrigger(day=1, hour=8, minute=0),
                   id="remaining_vacation")
     sched.start()
     _scheduler = sched
-    log.info("APScheduler gestartet")
+    job_ids = [j.id for j in sched.get_jobs()]
+    log.info("APScheduler gestartet mit %d Jobs: %s", len(job_ids), ", ".join(job_ids))
 
 
 def stop_scheduler() -> None:
@@ -217,3 +219,4 @@ def stop_scheduler() -> None:
     if _scheduler is not None:
         _scheduler.shutdown(wait=False)
         _scheduler = None
+        log.info("APScheduler gestoppt")

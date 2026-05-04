@@ -1,9 +1,13 @@
 """FastAPI app entry point."""
+import asyncio
+import logging
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import get_settings
 from app.db_migrate import upgrade_to_head
 from app.routers import (
     absences, admin, auth, employees, employer, entries, exports, holidays,
@@ -11,15 +15,47 @@ from app.routers import (
 )
 from app.scheduler import start_scheduler, stop_scheduler
 
+log = logging.getLogger("clok.lifespan")
+
+
+async def _run_with_timeout(name: str, sync_fn, timeout: float) -> None:
+    """Führt eine synchrone Funktion in einem Thread aus, mit Timeout und
+    Fehlertoleranz. Backend-Start darf nicht von externen Diensten oder
+    blockierenden Calls abhängen – im Zweifel wird der Schritt geloggt
+    und übersprungen, statt den ganzen Boot zu hängen."""
+    t0 = time.monotonic()
+    try:
+        await asyncio.wait_for(asyncio.to_thread(sync_fn), timeout=timeout)
+        log.info("Lifespan: %s ok in %.2fs", name, time.monotonic() - t0)
+    except asyncio.TimeoutError:
+        log.error(
+            "Lifespan: %s hat nach %.0fs nicht geantwortet – Schritt übersprungen",
+            name, timeout,
+        )
+    except Exception:
+        log.exception("Lifespan: %s fehlgeschlagen – Backend startet trotzdem", name)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    upgrade_to_head()
-    start_scheduler()
+    settings = get_settings()
+    log.info(
+        "Lifespan startup beginning (app_base_url=%s, email_dev_mode=%s)",
+        settings.app_base_url, settings.email_dev_mode,
+    )
+
+    await _run_with_timeout("alembic upgrade head", upgrade_to_head, timeout=120.0)
+    await _run_with_timeout("scheduler start", start_scheduler, timeout=10.0)
+
+    log.info("Lifespan startup complete")
     try:
         yield
     finally:
-        stop_scheduler()
+        log.info("Lifespan shutdown")
+        try:
+            stop_scheduler()
+        except Exception:
+            log.exception("Scheduler shutdown failed")
 
 
 app = FastAPI(title="Clok", version="0.1.0", lifespan=lifespan)

@@ -10,7 +10,12 @@ from app import models  # noqa: F401  – sorgt dafür, dass alle Tabellen regis
 
 config = context.config
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # WICHTIG: disable_existing_loggers=False, sonst killt fileConfig
+    # alle Logger, die uvicorn/FastAPI vor dem Lifespan registriert hat
+    # (`uvicorn`, `uvicorn.error`, `uvicorn.access`). Folge: nach dem
+    # alembic-Run ist der Server-Log stumm und „Application startup
+    # complete." erscheint nie, obwohl der Prozess läuft.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 config.set_main_option("sqlalchemy.url", get_settings().database_url)
 
