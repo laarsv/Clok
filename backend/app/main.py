@@ -4,6 +4,24 @@ import logging
 import time
 from contextlib import asynccontextmanager
 
+
+# uvicorn konfiguriert nur seine eigenen Logger ('uvicorn', 'uvicorn.error',
+# 'uvicorn.access'), der Root-Logger bleibt auf Python-Default (WARNING,
+# keine Handler). Damit unsere INFO-Logs (clok.lifespan, app.scheduler,
+# alembic.runtime.migration, …) erscheinen, müssen wir den Root einmal
+# selbst konfigurieren – BEVOR die App-Imports laufen, damit alle Logger,
+# die in den Imports erstellt werden, die richtige Hierarchie sehen.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+# basicConfig ist no-op, wenn Root schon Handler hat. setLevel auf einzelnen
+# Loggern wirkt unabhängig davon und fängt diesen Fall ab.
+for _name in ("clok", "app", "alembic"):
+    logging.getLogger(_name).setLevel(logging.INFO)
+
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
