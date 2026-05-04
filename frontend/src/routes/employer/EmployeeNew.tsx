@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Shell from "../../components/Shell";
 import WorkDaysPicker from "../../components/WorkDaysPicker";
+import { useCurrentUser } from "../../auth/CurrentUser";
 import {
   api, legalMinVacationDays,
-  type EmployeeCreatePayload, type FederalState, type WeekDay,
+  type EmployeeCreatePayload, type FederalState, type User, type WeekDay,
 } from "../../api";
 
 const FEDERAL_STATES: FederalState[] = [
@@ -16,6 +17,17 @@ const DEFAULT_WORK_DAYS: WeekDay[] = ["mon", "tue", "wed", "thu", "fri"];
 
 export default function EmployeeNew() {
   const navigate = useNavigate();
+  const { user: currentUser } = useCurrentUser();
+  const isAdmin = currentUser?.role === "admin";
+  const [employers, setEmployers] = useState<User[]>([]);
+  useEffect(() => {
+    if (isAdmin) {
+      api.listEmployees(false).then((all) =>
+        setEmployers(all.filter((u) => u.role === "employer")),
+      );
+    }
+  }, [isAdmin]);
+
   const [form, setForm] = useState<EmployeeCreatePayload>({
     username: "",
     email: "",
@@ -110,6 +122,17 @@ export default function EmployeeNew() {
             <label>Username<input value={form.username} onChange={(e) => set("username", e.target.value)} /></label>
             <label>E-Mail<input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} /></label>
             <label>Voller Name<input value={form.full_name ?? ""} onChange={(e) => set("full_name", e.target.value)} /></label>
+            {isAdmin && (
+              <label>Arbeitgeber
+                <select value={form.supervisor_id ?? ""}
+                  onChange={(e) => set("supervisor_id", e.target.value ? parseInt(e.target.value, 10) : undefined)}>
+                  <option value="">– kein Arbeitgeber (direkt unter Admin) –</option>
+                  {employers.map((em) => (
+                    <option key={em.id} value={em.id}>{em.full_name || em.username}</option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
           <p className="muted small">An die E-Mail-Adresse geht die Einladung mit Link zum Onboarding.</p>
         </section>
@@ -125,10 +148,10 @@ export default function EmployeeNew() {
               </select>
             </label>
             <label>Wochenstunden<input type="number" value={form.weekly_hours ?? 0} onChange={(e) => set("weekly_hours", parseFloat(e.target.value || "0"))} /></label>
-            <label className="full">
-              Arbeitstage pro Woche
+            <div className="field full">
+              <span className="field-label">Arbeitstage pro Woche</span>
               <WorkDaysPicker value={workDays} onChange={(v) => set("work_days", v)} />
-            </label>
+            </div>
             <label>
               Urlaub/Jahr (Tage)
               <input type="number" value={form.annual_vacation_days ?? 0}

@@ -311,6 +311,16 @@ td button:hover { color: var(--error); background: transparent; }
 .current-terms { background: rgba(0, 169, 132, 0.1); }
 .current-terms td { font-weight: 600; }
 
+.field {
+  display: flex; flex-direction: column; gap: 0.3rem;
+  margin-bottom: 0.8rem;
+}
+.field-label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.manual-grid .field.full { grid-column: 1 / -1; }
+
 /* Profil */
 .profile { display: flex; flex-direction: column; gap: 1.5rem; }
 .card-section {

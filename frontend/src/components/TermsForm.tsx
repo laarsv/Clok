@@ -89,9 +89,10 @@ export default function TermsForm({ initial, defaultValidFrom, onSubmit, onCance
               onChange={(e) => setMonthlyTarget(parseFloat(e.target.value || "0"))} /></label>}
         <label>Wochenstunden<input type="number" step="0.5" value={weeklyHours}
           onChange={(e) => setWeeklyHours(parseFloat(e.target.value || "0"))} /></label>
-        <label className="full">Arbeitstage pro Woche
+        <div className="field full">
+          <span className="field-label">Arbeitstage pro Woche</span>
           <WorkDaysPicker value={workDays} onChange={setWorkDays} />
-        </label>
+        </div>
         <label>Urlaub/Jahr (Tage)
           <input type="number" value={vacation}
             onChange={(e) => setVacation(parseFloat(e.target.value || "0"))} />

@@ -216,7 +216,24 @@ def update_employee(
     if not (actor.role == Role.ADMIN or supervises(actor, target)):
         raise HTTPException(status_code=403, detail="Kein Zugriff.")
 
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    updates = payload.model_dump(exclude_unset=True)
+
+    # supervisor_id: Wechsel des Arbeitgebers nur durch Admin.
+    if "supervisor_id" in updates and actor.role != Role.ADMIN:
+        raise HTTPException(
+            status_code=403,
+            detail="Nur Admins dürfen den Arbeitgeber eines Mitarbeiters ändern.",
+        )
+
+    if "supervisor_id" in updates and updates["supervisor_id"] is not None:
+        new_sup = db.query(User).filter(User.id == updates["supervisor_id"]).first()
+        if new_sup is None or new_sup.role not in (Role.EMPLOYER, Role.ADMIN):
+            raise HTTPException(
+                status_code=422,
+                detail="Neuer Vorgesetzter muss ein Arbeitgeber oder Admin sein.",
+            )
+
+    for field, value in updates.items():
         setattr(target, field, value)
     db.commit()
     db.refresh(target)

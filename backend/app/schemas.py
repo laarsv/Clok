@@ -116,6 +116,7 @@ class UserUpdate(BaseModel):
     """Allgemeines Update – wer was darf, entscheidet die Permission-Layer (Commit 4)."""
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
+    supervisor_id: Optional[int] = None  # nur Admin darf das ändern
     billing_mode: Optional[BillingMode] = None
     hourly_rate_eur: Optional[float] = Field(None, ge=0)
     monthly_target_hours: Optional[float] = Field(None, ge=0)
