@@ -150,6 +150,24 @@ export const api = {
     request<User>(`/employees/${id}/reactivate`, { method: "POST" }),
   hardDeleteEmployee: (id: number) =>
     request<void>(`/employees/${id}`, { method: "DELETE" }),
+  resendInvite: (id: number) =>
+    request<User>(`/employees/${id}/resend-invite`, { method: "POST" }),
+
+  // Onboarding (öffentlich, kein Token nötig)
+  onboardingPreview: async (token: string) => {
+    const res = await fetch(`${BASE}/onboarding/${token}`);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json() as Promise<OnboardingPreview>;
+  },
+  onboardingComplete: async (token: string, payload: OnboardingCompletePayload) => {
+    const res = await fetch(`${BASE}/onboarding/${token}/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json() as Promise<User>;
+  },
   importTimeEntriesCsv: (employeeId: number, file: File) =>
     _uploadCsv(`/employees/${employeeId}/imports/times`, file),
   importAbsencesCsv: (employeeId: number, file: File) =>
@@ -167,9 +185,20 @@ export type Role = "admin" | "employer" | "employee";
 export type BillingMode = "hourly" | "salary";
 export type AbsenceType = "vacation" | "sick" | "unpaid";
 export type AbsenceStatus = "pending" | "approved" | "rejected";
+export type WeekDay = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 export type FederalState =
   | "BW" | "BY" | "BE" | "BB" | "HB" | "HH" | "HE" | "MV"
   | "NI" | "NW" | "RP" | "SL" | "SN" | "ST" | "SH" | "TH";
+
+export const WEEKDAY_LABELS: Record<WeekDay, string> = {
+  mon: "Mo", tue: "Di", wed: "Mi", thu: "Do", fri: "Fr", sat: "Sa", sun: "So",
+};
+export const WEEKDAY_ORDER: WeekDay[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+export function legalMinVacationDays(workDays: WeekDay[] | null | undefined): number {
+  const days = (workDays && workDays.length > 0) ? workDays.length : 5;
+  return Math.floor((24 * days) / 6);
+}
 
 export interface User {
   id: number;
@@ -198,13 +227,14 @@ export interface User {
   annual_vacation_days?: number | null;
   initial_overtime_hours: number;
   initial_remaining_vacation: number;
+  work_days?: WeekDay[] | null;
   offboarded_at?: string | null;
+  onboarding_pending: boolean;
 }
 
 export interface EmployeeCreatePayload {
   username: string;
   email: string;
-  password: string;
   full_name?: string;
   role?: Role;
   supervisor_id?: number;
@@ -212,11 +242,24 @@ export interface EmployeeCreatePayload {
   hourly_rate_eur?: number;
   monthly_target_hours?: number;
   weekly_hours?: number;
+  work_days?: WeekDay[];
   annual_vacation_days?: number;
   initial_overtime_hours?: number;
   initial_remaining_vacation?: number;
   federal_state?: FederalState;
   hire_date?: string;
+}
+
+export interface OnboardingPreview {
+  username: string;
+  email: string;
+  full_name?: string | null;
+  employer_name?: string | null;
+}
+
+export interface OnboardingCompletePayload {
+  password: string;
+  full_name?: string;
   date_of_birth?: string;
   address_line1?: string;
   address_line2?: string;

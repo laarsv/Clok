@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { CurrentUserProvider, RoleGuard, homeForRole, useCurrentUser } from "./auth/CurrentUser";
 import Login from "./routes/Login";
+import Onboarding from "./routes/Onboarding";
 import EmployeeWeek from "./routes/employee/Week";
 import EmployeeMonth from "./routes/employee/Month";
 import EmployeeAbsences from "./routes/employee/Absences";
@@ -24,6 +25,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/onboarding/:token" element={<Onboarding />} />
 
           <Route path="/me" element={
             <RoleGuard allow={["employee", "employer", "admin"]}><EmployeeWeek /></RoleGuard>

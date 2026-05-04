@@ -80,6 +80,17 @@ export default function EmployeeDetail() {
           <h2>{employee.full_name || employee.username}</h2>
           <span className="muted">@{employee.username} · {employee.email}</span>
           <span className="spacer" />
+          {employee.onboarding_pending && (
+            <button onClick={async () => {
+              setBusy(true);
+              try {
+                const u = await api.resendInvite(employee.id);
+                setEmployee(u);
+                alert("Einladung erneut gesendet.");
+              } catch (e: any) { alert(e.message); }
+              finally { setBusy(false); }
+            }} disabled={busy}>Einladung erneut senden</button>
+          )}
           {employee.offboarded_at
             ? <button onClick={reactivate} disabled={busy}>Reaktivieren</button>
             : <button onClick={offboard} disabled={busy} className="danger">Offboarden</button>}

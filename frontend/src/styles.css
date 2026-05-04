@@ -292,6 +292,22 @@ td button:hover { color: var(--error); background: transparent; }
 .month-sum { font-size: 0.8rem; color: var(--accent); margin-top: auto; }
 .badge.small { font-size: 0.65rem; padding: 1px 4px; }
 
+.workdays { display: flex; gap: 0.4rem; margin-top: 0.4rem; }
+.workday {
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: row; gap: 0.3rem;
+  padding: 0.4rem 0.7rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  cursor: pointer; user-select: none;
+  margin: 0;
+  font-size: 0.85rem;
+}
+.workday input { width: auto; margin: 0; }
+.workday.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+.hint { display: block; color: var(--text-muted); font-size: 0.8rem; margin-top: 0.2rem; }
+.hint-error { color: var(--error); }
+
 /* Profil */
 .profile { display: flex; flex-direction: column; gap: 1.5rem; }
 .card-section {

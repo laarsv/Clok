@@ -57,7 +57,11 @@ export default function Dashboard() {
                 <td>{r.sick_days_month}</td>
                 <td>{r.sick_days_year}</td>
                 <td>{r.last_activity ?? "—"}</td>
-                <td>{r.offboarded_at ? <span className="status status-rejected">offboarded</span> : <span className="status status-approved">aktiv</span>}</td>
+                <td>
+                  {r.offboarded_at
+                    ? <span className="status status-rejected">offboarded</span>
+                    : <span className="status status-approved">aktiv</span>}
+                </td>
               </tr>
             ))}
             {rows.length === 0 && (

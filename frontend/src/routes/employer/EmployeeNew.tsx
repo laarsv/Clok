@@ -1,23 +1,29 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Shell from "../../components/Shell";
-import { api, type EmployeeCreatePayload, type FederalState } from "../../api";
+import WorkDaysPicker from "../../components/WorkDaysPicker";
+import {
+  api, legalMinVacationDays,
+  type EmployeeCreatePayload, type FederalState, type WeekDay,
+} from "../../api";
 
 const FEDERAL_STATES: FederalState[] = [
   "BW", "BY", "BE", "BB", "HB", "HH", "HE", "MV",
   "NI", "NW", "RP", "SL", "SN", "ST", "SH", "TH",
 ];
 
+const DEFAULT_WORK_DAYS: WeekDay[] = ["mon", "tue", "wed", "thu", "fri"];
+
 export default function EmployeeNew() {
   const navigate = useNavigate();
   const [form, setForm] = useState<EmployeeCreatePayload>({
     username: "",
     email: "",
-    password: "",
     full_name: "",
     billing_mode: "salary",
     monthly_target_hours: 160,
     weekly_hours: 40,
+    work_days: DEFAULT_WORK_DAYS,
     annual_vacation_days: 30,
   });
   const [timesFile, setTimesFile] = useState<File | null>(null);
@@ -26,12 +32,18 @@ export default function EmployeeNew() {
   const [busy, setBusy] = useState(false);
   const [timesReport, setTimesReport] = useState<{ imported: number; errors: { line: number; message: string }[] } | null>(null);
   const [absencesReport, setAbsencesReport] = useState<{ imported: number; errors: { line: number; message: string }[] } | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const workDays = form.work_days ?? DEFAULT_WORK_DAYS;
+  const legalMin = useMemo(() => legalMinVacationDays(workDays), [workDays]);
+  const vacInvalid = (form.annual_vacation_days ?? 0) < legalMin;
 
   const set = <K extends keyof EmployeeCreatePayload>(k: K, v: EmployeeCreatePayload[K]) =>
     setForm({ ...form, [k]: v });
 
   const submit = async () => {
-    setError(null); setTimesReport(null); setAbsencesReport(null); setBusy(true);
+    setError(null); setSuccess(null);
+    setTimesReport(null); setAbsencesReport(null); setBusy(true);
     try {
       const created = await api.createEmployee(form);
       let totalErrors = 0;
@@ -45,8 +57,12 @@ export default function EmployeeNew() {
         setAbsencesReport(r);
         totalErrors += r.errors.length;
       }
+      setSuccess(
+        `Mitarbeiter ${created.full_name || created.username} angelegt. Eine Einladung wurde an ${created.email} gesendet.`,
+      );
       if (totalErrors === 0) {
-        navigate(`/employer/employees/${created.id}`);
+        // bewusst kein direkter Redirect: User soll Bestätigung sehen
+        setTimeout(() => navigate(`/employer/employees/${created.id}`), 2000);
       }
     } catch (e: any) {
       setError(e.message);
@@ -82,31 +98,20 @@ export default function EmployeeNew() {
     <Shell>
       <div className="employee-new">
         <h2>Mitarbeiter anlegen</h2>
+        <p className="muted">
+          Du legst nur die vertraglichen Grunddaten an. Persönliche Daten
+          (Adresse, Geburtsdatum, IBAN, …) füllt der Mitarbeiter selbst aus,
+          nachdem er die Einladungsmail bekommen hat.
+        </p>
 
         <section className="card-section">
-          <h3>Login</h3>
+          <h3>Login &amp; Kontakt</h3>
           <div className="manual-grid">
             <label>Username<input value={form.username} onChange={(e) => set("username", e.target.value)} /></label>
             <label>E-Mail<input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} /></label>
-            <label>Passwort<input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} /></label>
             <label>Voller Name<input value={form.full_name ?? ""} onChange={(e) => set("full_name", e.target.value)} /></label>
           </div>
-        </section>
-
-        <section className="card-section">
-          <h3>Stammdaten</h3>
-          <div className="manual-grid">
-            <label>Geburtsdatum<input type="date" value={form.date_of_birth ?? ""} onChange={(e) => set("date_of_birth", e.target.value)} /></label>
-            <label>Telefon<input value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} /></label>
-            <label>SV-Nummer<input value={form.social_security_number ?? ""} onChange={(e) => set("social_security_number", e.target.value)} /></label>
-            <label>IBAN<input value={form.iban ?? ""} onChange={(e) => set("iban", e.target.value)} /></label>
-            <label>Adresse<input value={form.address_line1 ?? ""} onChange={(e) => set("address_line1", e.target.value)} /></label>
-            <label>Adresszusatz<input value={form.address_line2 ?? ""} onChange={(e) => set("address_line2", e.target.value)} /></label>
-            <label>PLZ<input value={form.postal_code ?? ""} onChange={(e) => set("postal_code", e.target.value)} /></label>
-            <label>Ort<input value={form.city ?? ""} onChange={(e) => set("city", e.target.value)} /></label>
-            <label>Notfallkontakt Name<input value={form.emergency_contact_name ?? ""} onChange={(e) => set("emergency_contact_name", e.target.value)} /></label>
-            <label>Notfallkontakt Telefon<input value={form.emergency_contact_phone ?? ""} onChange={(e) => set("emergency_contact_phone", e.target.value)} /></label>
-          </div>
+          <p className="muted small">An die E-Mail-Adresse geht die Einladung mit Link zum Onboarding.</p>
         </section>
 
         <section className="card-section">
@@ -120,7 +125,19 @@ export default function EmployeeNew() {
               </select>
             </label>
             <label>Wochenstunden<input type="number" value={form.weekly_hours ?? 0} onChange={(e) => set("weekly_hours", parseFloat(e.target.value || "0"))} /></label>
-            <label>Urlaub/Jahr (Tage)<input type="number" value={form.annual_vacation_days ?? 0} onChange={(e) => set("annual_vacation_days", parseFloat(e.target.value || "0"))} /></label>
+            <label className="full">
+              Arbeitstage pro Woche
+              <WorkDaysPicker value={workDays} onChange={(v) => set("work_days", v)} />
+            </label>
+            <label>
+              Urlaub/Jahr (Tage)
+              <input type="number" value={form.annual_vacation_days ?? 0}
+                onChange={(e) => set("annual_vacation_days", parseFloat(e.target.value || "0"))} />
+              <span className={`hint ${vacInvalid ? "hint-error" : ""}`}>
+                Mindestens {legalMin} Tage gesetzlich vorgeschrieben (BUrlG § 3) bei
+                {" "}{workDays.length}-Tage-Woche. Mehr ist erlaubt.
+              </span>
+            </label>
             <label>Anfangs-Resturlaub<input type="number" step="0.5" value={form.initial_remaining_vacation ?? 0} onChange={(e) => set("initial_remaining_vacation", parseFloat(e.target.value || "0"))} /></label>
             <label>Anfangs-Überstunden<input type="number" step="0.5" value={form.initial_overtime_hours ?? 0} onChange={(e) => set("initial_overtime_hours", parseFloat(e.target.value || "0"))} /></label>
             <label>Abrechnung
@@ -137,7 +154,6 @@ export default function EmployeeNew() {
 
         <section className="card-section">
           <h3>Optional: bestehende Daten importieren</h3>
-
           <div style={{ marginBottom: "1rem" }}>
             <strong>Zeiteinträge</strong>
             <p className="muted small">
@@ -148,14 +164,12 @@ export default function EmployeeNew() {
               onChange={(e) => setTimesFile(e.target.files?.[0] ?? null)} />
             {renderReport("Zeiteinträge", timesReport)}
           </div>
-
           <div>
             <strong>Abwesenheiten (Urlaub, Krankheit, unbezahlt)</strong>
             <p className="muted small">
               Header: <code>art;von;bis;notiz</code> · art ∈ {"{vacation, sick, unpaid}"} ·{" "}
               <a href={api.importTemplateAbsencesUrl()} download>Vorlage herunterladen</a>
             </p>
-            <p className="muted small">Importierte Einträge gelten direkt als <em>genehmigt</em>.</p>
             <input type="file" accept=".csv,text/csv"
               onChange={(e) => setAbsencesFile(e.target.files?.[0] ?? null)} />
             {renderReport("Abwesenheiten", absencesReport)}
@@ -163,9 +177,10 @@ export default function EmployeeNew() {
         </section>
 
         {error && <div className="error">{error}</div>}
+        {success && <div className="issue">{success}</div>}
         <div className="row-actions">
-          <button onClick={submit} disabled={busy}>
-            {busy ? "Speichere…" : "Mitarbeiter anlegen"}
+          <button onClick={submit} disabled={busy || vacInvalid}>
+            {busy ? "Speichere…" : "Anlegen & Einladung senden"}
           </button>
           <button onClick={() => navigate(-1)}>Abbrechen</button>
         </div>
