@@ -125,6 +125,29 @@ kommt der MA nicht ins Konto.
 
 Alle Trigger sind pro User unter `/me/profile` einzeln abschaltbar.
 
+## Vertragsverlauf
+
+Beim Anlegen eines Mitarbeiters entsteht automatisch der erste
+Vertragseintrag mit `valid_from = hire_date` (oder heute). Über
+**Mitarbeiter-Detail → Vertragsverlauf → + Neuer Vertrag** legt der
+Arbeitgeber/Admin spätere Änderungen ab Stichtag an.
+
+- **In die Zukunft**: Wirksam ab Stichtag, ändert nichts an
+  vergangenen Berechnungen.
+- **In die Vergangenheit** (Korrektur): überschreibt rückwirkend ab
+  dem Stichtag. Saldo & Resturlaub werden beim nächsten Aufruf neu
+  errechnet.
+- **Letzter Eintrag** ist nicht löschbar – jedem User muss
+  mindestens ein gültiger Vertragsstand bleiben.
+- Alle Änderungen landen im **Audit-Log** unter
+  `entity_type = "employment_terms"`.
+
+Die User-Spalten (`hourly_rate_eur`, `monthly_target_hours`, …)
+sind ein Cache des aktuell gültigen Vertrags und werden bei jeder
+Vertragsänderung automatisch synchronisiert. Wer Vergangenheits-
+Saldi prüft, sollte sich auf `employment_terms` und `terms_at(d)`
+verlassen.
+
 ## Architekturhinweise
 
 - ArbZG-Logik isoliert in `backend/app/arbzg.py`.
@@ -132,6 +155,8 @@ Alle Trigger sind pro User unter `/me/profile` einzeln abschaltbar.
   `python-holidays`, 16 Bundesländer).
 - Resturlaub & Saldo in `backend/app/absences.py` und `balance.py`,
   mit pytest-Tests in `backend/tests/`.
+- Vertragsverlauf in `backend/app/terms.py` – `terms_at(user, d)`
+  ist der zentrale Helper für historisch korrekte Berechnungen.
 - Mail-Wrapper `backend/app/notifications/resend.py` – Provider
   austauschbar, Templates in `backend/app/emails/*.j2`.
 - Frontend-Routing rollenbasiert (`/me`, `/employer`, `/admin`),
