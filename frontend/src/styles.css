@@ -311,3 +311,8 @@ td button:hover { color: var(--error); background: transparent; }
 .settings-list li { padding: 0.4rem 0; }
 .toggle { display: flex; align-items: center; gap: 0.6rem; flex-direction: row; margin: 0; }
 .toggle input { width: auto; }
+
+.status { padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+.status-pending { background: rgba(255, 204, 77, 0.2); color: var(--warning); }
+.status-approved { background: rgba(0, 169, 132, 0.2); color: var(--accent); }
+.status-rejected { background: rgba(255, 107, 107, 0.2); color: var(--error); }
