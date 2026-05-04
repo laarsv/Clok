@@ -22,8 +22,16 @@ produktiv auf Proxmox/Docker im Homelab.
   und Urlaub/Krankheit als farbigen Tagesblock.
 - **Arbeitgeber-Dashboard** mit aggregierter Übersicht (Soll/Ist, Saldo,
   Urlaubsstand, Krankheitstage, letzte Aktivität).
-- **Onboarding inkl. CSV-Import** historischer Zeiteinträge
-  (Format: `docs/import-format.md`).
+- **Self-Service-Onboarding**: Arbeitgeber legt nur Vertragsdaten an
+  (E-Mail, Beschäftigung, Urlaub, Bundesland), Mitarbeiter bekommt
+  eine Einladungsmail mit Link, setzt Passwort und ergänzt persönliche
+  Stammdaten (Adresse, IBAN, …) selbst.
+- **Arbeitstage pro Woche** (`work_days`) pro Mitarbeiter wählbar.
+  Mindesturlaub nach BUrlG § 3 wird automatisch berechnet
+  (24 / 6 × Arbeitstage) und als Floor erzwungen; mehr als das Minimum
+  bleibt erlaubt.
+- **Onboarding inkl. CSV-Import** historischer Zeiteinträge **und**
+  Abwesenheiten (Format: `docs/import-format.md`).
 - **Audit-Log** für `time_entries`, `absences` und Geld-/Compliance-
   Felder am User-Datensatz.
 - **Offboarding ohne Datenverlust**: `offboarded_at` als Soft-Delete-
@@ -103,6 +111,7 @@ sein muss.
 
 | Ereignis                                  | Empfänger          | Trigger-Quelle |
 | ----------------------------------------- | ------------------ | -------------- |
+| Mitarbeiter angelegt (Onboarding-Invite)  | Mitarbeiter        | API            |
 | Urlaubsantrag eingereicht                 | Arbeitgeber/Admin  | API            |
 | Urlaubsantrag entschieden                 | Mitarbeiter        | API            |
 | Krankmeldung eingetragen                  | Arbeitgeber/Admin  | API            |
@@ -110,6 +119,9 @@ sein muss.
 | Letzter Werktag des Monats getrackt       | Arbeitgeber/Admin  | Scheduler      |
 | Zwei Werktage ohne Eintrag                | Mitarbeiter        | Scheduler      |
 | Resturlaub-Erinnerung (Q4, monatlich)     | Mitarbeiter        | Scheduler      |
+
+Invite-Mails sind **nicht** über User-Settings abschaltbar – ohne sie
+kommt der MA nicht ins Konto.
 
 Alle Trigger sind pro User unter `/me/profile` einzeln abschaltbar.
 
