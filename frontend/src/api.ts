@@ -53,6 +53,33 @@ export const api = {
     if (!res.ok) throw new Error("Login fehlgeschlagen");
     return res.json() as Promise<{ access_token: string }>;
   },
+  forgotPassword: async (email: string) => {
+    const res = await fetch(`${BASE}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+  },
+  resetPasswordPreview: async (token: string) => {
+    const res = await fetch(`${BASE}/auth/reset-password/${token}`);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json() as Promise<{ username: string; email: string }>;
+  },
+  resetPasswordComplete: async (token: string, password: string) => {
+    const res = await fetch(`${BASE}/auth/reset-password/${token}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+  },
+  changePassword: (oldPassword: string, newPassword: string) =>
+    request<void>("/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+    }),
+
   me: () => request<User>("/auth/me"),
   updateMe: (payload: Partial<User>) =>
     request<User>("/auth/me", {

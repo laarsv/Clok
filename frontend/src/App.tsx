@@ -1,6 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { CurrentUserProvider, RoleGuard, homeForRole, useCurrentUser } from "./auth/CurrentUser";
 import Login from "./routes/Login";
+import ForgotPassword from "./routes/ForgotPassword";
+import ResetPassword from "./routes/ResetPassword";
 import Onboarding from "./routes/Onboarding";
 import EmployeeWeek from "./routes/employee/Week";
 import EmployeeMonth from "./routes/employee/Month";
@@ -26,6 +28,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/onboarding/:token" element={<Onboarding />} />
 
           <Route path="/me" element={

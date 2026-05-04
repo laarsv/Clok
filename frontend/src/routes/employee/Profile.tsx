@@ -3,6 +3,56 @@ import Shell from "../../components/Shell";
 import { api, type NotificationSettings, type Role, type User } from "../../api";
 import { useCurrentUser } from "../../auth/CurrentUser";
 
+function ChangePasswordPanel() {
+  const [oldPw, setOldPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [newPw2, setNewPw2] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    setError(null); setDone(false);
+    if (newPw.length < 8) { setError("Neues Passwort muss mindestens 8 Zeichen haben."); return; }
+    if (newPw !== newPw2) { setError("Passwörter stimmen nicht überein."); return; }
+    setBusy(true);
+    try {
+      await api.changePassword(oldPw, newPw);
+      setOldPw(""); setNewPw(""); setNewPw2("");
+      setDone(true);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div>
+      <p className="muted small">
+        Du kennst dein aktuelles Passwort? Hier kannst du es ändern. Falls
+        nicht, abmelden und auf der Login-Seite „Passwort vergessen?" nutzen.
+      </p>
+      <div className="manual-grid">
+        <label>Aktuelles Passwort
+          <input type="password" value={oldPw} onChange={(e) => setOldPw(e.target.value)} />
+        </label>
+        <label>Neues Passwort
+          <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+        </label>
+        <label>Wiederholen
+          <input type="password" value={newPw2} onChange={(e) => setNewPw2(e.target.value)} />
+        </label>
+      </div>
+      {error && <div className="error">{error}</div>}
+      {done && <div className="muted">Passwort geändert.</div>}
+      <button onClick={submit} disabled={busy || !oldPw || !newPw}>
+        {busy ? "Speichere…" : "Passwort ändern"}
+      </button>
+    </div>
+  );
+}
+
 const NOTIF_LABEL: Record<keyof NotificationSettings, string> = {
   reminder_no_entry: "Erinnerung, wenn ich zwei Tage keine Zeit eingetragen habe",
   reminder_remaining_vacation: "Erinnerung an Resturlaub im Jahresendspurt",
@@ -77,6 +127,11 @@ export default function Profile() {
             );
           })()}
           {savedNote && <div className="muted">{savedNote}</div>}
+        </section>
+
+        <section className="card-section">
+          <h3>Passwort ändern</h3>
+          <ChangePasswordPanel />
         </section>
       </div>
     </Shell>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api, setToken } from "../api";
 import { homeForRole, useCurrentUser } from "../auth/CurrentUser";
 
@@ -39,6 +39,9 @@ export default function Login() {
         </label>
         {error && <div className="error">{error}</div>}
         <button onClick={submit} disabled={busy}>{busy ? "Anmelden…" : "Anmelden"}</button>
+        <p className="muted small" style={{ marginTop: "1rem", textAlign: "center" }}>
+          <Link to="/forgot-password">Passwort vergessen?</Link>
+        </p>
       </div>
     </div>
   );
