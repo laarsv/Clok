@@ -40,6 +40,7 @@ class NotificationKind(str, Enum):
     REMINDER_NO_ENTRY = "reminder_no_entry"
     REMINDER_REMAINING_VACATION = "reminder_remaining_vacation"
     INVITE_EMPLOYEE = "invite_employee"
+    PASSWORD_RESET = "password_reset"
 
 
 # kind → (settings-Feld am Empfänger, template-Basename, Subject-Template)
@@ -76,6 +77,11 @@ _TEMPLATES: dict[NotificationKind, tuple[str, str, str]] = {
         # Settings-Feld existiert nicht; Invite-Mails sind nicht abschaltbar.
         "_invite_always_on", "invite_employee",
         "Willkommen bei Clok – richte dein Konto ein",
+    ),
+    NotificationKind.PASSWORD_RESET: (
+        # Sicherheitsrelevant: nicht abschaltbar.
+        "_security_always_on", "password_reset",
+        "Neues Passwort für Clok",
     ),
 }
 

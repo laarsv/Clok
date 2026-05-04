@@ -1,14 +1,40 @@
-"""Auth router: login + self-service profile."""
+"""Auth router: login + self-service profile + password reset."""
+import secrets
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
-from app.auth import authenticate_user, create_access_token, get_current_user
+from app.auth import authenticate_user, create_access_token, get_current_user, hash_password, verify_password
+from app.config import get_settings
 from app.database import get_db
 from app.models import User
+from app.notifications.service import NotificationKind, notify
 from app.schemas import Token, UserOut, UserUpdate
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+PASSWORD_RESET_TTL_MINUTES = 60
+
+
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordIn(BaseModel):
+    password: str = Field(min_length=8)
+
+
+class ChangePasswordIn(BaseModel):
+    old_password: str
+    new_password: str = Field(min_length=8)
+
+
+class ResetPreviewOut(BaseModel):
+    username: str
+    email: EmailStr
 
 
 @router.post("/login", response_model=Token)
@@ -41,3 +67,84 @@ def update_me(
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.post("/forgot-password", status_code=status.HTTP_204_NO_CONTENT)
+def forgot_password(payload: ForgotPasswordIn, db: Session = Depends(get_db)):
+    """Erzeugt einen Reset-Token, falls die E-Mail bekannt ist, und schickt
+    eine Mail. Antwortet immer 204, egal ob die Adresse existiert –
+    so können Angreifer nicht durch Antwortzeit/Status auf existierende
+    Konten schließen."""
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user is None or not user.is_active or user.offboarded_at is not None:
+        return  # silent success
+
+    token = secrets.token_urlsafe(32)
+    user.password_reset_token = token
+    user.password_reset_token_expires_at = (
+        datetime.utcnow() + timedelta(minutes=PASSWORD_RESET_TTL_MINUTES)
+    )
+    db.commit()
+
+    base = get_settings().app_base_url.rstrip("/")
+    link = f"{base}/reset-password/{token}"
+    first_name = (user.full_name or user.username).split()[0]
+    ctx = {
+        "requester": {
+            "first_name": first_name,
+            "full_name": user.full_name or user.username,
+            "email": user.email,
+        },
+        "approver": {"first_name": ""},
+        "link": link,
+        "valid_minutes": PASSWORD_RESET_TTL_MINUTES,
+    }
+    notify(db, kind=NotificationKind.PASSWORD_RESET, recipient=user, ctx=ctx)
+
+
+def _load_reset_user(token: str, db: Session) -> User:
+    user = db.query(User).filter(User.password_reset_token == token).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Link ungültig.")
+    if (
+        user.password_reset_token_expires_at is None
+        or user.password_reset_token_expires_at < datetime.utcnow()
+    ):
+        raise HTTPException(
+            status_code=410,
+            detail="Link ist abgelaufen. Fordere einen neuen Reset an.",
+        )
+    return user
+
+
+@router.get("/reset-password/{token}", response_model=ResetPreviewOut)
+def reset_password_preview(token: str, db: Session = Depends(get_db)):
+    user = _load_reset_user(token, db)
+    return ResetPreviewOut(username=user.username, email=user.email)
+
+
+@router.post("/reset-password/{token}", status_code=status.HTTP_204_NO_CONTENT)
+def reset_password_complete(
+    token: str,
+    payload: ResetPasswordIn,
+    db: Session = Depends(get_db),
+):
+    user = _load_reset_user(token, db)
+    user.password_hash = hash_password(payload.password)
+    user.password_reset_token = None
+    user.password_reset_token_expires_at = None
+    db.commit()
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    payload: ChangePasswordIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if user.password_hash is None or not verify_password(
+        payload.old_password, user.password_hash
+    ):
+        raise HTTPException(status_code=401, detail="Altes Passwort stimmt nicht.")
+    user.password_hash = hash_password(payload.new_password)
+    db.commit()

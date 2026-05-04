@@ -103,6 +103,10 @@ class User(Base):
     onboarding_token = Column(String(64), unique=True, nullable=True, index=True)
     onboarding_token_expires_at = Column(DateTime, nullable=True)
 
+    # Passwort-Reset (separates Token, damit Onboarding-Token nicht „missbraucht" wird)
+    password_reset_token = Column(String(64), unique=True, nullable=True, index=True)
+    password_reset_token_expires_at = Column(DateTime, nullable=True)
+
     # Lifecycle
     offboarded_at = Column(DateTime, nullable=True)
 
