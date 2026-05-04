@@ -384,6 +384,154 @@ td button:hover { color: var(--error); background: transparent; }
 
 .dashboard-toolbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
 .negative { color: var(--error); }
+.positive { color: var(--accent); }
+
+/* Team-Aggregat-Kacheln */
+.team-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.summary-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+}
+.summary-tile .summary-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.summary-tile .summary-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-top: 0.3rem;
+  line-height: 1.1;
+}
+.summary-tile .summary-meta {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
+
+/* Mitarbeiter-Cards */
+.employee-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 0.9rem;
+}
+.emp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  gap: 0.9rem;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+.emp-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.emp-card.is-offboarded { opacity: 0.65; }
+
+.emp-card-head { display: flex; align-items: center; gap: 0.7rem; }
+.emp-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--accent); color: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.95rem;
+  flex-shrink: 0;
+}
+.emp-card-title { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.emp-card-title strong {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.emp-card-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+.emp-stats { display: flex; flex-direction: column; gap: 0.55rem; min-width: 0; }
+.stat-row { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.stat-row-inline { flex-direction: row; align-items: center; justify-content: space-between; }
+.stat-label {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.stat-row-mini { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.stat-mini { display: flex; flex-direction: column; flex: 1; min-width: 70px; }
+.stat-mini-label {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.stat-mini-value { font-weight: 600; }
+
+.emp-card-foot {
+  border-top: 1px solid var(--border);
+  padding-top: 0.55rem;
+}
+
+/* Donut */
+.donut {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.donut-center {
+  position: absolute;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+.donut-center strong { font-size: 1.3rem; line-height: 1; }
+
+/* Hours Bar */
+.hours-bar { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.hours-bar-track {
+  height: 10px;
+  background: var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  position: relative;
+}
+.hours-bar-fill {
+  background: var(--accent);
+  height: 100%;
+  transition: width 240ms ease;
+}
+.hours-bar-over {
+  background: var(--warning);
+  height: 100%;
+  transition: width 240ms ease;
+}
+.hours-bar-labels {
+  display: flex; justify-content: space-between;
+  font-size: 0.85rem; gap: 0.5rem;
+}
+
+/* Balance Pill */
+.balance-pill {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+.balance-pill.positive { background: rgba(0, 169, 132, 0.18); color: var(--accent); }
+.balance-pill.negative { background: rgba(255, 107, 107, 0.18); color: var(--error); }
 
 
 /* ==========================================================================
