@@ -36,6 +36,23 @@ class SendResult:
     raw_response: Optional[str] = None
 
 
+def _normalize_from(addr: str) -> str:
+    """Akzeptiert in der Konfiguration drei Schreibweisen:
+      - "clok@send.f-lv.de"           (reine Adresse)
+      - "Clok <clok@send.f-lv.de>"    (RFC 5322-konform)
+      - "Clok clok@send.f-lv.de"      (Excel-/Copy-Paste-Variante)
+    und wandelt die letzte in das mittlere Format um, weil Resend
+    nur die ersten beiden akzeptiert.
+    """
+    addr = addr.strip()
+    if not addr or "<" in addr or " " not in addr:
+        return addr
+    name, _, email = addr.rpartition(" ")
+    if "@" in email and name:
+        return f"{name.strip()} <{email.strip()}>"
+    return addr
+
+
 def send(
     to: str,
     subject: str,
@@ -52,8 +69,15 @@ def send(
         )
         return SendResult(ok=True, dev_mode=True)
 
+    from_addr = _normalize_from(settings.resend_from_email)
+    if from_addr != settings.resend_from_email:
+        log.info(
+            "RESEND_FROM_EMAIL normalisiert: %r -> %r",
+            settings.resend_from_email, from_addr,
+        )
+
     payload: dict = {
-        "from": settings.resend_from_email,
+        "from": from_addr,
         "to": [to],
         "subject": subject,
         "html": html,
