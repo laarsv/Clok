@@ -4,7 +4,7 @@ from enum import Enum
 
 from sqlalchemy import (
     Boolean, Column, Date, DateTime, Enum as SAEnum, Float, ForeignKey,
-    Integer, String, Text,
+    Integer, JSON, String, Text,
 )
 from sqlalchemy.orm import relationship
 
@@ -160,8 +160,8 @@ class AuditLog(Base):
     action = Column(SAEnum(AuditAction, name="audit_action"), nullable=False)
     entity_type = Column(String(64), nullable=False)
     entity_id = Column(Integer, nullable=False)
-    before = Column(Text, nullable=True)  # JSON-encoded
-    after = Column(Text, nullable=True)
+    before = Column(JSON, nullable=True)
+    after = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
