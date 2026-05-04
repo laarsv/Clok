@@ -49,6 +49,10 @@ export default function EmployeeMasterDataForm({ user, onSaved, onCancel }: Prop
 
   const submit = async () => {
     setError(null);
+    if (isAdmin && user.role === "employee" && !supervisorId) {
+      setError("Mitarbeiter brauchen einen Arbeitgeber.");
+      return;
+    }
     setBusy(true);
     try {
       const payload: any = {};
@@ -101,7 +105,7 @@ export default function EmployeeMasterDataForm({ user, onSaved, onCancel }: Prop
           <label className="full">Arbeitgeber
             <select value={supervisorId ?? ""}
               onChange={(e) => setSupervisorId(e.target.value ? parseInt(e.target.value, 10) : null)}>
-              <option value="">– kein Arbeitgeber (direkt unter Admin) –</option>
+              <option value="">– bitte wählen –</option>
               {employers.map((em) => (
                 <option key={em.id} value={em.id}>{em.full_name || em.username}</option>
               ))}

@@ -119,6 +119,20 @@ def create_employee(
             )
         supervisor_id = actor.id
 
+    # Pflicht: jeder Mitarbeiter braucht einen Arbeitgeber als supervisor.
+    if payload.role == Role.EMPLOYEE:
+        if supervisor_id is None:
+            raise HTTPException(
+                status_code=422,
+                detail="Mitarbeiter brauchen einen Arbeitgeber. Wähle einen aus.",
+            )
+        sup = db.query(User).filter(User.id == supervisor_id).first()
+        if sup is None or sup.role != Role.EMPLOYER:
+            raise HTTPException(
+                status_code=422,
+                detail="Arbeitgeber muss ein User mit Rolle 'employer' sein.",
+            )
+
     token = secrets.token_urlsafe(32)
     expires_at = datetime.utcnow() + timedelta(days=ONBOARDING_TOKEN_VALID_DAYS)
 
@@ -225,13 +239,27 @@ def update_employee(
             detail="Nur Admins dürfen den Arbeitgeber eines Mitarbeiters ändern.",
         )
 
-    if "supervisor_id" in updates and updates["supervisor_id"] is not None:
-        new_sup = db.query(User).filter(User.id == updates["supervisor_id"]).first()
-        if new_sup is None or new_sup.role not in (Role.EMPLOYER, Role.ADMIN):
-            raise HTTPException(
-                status_code=422,
-                detail="Neuer Vorgesetzter muss ein Arbeitgeber oder Admin sein.",
-            )
+    if "supervisor_id" in updates:
+        new_sup_id = updates["supervisor_id"]
+        if target.role == Role.EMPLOYEE:
+            if new_sup_id is None:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Mitarbeiter brauchen einen Arbeitgeber.",
+                )
+            new_sup = db.query(User).filter(User.id == new_sup_id).first()
+            if new_sup is None or new_sup.role != Role.EMPLOYER:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Arbeitgeber muss ein User mit Rolle 'employer' sein.",
+                )
+        elif new_sup_id is not None:
+            new_sup = db.query(User).filter(User.id == new_sup_id).first()
+            if new_sup is None or new_sup.role not in (Role.EMPLOYER, Role.ADMIN):
+                raise HTTPException(
+                    status_code=422,
+                    detail="Vorgesetzter muss Arbeitgeber oder Admin sein.",
+                )
 
     for field, value in updates.items():
         setattr(target, field, value)

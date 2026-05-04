@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Shell from "../../components/Shell";
-import { api, type NotificationSettings, type User } from "../../api";
+import { api, type NotificationSettings, type Role, type User } from "../../api";
 import { useCurrentUser } from "../../auth/CurrentUser";
 
 const NOTIF_LABEL: Record<keyof NotificationSettings, string> = {
@@ -10,6 +10,12 @@ const NOTIF_LABEL: Record<keyof NotificationSettings, string> = {
   incoming_vacation_request: "Wenn ein Mitarbeiter Urlaub beantragt",
   incoming_sick_note: "Wenn ein Mitarbeiter sich krank meldet",
   month_complete: "Wenn ein Mitarbeiter den letzten Werktag getrackt hat",
+};
+
+const TOGGLES_FOR_ROLE: Record<Role, (keyof NotificationSettings)[]> = {
+  admin: [],
+  employer: ["incoming_vacation_request", "incoming_sick_note", "month_complete"],
+  employee: ["reminder_no_entry", "reminder_remaining_vacation", "vacation_decided"],
 };
 
 export default function Profile() {
@@ -44,16 +50,21 @@ export default function Profile() {
 
         <section className="card-section">
           <h3>Benachrichtigungen</h3>
-          {!settings ? <div className="muted">Lade…</div> : (
-            <ul className="settings-list">
-              {Object.keys(NOTIF_LABEL).map((k) => {
-                const key = k as keyof NotificationSettings;
-                // Anzeige rollenabhängig: Mitarbeiter sieht keine "incoming"-Toggles
-                if (user.role === "employee" && (key === "incoming_vacation_request" || key === "incoming_sick_note" || key === "month_complete")) {
-                  return null;
-                }
-                return (
-                  <li key={k}>
+          {(() => {
+            const allowed = TOGGLES_FOR_ROLE[user.role];
+            if (allowed.length === 0) {
+              return (
+                <p className="muted">
+                  Als Admin bekommst du keine Status-Mails. Einladungs-Mails an
+                  neue Mitarbeiter werden in jedem Fall verschickt.
+                </p>
+              );
+            }
+            if (!settings) return <div className="muted">Lade…</div>;
+            return (
+              <ul className="settings-list">
+                {allowed.map((key) => (
+                  <li key={key}>
                     <label className="toggle">
                       <input type="checkbox"
                         checked={settings[key]}
@@ -61,10 +72,10 @@ export default function Profile() {
                       <span>{NOTIF_LABEL[key]}</span>
                     </label>
                   </li>
-                );
-              })}
-            </ul>
-          )}
+                ))}
+              </ul>
+            );
+          })()}
           {savedNote && <div className="muted">{savedNote}</div>}
         </section>
       </div>
