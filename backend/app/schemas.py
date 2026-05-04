@@ -52,17 +52,26 @@ class UserOut(BaseModel):
     annual_vacation_days: Optional[float] = None
     initial_overtime_hours: float = 0.0
     initial_remaining_vacation: float = 0.0
+    work_days: Optional[list[str]] = None
     offboarded_at: Optional[datetime] = None
+    onboarding_pending: bool = False
 
     class Config:
         from_attributes = True
 
 
 class EmployeeCreate(BaseModel):
-    """Onboarding-Payload, den Arbeitgeber/Admin schickt."""
+    """Arbeitgeber/Admin-Onboarding-Payload.
+
+    Bewusst reduziert auf Daten, die *Arbeitgeber* setzen darf
+    (vertraglich/abrechnungsrelevant). Persönliche Daten (Adresse,
+    Geburtsdatum, IBAN, …) trägt der Mitarbeiter beim Self-Service-
+    Onboarding selbst nach. Kein Passwort hier – ein Onboarding-Token
+    geht per Mail an den Mitarbeiter, der dort sein Passwort selbst
+    setzt.
+    """
     username: str
     email: EmailStr
-    password: str
     full_name: Optional[str] = None
     role: Role = Role.EMPLOYEE
     supervisor_id: Optional[int] = None  # bei Admin: explizit setzbar
@@ -70,11 +79,26 @@ class EmployeeCreate(BaseModel):
     hourly_rate_eur: float = 0.0
     monthly_target_hours: float = 160.0
     weekly_hours: Optional[float] = None
+    work_days: list[str] = Field(default_factory=lambda: ["mon", "tue", "wed", "thu", "fri"])
     annual_vacation_days: Optional[float] = None
     initial_overtime_hours: float = 0.0
     initial_remaining_vacation: float = 0.0
     federal_state: Optional[FederalState] = None
     hire_date: Optional[date] = None
+
+
+class OnboardingPreview(BaseModel):
+    """Was der Mitarbeiter beim Klick auf den Invite-Link sieht."""
+    username: str
+    email: EmailStr
+    full_name: Optional[str] = None
+    employer_name: Optional[str] = None
+
+
+class OnboardingComplete(BaseModel):
+    """Self-Service: Mitarbeiter setzt Passwort und persönliche Daten."""
+    password: str = Field(min_length=8)
+    full_name: Optional[str] = None
     date_of_birth: Optional[date] = None
     address_line1: Optional[str] = None
     address_line2: Optional[str] = None
@@ -109,6 +133,7 @@ class UserUpdate(BaseModel):
     hire_date: Optional[date] = None
     federal_state: Optional[FederalState] = None
     weekly_hours: Optional[float] = Field(None, ge=0, le=80)
+    work_days: Optional[list[str]] = None
     annual_vacation_days: Optional[float] = Field(None, ge=0, le=60)
     initial_overtime_hours: Optional[float] = None
     initial_remaining_vacation: Optional[float] = Field(None, ge=0)

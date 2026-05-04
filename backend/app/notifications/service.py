@@ -39,6 +39,7 @@ class NotificationKind(str, Enum):
     MONTH_COMPLETE = "month_complete"
     REMINDER_NO_ENTRY = "reminder_no_entry"
     REMINDER_REMAINING_VACATION = "reminder_remaining_vacation"
+    INVITE_EMPLOYEE = "invite_employee"
 
 
 # kind → (settings-Feld am Empfänger, template-Basename, Subject-Template)
@@ -71,6 +72,11 @@ _TEMPLATES: dict[NotificationKind, tuple[str, str, str]] = {
         "reminder_remaining_vacation", "reminder_remaining_vacation",
         "Du hast noch {remaining} Urlaubstage",
     ),
+    NotificationKind.INVITE_EMPLOYEE: (
+        # Settings-Feld existiert nicht; Invite-Mails sind nicht abschaltbar.
+        "_invite_always_on", "invite_employee",
+        "Willkommen bei Clok – richte dein Konto ein",
+    ),
 }
 
 
@@ -90,9 +96,12 @@ def _build_user_ctx(u: User) -> dict:
 
 
 def _setting_enabled(db: Session, user: User, field: str) -> bool:
+    if field.startswith("_"):
+        # Sentinel: Invite/Bootstrap-Mails sind immer an, kein User-Toggle.
+        return True
     s = db.query(NotificationSettings).filter(NotificationSettings.user_id == user.id).first()
     if s is None:
-        return True  # Default: an
+        return True
     return bool(getattr(s, field, True))
 
 

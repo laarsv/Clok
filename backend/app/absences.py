@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.holidays_de import is_holiday
 from app.models import Absence, AbsenceStatus, AbsenceType, User
+from app.work_days import is_work_day
 
 
 def working_days_in_range(
@@ -46,7 +47,11 @@ def working_days_in_range(
     count = 0
     cur = start
     while cur <= end:
-        if cur.weekday() < 5 and not is_holiday(cur, state) and cur not in absent_dates:
+        if (
+            is_work_day(user.work_days, cur)
+            and not is_holiday(cur, state)
+            and cur not in absent_dates
+        ):
             count += 1
         cur += timedelta(days=1)
     return count
@@ -84,7 +89,7 @@ def remaining_vacation_days(db: Session, user: User, year: int) -> float:
         cur = max(a.start_date, year_start)
         stop = min(a.end_date, year_end)
         while cur <= stop:
-            if cur.weekday() < 5 and not is_holiday(cur, state):
+            if is_work_day(user.work_days, cur) and not is_holiday(cur, state):
                 used += 1
             cur += timedelta(days=1)
 

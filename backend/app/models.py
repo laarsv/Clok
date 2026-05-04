@@ -53,7 +53,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     username = Column(String(64), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
-    password_hash = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=True)  # NULL bis Self-Service-Onboarding
     full_name = Column(String(128))
     role = Column(
         SAEnum(Role, name="user_role", values_callable=_enum_values),
@@ -96,11 +96,22 @@ class User(Base):
     initial_overtime_hours = Column(Float, default=0.0, nullable=False)
     initial_remaining_vacation = Column(Float, default=0.0, nullable=False)
 
+    # Arbeitstage pro Woche (für Mindesturlaub und Werktag-Berechnung)
+    work_days = Column(JSON, nullable=True)
+
+    # Self-Service-Onboarding
+    onboarding_token = Column(String(64), unique=True, nullable=True, index=True)
+    onboarding_token_expires_at = Column(DateTime, nullable=True)
+
     # Lifecycle
     offboarded_at = Column(DateTime, nullable=True)
 
     entries = relationship("TimeEntry", back_populates="user", cascade="all, delete-orphan")
     supervisor = relationship("User", remote_side=[id], backref="reports")
+
+    @property
+    def onboarding_pending(self) -> bool:
+        return self.onboarding_token is not None
 
 
 class AbsenceType(str, Enum):

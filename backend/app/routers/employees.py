@@ -1,5 +1,6 @@
 """Mitarbeiter-Verwaltung: Anlegen, Auflisten, Stammdaten ändern, CSV-Import,
 Offboarding/Reactivate und Hard-Delete (Admin)."""
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -8,12 +9,18 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user, hash_password
+from app.config import get_settings
 from app.database import get_db
 from app.importers.absences_csv import import_absences
 from app.importers.time_entries_csv import import_time_entries
 from app.models import Role, User
+from app.notifications.service import NotificationKind, notify
 from app.permissions import require_role, supervises, visible_user_ids
 from app.schemas import EmployeeCreate, UserOut, UserUpdate
+from app.work_days import legal_min_vacation_days, normalize as normalize_work_days
+
+
+ONBOARDING_TOKEN_VALID_DAYS = 7
 
 
 HARD_DELETE_RETENTION_DAYS = 365 * 10  # 10 Jahre Aufbewahrung
@@ -86,6 +93,21 @@ def create_employee(
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=409, detail="E-Mail bereits vergeben.")
 
+    # Mindesturlaub-Check: § 3 BUrlG, abhängig von Arbeitstagen pro Woche.
+    work_days = normalize_work_days(payload.work_days)
+    legal_min = legal_min_vacation_days(work_days)
+    if (
+        payload.annual_vacation_days is not None
+        and payload.annual_vacation_days < legal_min
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Urlaubsanspruch ({payload.annual_vacation_days}) liegt unter dem "
+                f"gesetzlichen Mindestmaß ({legal_min} Tage bei {len(work_days)}-Tage-Woche)."
+            ),
+        )
+
     # Hierarchie-Check: Arbeitgeber legt nur eigene MA an, Admin alle.
     supervisor_id = payload.supervisor_id
     if actor.role == Role.EMPLOYER:
@@ -95,21 +117,67 @@ def create_employee(
                 detail="Arbeitgeber dürfen nur Mitarbeiter anlegen.",
             )
         supervisor_id = actor.id
-    elif actor.role == Role.ADMIN and supervisor_id is None:
-        # Admin legt Arbeitgeber an oder Mitarbeiter ohne expliziten Vorgesetzten:
-        # supervisor bleibt None (= System-Admin).
-        pass
 
-    data = payload.model_dump(exclude={"password", "supervisor_id"})
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.utcnow() + timedelta(days=ONBOARDING_TOKEN_VALID_DAYS)
+
+    data = payload.model_dump(exclude={"supervisor_id", "work_days"})
     user = User(
         **data,
-        password_hash=hash_password(payload.password),
+        work_days=work_days,
         supervisor_id=supervisor_id,
+        is_active=False,  # bleibt inaktiv bis Onboarding abgeschlossen
+        onboarding_token=token,
+        onboarding_token_expires_at=expires_at,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    _send_invite(db, user, actor, token)
+
     return UserOut.model_validate(user)
+
+
+def _send_invite(db: Session, recipient: User, actor: User, token: str) -> None:
+    base = get_settings().app_base_url.rstrip("/")
+    link = f"{base}/onboarding/{token}"
+    ctx = {
+        "requester": {
+            "first_name": (recipient.full_name or recipient.username).split()[0],
+            "full_name": recipient.full_name or recipient.username,
+            "email": recipient.email,
+        },
+        "approver": {
+            "first_name": (actor.full_name or actor.username).split()[0],
+            "full_name": actor.full_name or actor.username,
+        },
+        "link": link,
+        "valid_days": ONBOARDING_TOKEN_VALID_DAYS,
+    }
+    notify(db, kind=NotificationKind.INVITE_EMPLOYEE, recipient=recipient, ctx=ctx)
+
+
+@router.post("/{user_id}/resend-invite", response_model=UserOut)
+def resend_invite(
+    user_id: int,
+    actor: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    target = _check_import_access(actor, user_id, db)
+    if not target.onboarding_pending:
+        raise HTTPException(
+            status_code=409,
+            detail="Onboarding ist bereits abgeschlossen.",
+        )
+    target.onboarding_token = secrets.token_urlsafe(32)
+    target.onboarding_token_expires_at = (
+        datetime.utcnow() + timedelta(days=ONBOARDING_TOKEN_VALID_DAYS)
+    )
+    db.commit()
+    db.refresh(target)
+    _send_invite(db, target, actor, target.onboarding_token)
+    return UserOut.model_validate(target)
 
 
 @router.get("/{user_id}", response_model=UserOut)
