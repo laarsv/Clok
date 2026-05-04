@@ -144,7 +144,6 @@ def notify(
             return False
 
         full_ctx = {
-            "subject": subject_tpl,
             "requester_full_name": ctx.get("requester", {}).get("full_name", ""),
             "remaining": ctx.get("remaining"),
             "month": ctx.get("month"),
@@ -155,9 +154,13 @@ def notify(
             subject = subject_tpl.format(**full_ctx)
         except Exception:  # noqa: BLE001
             subject = subject_tpl
+        # subject erst NACH dem Format-Aufruf in full_ctx eintragen, damit
+        # Templates ihn referenzieren können – und nicht zweimal als kwarg
+        # an Jinja übergeben (würde TypeError werfen).
+        full_ctx["subject"] = subject
 
         text = _env.get_template(f"{template_base}.txt.j2").render(**full_ctx)
-        html = _env.get_template(f"{template_base}.html.j2").render(subject=subject, **full_ctx)
+        html = _env.get_template(f"{template_base}.html.j2").render(**full_ctx)
 
         result = resend.send(to=recipient.email, subject=subject, html=html, text=text)
 
