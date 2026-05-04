@@ -17,10 +17,18 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    absence_type = sa.Enum("vacation", "sick", "unpaid", name="absence_type")
-    absence_status = sa.Enum("pending", "approved", "rejected", name="absence_status")
-    absence_type.create(op.get_bind(), checkfirst=True)
-    absence_status.create(op.get_bind(), checkfirst=True)
+    sa.Enum("vacation", "sick", "unpaid", name="absence_type").create(
+        op.get_bind(), checkfirst=True,
+    )
+    sa.Enum("pending", "approved", "rejected", name="absence_status").create(
+        op.get_bind(), checkfirst=True,
+    )
+    absence_type = sa.Enum(
+        "vacation", "sick", "unpaid", name="absence_type", create_type=False,
+    )
+    absence_status = sa.Enum(
+        "pending", "approved", "rejected", name="absence_status", create_type=False,
+    )
 
     op.create_table(
         "absences",

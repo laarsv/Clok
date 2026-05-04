@@ -17,8 +17,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    audit_action = sa.Enum("create", "update", "delete", name="audit_action")
-    audit_action.create(op.get_bind(), checkfirst=True)
+    sa.Enum("create", "update", "delete", name="audit_action").create(
+        op.get_bind(), checkfirst=True,
+    )
+    audit_action = sa.Enum(
+        "create", "update", "delete", name="audit_action", create_type=False,
+    )
 
     op.create_table(
         "audit_log",

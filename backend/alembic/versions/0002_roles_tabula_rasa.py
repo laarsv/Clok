@@ -21,12 +21,16 @@ def upgrade() -> None:
     op.execute("DELETE FROM time_entries")
     op.execute("DELETE FROM users")
 
-    user_role = sa.Enum("admin", "employer", "employee", name="user_role")
-    user_role.create(op.get_bind(), checkfirst=True)
+    sa.Enum("admin", "employer", "employee", name="user_role").create(
+        op.get_bind(), checkfirst=True,
+    )
+    user_role_ref = sa.Enum(
+        "admin", "employer", "employee", name="user_role", create_type=False,
+    )
 
     op.add_column(
         "users",
-        sa.Column("role", user_role, nullable=False, server_default="employee"),
+        sa.Column("role", user_role_ref, nullable=False, server_default="employee"),
     )
     op.add_column("users", sa.Column("supervisor_id", sa.Integer, nullable=True))
     op.add_column("users", sa.Column("email", sa.String(255), nullable=False))

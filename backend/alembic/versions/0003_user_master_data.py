@@ -23,8 +23,10 @@ FEDERAL_STATES = (
 
 
 def upgrade() -> None:
-    federal_state = sa.Enum(*FEDERAL_STATES, name="federal_state")
-    federal_state.create(op.get_bind(), checkfirst=True)
+    sa.Enum(*FEDERAL_STATES, name="federal_state").create(
+        op.get_bind(), checkfirst=True,
+    )
+    federal_state = sa.Enum(*FEDERAL_STATES, name="federal_state", create_type=False)
 
     with op.batch_alter_table("users") as b:
         b.add_column(sa.Column("date_of_birth", sa.Date, nullable=True))
