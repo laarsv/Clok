@@ -30,7 +30,7 @@ export default function Login() {
   return (
     <div className="center">
       <div className="card">
-        <h1>Clok</h1>
+        <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
         <label>Benutzername<input value={username} onChange={(e) => setUsername(e.target.value)} autoFocus /></label>
         <label>Passwort
           <input type="password" value={password}

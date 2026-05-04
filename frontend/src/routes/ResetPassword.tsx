@@ -39,7 +39,7 @@ export default function ResetPassword() {
     return (
       <div className="center">
         <div className="card">
-          <h1>Clok</h1>
+          <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
           <div className="error">{error}</div>
           <Link to="/forgot-password">Neuen Reset-Link anfordern</Link>
         </div>
@@ -51,7 +51,7 @@ export default function ResetPassword() {
     return (
       <div className="center">
         <div className="card">
-          <h1>Clok</h1>
+          <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
           <p>Passwort gesetzt. Du wirst gleich zum Login weitergeleitet.</p>
         </div>
       </div>
@@ -61,7 +61,8 @@ export default function ResetPassword() {
   return (
     <div className="center">
       <div className="card">
-        <h1>Neues Passwort setzen</h1>
+        <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
+        <h2 style={{ marginTop: 0 }}>Neues Passwort setzen</h2>
         <p className="muted small">
           Login-Username: <code>{preview.username}</code> · E-Mail: {preview.email}
         </p>

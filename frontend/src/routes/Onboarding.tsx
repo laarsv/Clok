@@ -42,7 +42,7 @@ export default function Onboarding() {
     return (
       <div className="center">
         <div className="card">
-          <h1>Clok</h1>
+          <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
           <div className="error">{error}</div>
         </div>
       </div>
@@ -55,7 +55,7 @@ export default function Onboarding() {
     return (
       <div className="center">
         <div className="card">
-          <h1>Clok</h1>
+          <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
           <p>Alles gespeichert. Du wirst gleich zum Login weitergeleitet.</p>
         </div>
       </div>
@@ -65,7 +65,8 @@ export default function Onboarding() {
   return (
     <div className="center">
       <div className="card" style={{ width: 560 }}>
-        <h1>Willkommen bei Clok</h1>
+        <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
+        <h2 style={{ marginTop: 0 }}>Willkommen!</h2>
         <p className="muted">
           Hi {(preview.full_name || preview.username).split(" ")[0]} – {preview.employer_name ?? "Dein Arbeitgeber"} hat dich
           angelegt. Setz hier dein Passwort und ergänze deine Stammdaten.

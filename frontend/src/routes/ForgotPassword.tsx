@@ -25,7 +25,7 @@ export default function ForgotPassword() {
     return (
       <div className="center">
         <div className="card">
-          <h1>Clok</h1>
+          <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
           <p>
             Falls die Adresse bei uns bekannt ist, haben wir dir eine
             Mail mit einem Link zum Zurücksetzen geschickt. Schau in
@@ -40,7 +40,8 @@ export default function ForgotPassword() {
   return (
     <div className="center">
       <div className="card">
-        <h1>Passwort vergessen?</h1>
+        <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
+        <h2 style={{ marginTop: 0 }}>Passwort vergessen?</h2>
         <p className="muted small">
           Trag deine E-Mail-Adresse ein, dann schicken wir dir einen
           Link zum Zurücksetzen.

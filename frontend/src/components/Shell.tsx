@@ -32,7 +32,10 @@ export default function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="app">
       <header>
-        <h1>Clok</h1>
+        <Link to="/" className="brand" aria-label="Clok">
+          <img src="/clok-icon.png" alt="" className="brand-icon" />
+          <span className="brand-text">clok</span>
+        </Link>
         <nav className="nav">
           {items.map((it) => (
             <Link key={it.to} to={it.to} className={loc.pathname === it.to ? "active" : ""}>
