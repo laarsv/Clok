@@ -1,4 +1,6 @@
-"""Mitarbeiter-Verwaltung: Anlegen, Auflisten, Stammdaten ändern, CSV-Import."""
+"""Mitarbeiter-Verwaltung: Anlegen, Auflisten, Stammdaten ändern, CSV-Import,
+Offboarding/Reactivate und Hard-Delete (Admin)."""
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
@@ -10,6 +12,9 @@ from app.importers.time_entries_csv import import_time_entries
 from app.models import Role, User
 from app.permissions import require_role, supervises, visible_user_ids
 from app.schemas import EmployeeCreate, UserOut, UserUpdate
+
+
+HARD_DELETE_RETENTION_DAYS = 365 * 10  # 10 Jahre Aufbewahrung
 
 router = APIRouter(prefix="/api/employees", tags=["employees"])
 
@@ -99,6 +104,75 @@ def update_employee(
     db.commit()
     db.refresh(target)
     return UserOut.model_validate(target)
+
+
+@router.post("/{user_id}/offboard", response_model=UserOut)
+def offboard_employee(
+    user_id: int,
+    actor: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    target = db.query(User).filter(User.id == user_id).first()
+    if target is None:
+        raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden.")
+    if not (actor.role == Role.ADMIN or supervises(actor, target)):
+        raise HTTPException(status_code=403, detail="Kein Zugriff.")
+    if target.offboarded_at is not None:
+        raise HTTPException(status_code=409, detail="Bereits offboarded.")
+    target.offboarded_at = datetime.utcnow()
+    target.is_active = False
+    db.commit()
+    db.refresh(target)
+    return UserOut.model_validate(target)
+
+
+@router.post("/{user_id}/reactivate", response_model=UserOut)
+def reactivate_employee(
+    user_id: int,
+    actor: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    target = db.query(User).filter(User.id == user_id).first()
+    if target is None:
+        raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden.")
+    if not (actor.role == Role.ADMIN or supervises(actor, target)):
+        raise HTTPException(status_code=403, detail="Kein Zugriff.")
+    if target.offboarded_at is None:
+        raise HTTPException(status_code=409, detail="Mitarbeiter ist nicht offboarded.")
+    target.offboarded_at = None
+    target.is_active = True
+    db.commit()
+    db.refresh(target)
+    return UserOut.model_validate(target)
+
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def hard_delete_employee(
+    user_id: int,
+    actor: User = Depends(require_role(Role.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Endgültiges Löschen. Nur Admin und nur, wenn die Aufbewahrungsfrist
+    abgelaufen ist (offboarded_at + 10 Jahre)."""
+    target = db.query(User).filter(User.id == user_id).first()
+    if target is None:
+        raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden.")
+    if target.offboarded_at is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Mitarbeiter muss zuerst offboarded werden.",
+        )
+    earliest = target.offboarded_at + timedelta(days=HARD_DELETE_RETENTION_DAYS)
+    if datetime.utcnow() < earliest:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Aufbewahrungsfrist läuft bis {earliest.date().isoformat()}. "
+                "Hard-Delete vorher nicht zulässig."
+            ),
+        )
+    db.delete(target)
+    db.commit()
 
 
 @router.post("/{user_id}/imports")
