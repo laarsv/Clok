@@ -730,3 +730,14 @@ td button:hover { color: var(--error); background: transparent; }
 @media (max-width: 600px) {
   .audit-snapshots { grid-template-columns: 1fr; }
 }
+
+/* Mini-Charts */
+.mini-bar-chart { display: flex; flex-direction: column; gap: 0.5rem; }
+.mini-bar-legend {
+  display: flex; gap: 1rem; flex-wrap: wrap;
+  font-size: 0.85rem; color: var(--text-muted);
+}
+.mini-bar-legend-item { display: flex; align-items: center; gap: 0.4rem; }
+.mini-bar-legend .dot {
+  width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+}

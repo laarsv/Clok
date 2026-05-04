@@ -8,6 +8,7 @@ import EmployeeWeek from "./routes/employee/Week";
 import EmployeeMonth from "./routes/employee/Month";
 import EmployeeAbsences from "./routes/employee/Absences";
 import EmployeeLog from "./routes/employee/Log";
+import EmployeeYear from "./routes/employee/Year";
 import EmployeeProfile from "./routes/employee/Profile";
 import EmployerDashboard from "./routes/employer/Dashboard";
 import EmployerEmployeeNew from "./routes/employer/EmployeeNew";
@@ -43,6 +44,9 @@ export default function App() {
           } />
           <Route path="/me/log" element={
             <RoleGuard allow={["employee", "employer", "admin"]}><EmployeeLog /></RoleGuard>
+          } />
+          <Route path="/me/year" element={
+            <RoleGuard allow={["employee", "employer", "admin"]}><EmployeeYear /></RoleGuard>
           } />
           <Route path="/me/profile" element={
             <RoleGuard allow={["employee", "employer", "admin"]}><EmployeeProfile /></RoleGuard>

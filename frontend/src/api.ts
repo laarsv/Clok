@@ -114,6 +114,12 @@ export const api = {
 
   // Stats / Exports
   summary: () => request<PeriodSummary[]>("/stats/summary"),
+  yearOverview: (year?: number, userId?: number) => {
+    const q = new URLSearchParams();
+    if (year) q.set("year", String(year));
+    if (userId) q.set("user_id", String(userId));
+    return request<YearOverview>(`/stats/year-overview?${q}`);
+  },
   exportUrl: (year: number, month: number) =>
     `${BASE}/exports/monthly.csv?year=${year}&month=${month}`,
 
@@ -421,6 +427,28 @@ export interface Issue {
   severity: "warning" | "error";
   code: string;
   message: string;
+}
+
+export interface MonthSummary {
+  month: number; // 1..12
+  actual_hours: number;
+  target_hours: number;
+  balance_at_end: number;
+  vacation_days: number;
+  sick_days: number;
+  other_absence_days: number;
+}
+
+export interface YearOverview {
+  year: number;
+  months: MonthSummary[];
+  total_actual: number;
+  total_target: number;
+  balance_at_year_start: number;
+  balance_at_year_end: number;
+  vacation_used: number;
+  vacation_remaining: number;
+  sick_total: number;
 }
 
 export interface PeriodSummary {
