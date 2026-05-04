@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import (
-    Boolean, Column, DateTime, Enum as SAEnum, Float, ForeignKey,
+    Boolean, Column, Date, DateTime, Enum as SAEnum, Float, ForeignKey,
     Integer, String, Text,
 )
 from sqlalchemy.orm import relationship
@@ -20,6 +20,25 @@ class Role(str, Enum):
     ADMIN = "admin"
     EMPLOYER = "employer"
     EMPLOYEE = "employee"
+
+
+class FederalState(str, Enum):
+    BW = "BW"  # Baden-Württemberg
+    BY = "BY"  # Bayern
+    BE = "BE"  # Berlin
+    BB = "BB"  # Brandenburg
+    HB = "HB"  # Bremen
+    HH = "HH"  # Hamburg
+    HE = "HE"  # Hessen
+    MV = "MV"  # Mecklenburg-Vorpommern
+    NI = "NI"  # Niedersachsen
+    NW = "NW"  # Nordrhein-Westfalen
+    RP = "RP"  # Rheinland-Pfalz
+    SL = "SL"  # Saarland
+    SN = "SN"  # Sachsen
+    ST = "ST"  # Sachsen-Anhalt
+    SH = "SH"  # Schleswig-Holstein
+    TH = "TH"  # Thüringen
 
 
 class User(Base):
@@ -43,6 +62,30 @@ class User(Base):
     )
     hourly_rate_eur = Column(Float, default=0.0, nullable=False)
     monthly_target_hours = Column(Float, default=160.0, nullable=False)
+
+    # Stammdaten
+    date_of_birth = Column(Date, nullable=True)
+    address_line1 = Column(String(255), nullable=True)
+    address_line2 = Column(String(255), nullable=True)
+    postal_code = Column(String(10), nullable=True)
+    city = Column(String(128), nullable=True)
+    country = Column(String(2), default="DE", nullable=False)
+    social_security_number = Column(String(64), nullable=True)
+    iban = Column(String(34), nullable=True)
+    phone = Column(String(64), nullable=True)
+    emergency_contact_name = Column(String(128), nullable=True)
+    emergency_contact_phone = Column(String(64), nullable=True)
+
+    # Beschäftigung
+    hire_date = Column(Date, nullable=True)
+    federal_state = Column(SAEnum(FederalState, name="federal_state"), nullable=True)
+    weekly_hours = Column(Float, nullable=True)
+    annual_vacation_days = Column(Float, nullable=True)
+    initial_overtime_hours = Column(Float, default=0.0, nullable=False)
+    initial_remaining_vacation = Column(Float, default=0.0, nullable=False)
+
+    # Lifecycle
+    offboarded_at = Column(DateTime, nullable=True)
 
     entries = relationship("TimeEntry", back_populates="user", cascade="all, delete-orphan")
     supervisor = relationship("User", remote_side=[id], backref="reports")
