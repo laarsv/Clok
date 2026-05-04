@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Shell from "../../components/Shell";
 import EmployeeMasterDataForm from "../../components/EmployeeMasterDataForm";
 import EntriesLog from "../../components/EntriesLog";
 import ImportPanel from "../../components/ImportPanel";
 import TermsForm from "../../components/TermsForm";
+import { useCurrentUser } from "../../auth/CurrentUser";
 import {
   api,
   type Absence, type EmploymentTerms, type TermsPayload, type TimeEntry, type User,
@@ -17,6 +18,9 @@ type EditMode = null | "master" | "new-terms" | { kind: "edit-terms"; id: number
 
 export default function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user: currentUser } = useCurrentUser();
+  const isAdmin = currentUser?.role === "admin";
   const employeeId = Number(id);
   const [employee, setEmployee] = useState<User | null>(null);
   const [terms, setTerms] = useState<EmploymentTerms[]>([]);
@@ -130,6 +134,29 @@ export default function EmployeeDetail() {
           {employee.offboarded_at
             ? <button onClick={reactivate} disabled={busy}>Reaktivieren</button>
             : <button onClick={offboard} disabled={busy} className="danger">Offboarden</button>}
+          {isAdmin && (
+            <button className="danger" disabled={busy} onClick={async () => {
+              const confirmed = confirm(
+                `Mitarbeiter "${employee.full_name || employee.username}" endgültig löschen?\n\n` +
+                `Es werden ALLE Daten unwiderruflich entfernt:\n` +
+                `– Zeiteinträge\n– Abwesenheiten\n– Vertragsverlauf\n– Notification-Einstellungen\n\n` +
+                `Audit-Log behält den Snapshot. Trotzdem: prüf die gesetzliche Aufbewahrungs-\n` +
+                `pflicht (i. d. R. 10 Jahre nach Ausscheiden) – sie wird vom System nicht\n` +
+                `erzwungen, sondern liegt in deiner Verantwortung.`
+              );
+              if (!confirmed) return;
+              setBusy(true);
+              try {
+                await api.hardDeleteEmployee(employee.id);
+                alert("Mitarbeiter gelöscht.");
+                navigate(currentUser?.role === "admin" ? "/admin" : "/employer");
+              } catch (e: any) {
+                alert(e.message);
+              } finally {
+                setBusy(false);
+              }
+            }}>Endgültig löschen</button>
+          )}
         </div>
 
         <section className="card-section">

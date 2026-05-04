@@ -11,12 +11,13 @@ from sqlalchemy.orm import Session
 
 log = logging.getLogger(__name__)
 
+from app.audit import log_change
 from app.auth import get_current_user, hash_password
 from app.config import get_settings
 from app.database import get_db
 from app.importers.absences_csv import import_absences
 from app.importers.time_entries_csv import import_time_entries
-from app.models import Role, User
+from app.models import AuditAction, Role, User
 from app.notifications.service import NotificationKind, notify
 from app.permissions import require_role, supervises, visible_user_ids
 from app.schemas import EmployeeCreate, UserOut, UserUpdate
@@ -328,25 +329,32 @@ def hard_delete_employee(
     actor: User = Depends(require_role(Role.ADMIN)),
     db: Session = Depends(get_db),
 ):
-    """Endgültiges Löschen. Nur Admin und nur, wenn die Aufbewahrungsfrist
-    abgelaufen ist (offboarded_at + 10 Jahre)."""
+    """Endgültiges Löschen eines Users. Nur Admin. Cascade entfernt
+    automatisch alle Zeit-/Abwesenheits-/Vertrags-Einträge.
+
+    Aufbewahrungsfristen (BUrlG/AO) sind operative Verantwortung des
+    Admins und werden bewusst nicht erzwungen – stattdessen warnt
+    das Frontend deutlich. Audit-Log behält den Snapshot des
+    gelöschten Users (entity_type='user'), damit nachvollziehbar
+    bleibt, was vor dem Löschen stand."""
     target = db.query(User).filter(User.id == user_id).first()
     if target is None:
         raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden.")
-    if target.offboarded_at is None:
+    if target.id == actor.id:
         raise HTTPException(
             status_code=409,
-            detail="Mitarbeiter muss zuerst offboarded werden.",
+            detail="Du kannst dich nicht selbst löschen.",
         )
-    earliest = target.offboarded_at + timedelta(days=HARD_DELETE_RETENTION_DAYS)
-    if datetime.utcnow() < earliest:
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                f"Aufbewahrungsfrist läuft bis {earliest.date().isoformat()}. "
-                "Hard-Delete vorher nicht zulässig."
-            ),
-        )
+
+    snapshot = {c.name: getattr(target, c.name) for c in target.__table__.columns}
+    log_change(
+        db,
+        actor_user_id=actor.id,
+        action=AuditAction.DELETE,
+        entity_type="user",
+        entity_id=target.id,
+        before=snapshot,
+    )
     db.delete(target)
     db.commit()
 
