@@ -97,6 +97,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  updateAbsence: (id: number, payload: AbsenceUpdatePayload) =>
+    request<Absence>(`/absences/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
   approveAbsence: (id: number, note?: string) =>
     request<Absence>(`/absences/${id}/approve`, {
       method: "PATCH",
@@ -368,6 +373,13 @@ export interface AbsenceInput {
   end_date: string;
   note?: string;
   user_id?: number;
+}
+
+export interface AbsenceUpdatePayload {
+  type?: AbsenceType;
+  start_date?: string;
+  end_date?: string;
+  note?: string;
 }
 
 export interface NotificationSettings {

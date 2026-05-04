@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import Shell from "../../components/Shell";
 import EmployeeMasterDataForm from "../../components/EmployeeMasterDataForm";
+import EntriesLog from "../../components/EntriesLog";
 import ImportPanel from "../../components/ImportPanel";
 import TermsForm from "../../components/TermsForm";
 import {
@@ -197,6 +198,11 @@ export default function EmployeeDetail() {
               )}
             </tbody>
           </table>
+        </section>
+
+        <section className="card-section">
+          <h3>Alle Einträge &amp; Abwesenheiten</h3>
+          <EntriesLog employeeId={employee.id} canEditAll={true} />
         </section>
 
         <section className="card-section">
