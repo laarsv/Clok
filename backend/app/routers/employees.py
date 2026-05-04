@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_user, hash_password
 from app.database import get_db
+from app.importers.absences_csv import import_absences
 from app.importers.time_entries_csv import import_time_entries
 from app.models import Role, User
 from app.permissions import require_role, supervises, visible_user_ids
@@ -20,7 +21,7 @@ HARD_DELETE_RETENTION_DAYS = 365 * 10  # 10 Jahre Aufbewahrung
 router = APIRouter(prefix="/api/employees", tags=["employees"])
 
 
-_IMPORT_TEMPLATE = (
+_IMPORT_TEMPLATE_TIMES = (
     "﻿"  # UTF-8 BOM für Excel-DE
     "datum;start;ende;pause_min;projekt;notiz\r\n"
     "04.05.2026;09:00;17:30;30;Kunde A;Sprint Planning\r\n"
@@ -28,19 +29,34 @@ _IMPORT_TEMPLATE = (
     "06.05.2026;09:00;13:00;0;;Halber Tag\r\n"
 )
 
+_IMPORT_TEMPLATE_ABSENCES = (
+    "﻿"
+    "art;von;bis;notiz\r\n"
+    "vacation;01.07.2026;12.07.2026;Sommerurlaub\r\n"
+    "sick;15.06.2026;16.06.2026;\r\n"
+    "unpaid;20.08.2026;22.08.2026;Familienangelegenheit\r\n"
+)
 
-@router.get("/import-template.csv")
-def import_template():
-    """CSV-Vorlage zum Download. Kein Auth nötig – Inhalt ist statisch
-    und enthält nur Beispiel-Werte."""
+
+def _csv_response(content: str, filename: str) -> Response:
     return Response(
-        content=_IMPORT_TEMPLATE,
+        content=content,
         media_type="text/csv; charset=utf-8",
         headers={
-            "Content-Disposition": 'attachment; filename="clok-zeiteintraege-vorlage.csv"',
+            "Content-Disposition": f'attachment; filename="{filename}"',
             "Cache-Control": "public, max-age=3600",
         },
     )
+
+
+@router.get("/import-template-times.csv")
+def import_template_times():
+    return _csv_response(_IMPORT_TEMPLATE_TIMES, "clok-zeiteintraege-vorlage.csv")
+
+
+@router.get("/import-template-absences.csv")
+def import_template_absences():
+    return _csv_response(_IMPORT_TEMPLATE_ABSENCES, "clok-abwesenheiten-vorlage.csv")
 
 
 @router.get("", response_model=list[UserOut])
@@ -199,22 +215,45 @@ def hard_delete_employee(
     db.commit()
 
 
-@router.post("/{user_id}/imports")
-async def import_csv(
+def _check_import_access(actor: User, target_id: int, db: Session) -> User:
+    target = db.query(User).filter(User.id == target_id).first()
+    if target is None:
+        raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden.")
+    if not (actor.role == Role.ADMIN or supervises(actor, target)):
+        raise HTTPException(status_code=403, detail="Kein Zugriff.")
+    return target
+
+
+@router.post("/{user_id}/imports/times")
+async def import_times_csv(
     user_id: int,
     file: UploadFile = File(...),
     actor: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    target = db.query(User).filter(User.id == user_id).first()
-    if target is None:
-        raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden.")
-    if not (actor.role == Role.ADMIN or supervises(actor, target)):
-        raise HTTPException(status_code=403, detail="Kein Zugriff.")
-
+    target = _check_import_access(actor, user_id, db)
     content = await file.read()
     try:
         result = import_time_entries(db, target, content)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return {
+        "imported": result.imported,
+        "errors": [{"line": e.line, "message": e.message} for e in result.errors],
+    }
+
+
+@router.post("/{user_id}/imports/absences")
+async def import_absences_csv(
+    user_id: int,
+    file: UploadFile = File(...),
+    actor: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    target = _check_import_access(actor, user_id, db)
+    content = await file.read()
+    try:
+        result = import_absences(db, target, actor.id, content)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     return {

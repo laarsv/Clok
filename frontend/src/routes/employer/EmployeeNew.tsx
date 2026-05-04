@@ -20,25 +20,32 @@ export default function EmployeeNew() {
     weekly_hours: 40,
     annual_vacation_days: 30,
   });
-  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [timesFile, setTimesFile] = useState<File | null>(null);
+  const [absencesFile, setAbsencesFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [importReport, setImportReport] = useState<{ imported: number; errors: { line: number; message: string }[] } | null>(null);
+  const [timesReport, setTimesReport] = useState<{ imported: number; errors: { line: number; message: string }[] } | null>(null);
+  const [absencesReport, setAbsencesReport] = useState<{ imported: number; errors: { line: number; message: string }[] } | null>(null);
 
   const set = <K extends keyof EmployeeCreatePayload>(k: K, v: EmployeeCreatePayload[K]) =>
     setForm({ ...form, [k]: v });
 
   const submit = async () => {
-    setError(null); setImportReport(null); setBusy(true);
+    setError(null); setTimesReport(null); setAbsencesReport(null); setBusy(true);
     try {
       const created = await api.createEmployee(form);
-      if (csvFile) {
-        const r = await api.importTimeEntriesCsv(created.id, csvFile);
-        setImportReport(r);
-        if (r.errors.length === 0) {
-          navigate(`/employer/employees/${created.id}`);
-        }
-      } else {
+      let totalErrors = 0;
+      if (timesFile) {
+        const r = await api.importTimeEntriesCsv(created.id, timesFile);
+        setTimesReport(r);
+        totalErrors += r.errors.length;
+      }
+      if (absencesFile) {
+        const r = await api.importAbsencesCsv(created.id, absencesFile);
+        setAbsencesReport(r);
+        totalErrors += r.errors.length;
+      }
+      if (totalErrors === 0) {
         navigate(`/employer/employees/${created.id}`);
       }
     } catch (e: any) {
@@ -46,6 +53,29 @@ export default function EmployeeNew() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const renderReport = (
+    label: string,
+    report: { imported: number; errors: { line: number; message: string }[] } | null,
+  ) => {
+    if (!report) return null;
+    return (
+      <div className={report.errors.length ? "issue warning" : "issue"} style={{ marginTop: "0.75rem" }}>
+        <strong>{label}: {report.imported} importiert.</strong>
+        {report.errors.length > 0 && (
+          <>
+            <p>{report.errors.length} Zeile(n) abgewiesen:</p>
+            <ul>
+              {report.errors.slice(0, 10).map((e, i) => (
+                <li key={i}>Zeile {e.line}: {e.message}</li>
+              ))}
+              {report.errors.length > 10 && <li>… ({report.errors.length - 10} weitere)</li>}
+            </ul>
+          </>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -106,30 +136,30 @@ export default function EmployeeNew() {
         </section>
 
         <section className="card-section">
-          <h3>Optional: bestehende Zeiten importieren</h3>
-          <p className="muted small">
-            CSV mit Header <code>datum;start;ende;pause_min;projekt;notiz</code> – Excel-DE-Format.{" "}
-            <a href={api.importTemplateUrl()} download>Vorlage herunterladen</a> ·{" "}
-            Details: <code>docs/import-format.md</code>.
-          </p>
-          <input type="file" accept=".csv,text/csv"
-            onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)} />
-          {importReport && (
-            <div className={importReport.errors.length ? "issue warning" : "issue"} style={{ marginTop: "0.75rem" }}>
-              <strong>{importReport.imported} Einträge importiert.</strong>
-              {importReport.errors.length > 0 && (
-                <>
-                  <p>{importReport.errors.length} Zeile(n) abgewiesen:</p>
-                  <ul>
-                    {importReport.errors.slice(0, 10).map((e, i) => (
-                      <li key={i}>Zeile {e.line}: {e.message}</li>
-                    ))}
-                    {importReport.errors.length > 10 && <li>… ({importReport.errors.length - 10} weitere)</li>}
-                  </ul>
-                </>
-              )}
-            </div>
-          )}
+          <h3>Optional: bestehende Daten importieren</h3>
+
+          <div style={{ marginBottom: "1rem" }}>
+            <strong>Zeiteinträge</strong>
+            <p className="muted small">
+              Header: <code>datum;start;ende;pause_min;projekt;notiz</code> ·{" "}
+              <a href={api.importTemplateTimesUrl()} download>Vorlage herunterladen</a>
+            </p>
+            <input type="file" accept=".csv,text/csv"
+              onChange={(e) => setTimesFile(e.target.files?.[0] ?? null)} />
+            {renderReport("Zeiteinträge", timesReport)}
+          </div>
+
+          <div>
+            <strong>Abwesenheiten (Urlaub, Krankheit, unbezahlt)</strong>
+            <p className="muted small">
+              Header: <code>art;von;bis;notiz</code> · art ∈ {"{vacation, sick, unpaid}"} ·{" "}
+              <a href={api.importTemplateAbsencesUrl()} download>Vorlage herunterladen</a>
+            </p>
+            <p className="muted small">Importierte Einträge gelten direkt als <em>genehmigt</em>.</p>
+            <input type="file" accept=".csv,text/csv"
+              onChange={(e) => setAbsencesFile(e.target.files?.[0] ?? null)} />
+            {renderReport("Abwesenheiten", absencesReport)}
+          </div>
         </section>
 
         {error && <div className="error">{error}</div>}

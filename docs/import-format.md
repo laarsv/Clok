@@ -1,6 +1,16 @@
-# CSV-Import: Zeiteinträge
+# CSV-Import beim Onboarding
 
-Format für den Onboarding-Import historischer Zeiteinträge.
+Beim Anlegen eines Mitarbeiters lassen sich zwei Sorten historischer
+Daten importieren – jeweils als eigene CSV-Datei:
+
+- **Zeiteinträge** (`POST /api/employees/{id}/imports/times`)
+- **Abwesenheiten** (`POST /api/employees/{id}/imports/absences`)
+
+Vorlagen können direkt im Onboarding-Form heruntergeladen werden:
+`/api/employees/import-template-times.csv` und
+`/api/employees/import-template-absences.csv`.
+
+## Zeiteinträge
 
 ## Pflicht-Header
 
@@ -48,10 +58,10 @@ datum;start;ende;pause_min;projekt;notiz
 06.05.2026;09:00;13:00;0;;Kurzer Tag
 ```
 
-## Aufruf
+### Aufruf
 
 ```http
-POST /api/employees/{user_id}/imports
+POST /api/employees/{user_id}/imports/times
 Content-Type: multipart/form-data
 file: <CSV-Datei>
 ```
@@ -67,3 +77,47 @@ Response:
   ]
 }
 ```
+
+## Abwesenheiten
+
+### Pflicht-Header
+
+```
+art;von;bis;notiz
+```
+
+### Spalten
+
+| Spalte | Werte / Format | Pflicht | Beispiel |
+|---|---|---|---|
+| `art` | `vacation` · `sick` · `unpaid` | ja | `vacation` |
+| `von` | `TT.MM.JJJJ` | ja | `01.07.2026` |
+| `bis` | `TT.MM.JJJJ` (inklusiv, ≥ von) | ja | `12.07.2026` |
+| `notiz` | Freitext | nein | `Sommerurlaub` |
+
+### Verhalten
+
+- Importierte Einträge erhalten direkt **Status `approved`** – sie
+  bilden historische Realität ab und sind nicht offene Anträge.
+- `decided_by` wird auf den importierenden User (Arbeitgeber/Admin)
+  gesetzt, `requested_at` und `decided_at` auf den Importzeitpunkt.
+- BOM, Semikolon und Leerzeilen werden wie bei Zeiteinträgen behandelt.
+
+### Beispiel
+
+```csv
+art;von;bis;notiz
+vacation;01.07.2026;12.07.2026;Sommerurlaub
+sick;15.06.2026;16.06.2026;
+unpaid;20.08.2026;22.08.2026;Familienangelegenheit
+```
+
+### Aufruf
+
+```http
+POST /api/employees/{user_id}/imports/absences
+Content-Type: multipart/form-data
+file: <CSV-Datei>
+```
+
+Response identisch zu Zeiteinträgen (`{ imported, errors[] }`).

@@ -9,6 +9,20 @@ export function setToken(t: string | null) {
   else localStorage.removeItem("token");
 }
 
+async function _uploadCsv(
+  path: string,
+  file: File,
+): Promise<{ imported: number; errors: { line: number; message: string }[] }> {
+  const fd = new FormData();
+  fd.append("file", file);
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(`${BASE}${path}`, { method: "POST", headers, body: fd });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 async function request<T>(
   path: string,
   init: RequestInit = {},
@@ -111,7 +125,8 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
-  importTemplateUrl: () => `${BASE}/employees/import-template.csv`,
+  importTemplateTimesUrl: () => `${BASE}/employees/import-template-times.csv`,
+  importTemplateAbsencesUrl: () => `${BASE}/employees/import-template-absences.csv`,
 
   // Employees / Onboarding
   listEmployees: (includeOffboarded = false) =>
@@ -135,23 +150,10 @@ export const api = {
     request<User>(`/employees/${id}/reactivate`, { method: "POST" }),
   hardDeleteEmployee: (id: number) =>
     request<void>(`/employees/${id}`, { method: "DELETE" }),
-  importTimeEntriesCsv: async (
-    employeeId: number,
-    file: File,
-  ): Promise<{ imported: number; errors: { line: number; message: string }[] }> => {
-    const fd = new FormData();
-    fd.append("file", file);
-    const headers = new Headers();
-    const token = getToken();
-    if (token) headers.set("Authorization", `Bearer ${token}`);
-    const res = await fetch(`${BASE}/employees/${employeeId}/imports`, {
-      method: "POST",
-      headers,
-      body: fd,
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  },
+  importTimeEntriesCsv: (employeeId: number, file: File) =>
+    _uploadCsv(`/employees/${employeeId}/imports/times`, file),
+  importAbsencesCsv: (employeeId: number, file: File) =>
+    _uploadCsv(`/employees/${employeeId}/imports/absences`, file),
 
   // Employer dashboard
   employerDashboard: (reference?: string) => {
