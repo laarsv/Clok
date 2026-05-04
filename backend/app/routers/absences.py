@@ -5,9 +5,10 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.audit import log_change
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import Absence, AbsenceStatus, AbsenceType, Role, User
+from app.models import Absence, AbsenceStatus, AbsenceType, AuditAction, Role, User
 from app.permissions import supervises, visible_user_ids
 from app.schemas import AbsenceDecision, AbsenceIn, AbsenceOut
 
@@ -76,6 +77,15 @@ def create_absence(
         decided_by=user.id if auto_approve else None,
     )
     db.add(absence)
+    db.flush()
+    log_change(
+        db,
+        actor_user_id=user.id,
+        action=AuditAction.CREATE,
+        entity_type="absence",
+        entity_id=absence.id,
+        after=absence,
+    )
     db.commit()
     db.refresh(absence)
     return _to_out(absence)
@@ -96,11 +106,22 @@ def _decide(
         raise HTTPException(status_code=403, detail="Kein Zugriff.")
     if absence.status != AbsenceStatus.PENDING:
         raise HTTPException(status_code=409, detail="Antrag ist nicht mehr offen.")
+    before_snapshot = {c.name: getattr(absence, c.name) for c in absence.__table__.columns}
     absence.status = new_status
     absence.decided_at = datetime.utcnow()
     absence.decided_by = user.id
     if payload.note:
         absence.note = (absence.note or "") + ("\n" if absence.note else "") + payload.note
+    db.flush()
+    log_change(
+        db,
+        actor_user_id=user.id,
+        action=AuditAction.UPDATE,
+        entity_type="absence",
+        entity_id=absence.id,
+        before=before_snapshot,
+        after=absence,
+    )
     db.commit()
     db.refresh(absence)
     return absence
@@ -139,5 +160,14 @@ def delete_absence(
     is_own_pending = absence.user_id == user.id and absence.status == AbsenceStatus.PENDING
     if not (is_admin or is_own_pending):
         raise HTTPException(status_code=403, detail="Kein Zugriff.")
+    before_snapshot = {c.name: getattr(absence, c.name) for c in absence.__table__.columns}
+    log_change(
+        db,
+        actor_user_id=user.id,
+        action=AuditAction.DELETE,
+        entity_type="absence",
+        entity_id=absence.id,
+        before=before_snapshot,
+    )
     db.delete(absence)
     db.commit()
