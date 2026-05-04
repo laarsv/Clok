@@ -139,6 +139,51 @@ class UserUpdate(BaseModel):
     initial_remaining_vacation: Optional[float] = Field(None, ge=0)
 
 
+# ---------- Employment Terms ----------
+
+class TermsIn(BaseModel):
+    """Neuer Vertragsabschnitt. Felder, die nicht angegeben sind,
+    werden vom aktuell gültigen Vertrag übernommen."""
+    valid_from: date
+    billing_mode: Optional[BillingMode] = None
+    hourly_rate_eur: Optional[float] = Field(None, ge=0)
+    monthly_target_hours: Optional[float] = Field(None, ge=0)
+    weekly_hours: Optional[float] = Field(None, ge=0, le=80)
+    work_days: Optional[list[str]] = None
+    annual_vacation_days: Optional[float] = Field(None, ge=0, le=60)
+    note: Optional[str] = None
+
+
+class TermsPatch(BaseModel):
+    """Korrektur eines bestehenden Eintrags."""
+    valid_from: Optional[date] = None
+    billing_mode: Optional[BillingMode] = None
+    hourly_rate_eur: Optional[float] = Field(None, ge=0)
+    monthly_target_hours: Optional[float] = Field(None, ge=0)
+    weekly_hours: Optional[float] = Field(None, ge=0, le=80)
+    work_days: Optional[list[str]] = None
+    annual_vacation_days: Optional[float] = Field(None, ge=0, le=60)
+    note: Optional[str] = None
+
+
+class TermsOut(BaseModel):
+    id: int
+    user_id: int
+    valid_from: date
+    billing_mode: BillingMode
+    hourly_rate_eur: float
+    monthly_target_hours: float
+    weekly_hours: Optional[float] = None
+    work_days: Optional[list[str]] = None
+    annual_vacation_days: Optional[float] = None
+    note: Optional[str] = None
+    created_at: datetime
+    created_by: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
 # ---------- Time entries ----------
 
 class TimeEntryIn(BaseModel):
@@ -169,8 +214,6 @@ class TimeEntryCreateResponse(BaseModel):
     entry: TimeEntryOut
     issues: list[ValidationIssueOut] = []
 
-
-# ---------- Stats ----------
 
 # ---------- Absences ----------
 
