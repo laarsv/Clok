@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import Shell from "../../components/Shell";
 import EmployeeMasterDataForm from "../../components/EmployeeMasterDataForm";
+import ImportPanel from "../../components/ImportPanel";
 import TermsForm from "../../components/TermsForm";
 import {
   api,
@@ -196,6 +197,16 @@ export default function EmployeeDetail() {
               )}
             </tbody>
           </table>
+        </section>
+
+        <section className="card-section">
+          <h3>Daten importieren</h3>
+          <p className="muted small">
+            CSVs für Zeiteinträge und Abwesenheiten können jederzeit
+            nachträglich hochgeladen werden – z. B. Daten aus dem Vorjahr,
+            Korrekturen oder ein Wechsel von einem anderen System.
+          </p>
+          <ImportPanel employeeId={employee.id} />
         </section>
 
         <section className="card-section">

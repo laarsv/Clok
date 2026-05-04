@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Shell from "../../components/Shell";
 import WorkDaysPicker from "../../components/WorkDaysPicker";
+import ImportPanel from "../../components/ImportPanel";
 import { useCurrentUser } from "../../auth/CurrentUser";
 import {
   api, legalMinVacationDays,
@@ -83,29 +84,6 @@ export default function EmployeeNew() {
     }
   };
 
-  const renderReport = (
-    label: string,
-    report: { imported: number; errors: { line: number; message: string }[] } | null,
-  ) => {
-    if (!report) return null;
-    return (
-      <div className={report.errors.length ? "issue warning" : "issue"} style={{ marginTop: "0.75rem" }}>
-        <strong>{label}: {report.imported} importiert.</strong>
-        {report.errors.length > 0 && (
-          <>
-            <p>{report.errors.length} Zeile(n) abgewiesen:</p>
-            <ul>
-              {report.errors.slice(0, 10).map((e, i) => (
-                <li key={i}>Zeile {e.line}: {e.message}</li>
-              ))}
-              {report.errors.length > 10 && <li>… ({report.errors.length - 10} weitere)</li>}
-            </ul>
-          </>
-        )}
-      </div>
-    );
-  };
-
   return (
     <Shell>
       <div className="employee-new">
@@ -126,11 +104,17 @@ export default function EmployeeNew() {
               <label>Arbeitgeber
                 <select value={form.supervisor_id ?? ""}
                   onChange={(e) => set("supervisor_id", e.target.value ? parseInt(e.target.value, 10) : undefined)}>
-                  <option value="">– kein Arbeitgeber (direkt unter Admin) –</option>
+                  <option value="">– bitte wählen –</option>
                   {employers.map((em) => (
                     <option key={em.id} value={em.id}>{em.full_name || em.username}</option>
                   ))}
                 </select>
+                {employers.length === 0 && (
+                  <span className="hint hint-error">
+                    Es existiert noch kein Arbeitgeber. Lege zuerst einen
+                    unter „Arbeitgeber" an.
+                  </span>
+                )}
               </label>
             )}
           </div>
@@ -177,32 +161,26 @@ export default function EmployeeNew() {
 
         <section className="card-section">
           <h3>Optional: bestehende Daten importieren</h3>
-          <div style={{ marginBottom: "1rem" }}>
-            <strong>Zeiteinträge</strong>
-            <p className="muted small">
-              Header: <code>datum;start;ende;pause_min;projekt;notiz</code> ·{" "}
-              <a href={api.importTemplateTimesUrl()} download>Vorlage herunterladen</a>
-            </p>
-            <input type="file" accept=".csv,text/csv"
-              onChange={(e) => setTimesFile(e.target.files?.[0] ?? null)} />
-            {renderReport("Zeiteinträge", timesReport)}
-          </div>
-          <div>
-            <strong>Abwesenheiten (Urlaub, Krankheit, unbezahlt)</strong>
-            <p className="muted small">
-              Header: <code>art;von;bis;notiz</code> · art ∈ {"{vacation, sick, unpaid}"} ·{" "}
-              <a href={api.importTemplateAbsencesUrl()} download>Vorlage herunterladen</a>
-            </p>
-            <input type="file" accept=".csv,text/csv"
-              onChange={(e) => setAbsencesFile(e.target.files?.[0] ?? null)} />
-            {renderReport("Abwesenheiten", absencesReport)}
-          </div>
+          <p className="muted small">
+            Werden nach dem Anlegen des Mitarbeiters direkt mit hochgeladen.
+            Du kannst später auch jederzeit nachträglich importieren –
+            Drill-Down → Import.
+          </p>
+          <ImportPanel
+            employeeId={0}
+            autoUpload={false}
+            onFilesChange={(t, a) => { setTimesFile(t); setAbsencesFile(a); }}
+            timesReport={timesReport}
+            absencesReport={absencesReport}
+          />
         </section>
 
         {error && <div className="error">{error}</div>}
         {success && <div className="issue">{success}</div>}
         <div className="row-actions">
-          <button onClick={submit} disabled={busy || vacInvalid}>
+          <button
+            onClick={submit}
+            disabled={busy || vacInvalid || (isAdmin && !form.supervisor_id)}>
             {busy ? "Speichere…" : "Anlegen & Einladung senden"}
           </button>
           <button onClick={() => navigate(-1)}>Abbrechen</button>
