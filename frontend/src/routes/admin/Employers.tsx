@@ -9,9 +9,10 @@ export default function Employers() {
   const [showOff, setShowOff] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<EmployeeCreatePayload>({
-    username: "", email: "", password: "", role: "employer",
+    username: "", email: "", role: "employer",
   });
   const [error, setError] = useState<string | null>(null);
+  const [createdNote, setCreatedNote] = useState<string | null>(null);
 
   const load = async () => {
     const all = await api.listEmployees(true);
@@ -22,9 +23,11 @@ export default function Employers() {
   const submit = async () => {
     setError(null);
     try {
-      await api.createEmployee({ ...form, role: "employer" });
+      const created = await api.createEmployee({ ...form, role: "employer" });
       setCreating(false);
-      setForm({ username: "", email: "", password: "", role: "employer" });
+      setForm({ username: "", email: "", role: "employer" });
+      setCreatedNote(`Einladung an ${created.email} gesendet.`);
+      setTimeout(() => setCreatedNote(null), 4000);
       load();
     } catch (e: any) {
       setError(e.message);
@@ -45,6 +48,8 @@ export default function Employers() {
           </label>
           <button onClick={() => setCreating(true)}>+ Arbeitgeber</button>
         </div>
+
+        {createdNote && <div className="issue">{createdNote}</div>}
 
         <table>
           <thead>
@@ -79,14 +84,17 @@ export default function Employers() {
           <div className="modal-backdrop" onClick={() => setCreating(false)}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
               <h3>Neuer Arbeitgeber</h3>
+              <p className="muted small">
+                Der neue Arbeitgeber bekommt eine Einladungsmail und setzt
+                Passwort und Stammdaten selbst.
+              </p>
               <label>Username<input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} /></label>
               <label>E-Mail<input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
-              <label>Passwort<input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></label>
               <label>Voller Name<input value={form.full_name ?? ""} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></label>
               {error && <div className="error">{error}</div>}
               <div className="modal-actions">
                 <button onClick={() => setCreating(false)}>Abbrechen</button>
-                <button onClick={submit}>Anlegen</button>
+                <button onClick={submit}>Anlegen &amp; einladen</button>
               </div>
             </div>
           </div>
