@@ -6,12 +6,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.db_migrate import upgrade_to_head
 from app.routers import absences, auth, entries, exports, holidays, notifications, stats
+from app.scheduler import start_scheduler, stop_scheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     upgrade_to_head()
-    yield
+    start_scheduler()
+    try:
+        yield
+    finally:
+        stop_scheduler()
 
 
 app = FastAPI(title="Clok", version="0.1.0", lifespan=lifespan)
