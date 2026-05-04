@@ -8,6 +8,17 @@ from app.models import Absence, AbsenceStatus, AbsenceType, User
 from app.work_days import is_work_day
 
 
+def _work_days_for(db: Session, user: User, d: date) -> list[str]:
+    """Lokaler Wrapper, vermeidet Circular Import mit terms.py."""
+    from app.terms import work_days_at
+    return work_days_at(db, user, d)
+
+
+def _annual_vacation_for(db: Session, user: User, d: date) -> float:
+    from app.terms import field_at
+    return float(field_at(db, user, d, "annual_vacation_days") or 0.0)
+
+
 def working_days_in_range(
     db: Session,
     user: User,
@@ -47,8 +58,9 @@ def working_days_in_range(
     count = 0
     cur = start
     while cur <= end:
+        wd = _work_days_for(db, user, cur)
         if (
-            is_work_day(user.work_days, cur)
+            is_work_day(wd, cur)
             and not is_holiday(cur, state)
             and cur not in absent_dates
         ):
@@ -64,12 +76,12 @@ def remaining_vacation_days(db: Session, user: User, year: int) -> float:
     (nur im Eintrittsjahr) abzüglich Werktage in approved+pending
     Urlaubsanträgen des Jahres.
     """
-    anspruch = float(user.annual_vacation_days or 0.0)
+    year_end = date(year, 12, 31)
+    anspruch = _annual_vacation_for(db, user, year_end)
     if user.hire_date and user.hire_date.year == year:
         anspruch += float(user.initial_remaining_vacation or 0.0)
 
     year_start = date(year, 1, 1)
-    year_end = date(year, 12, 31)
 
     state = user.federal_state.value if user.federal_state else None
     rows = (
@@ -89,7 +101,8 @@ def remaining_vacation_days(db: Session, user: User, year: int) -> float:
         cur = max(a.start_date, year_start)
         stop = min(a.end_date, year_end)
         while cur <= stop:
-            if is_work_day(user.work_days, cur) and not is_holiday(cur, state):
+            wd = _work_days_for(db, user, cur)
+            if is_work_day(wd, cur) and not is_holiday(cur, state):
                 used += 1
             cur += timedelta(days=1)
 
