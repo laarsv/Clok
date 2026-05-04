@@ -11,6 +11,12 @@ from sqlalchemy.orm import relationship
 from app.database import Base
 
 
+def _enum_values(cls):
+    """SQLAlchemy soll die Enum-VALUES an Postgres senden, nicht die NAMES.
+    Sonst landet 'ADMIN' in der DB, die ENUM hat aber 'admin'."""
+    return [e.value for e in cls]
+
+
 class BillingMode(str, Enum):
     HOURLY = "hourly"   # stundenbasierte Abrechnung
     SALARY = "salary"   # Festgehalt mit Soll-Stunden
@@ -49,14 +55,17 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(128))
-    role = Column(SAEnum(Role, name="user_role"), nullable=False, default=Role.EMPLOYEE)
+    role = Column(
+        SAEnum(Role, name="user_role", values_callable=_enum_values),
+        nullable=False, default=Role.EMPLOYEE,
+    )
     supervisor_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Abrechnungsmodell
     billing_mode = Column(
-        SAEnum(BillingMode, name="billing_mode"),
+        SAEnum(BillingMode, name="billing_mode", values_callable=_enum_values),
         default=BillingMode.SALARY,
         nullable=False,
     )
@@ -78,7 +87,10 @@ class User(Base):
 
     # Beschäftigung
     hire_date = Column(Date, nullable=True)
-    federal_state = Column(SAEnum(FederalState, name="federal_state"), nullable=True)
+    federal_state = Column(
+        SAEnum(FederalState, name="federal_state", values_callable=_enum_values),
+        nullable=True,
+    )
     weekly_hours = Column(Float, nullable=True)
     annual_vacation_days = Column(Float, nullable=True)
     initial_overtime_hours = Column(Float, default=0.0, nullable=False)
@@ -108,11 +120,14 @@ class Absence(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    type = Column(SAEnum(AbsenceType, name="absence_type"), nullable=False)
+    type = Column(
+        SAEnum(AbsenceType, name="absence_type", values_callable=_enum_values),
+        nullable=False,
+    )
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     status = Column(
-        SAEnum(AbsenceStatus, name="absence_status"),
+        SAEnum(AbsenceStatus, name="absence_status", values_callable=_enum_values),
         default=AbsenceStatus.PENDING,
         nullable=False,
     )
@@ -157,7 +172,10 @@ class AuditLog(Base):
 
     id = Column(Integer, primary_key=True)
     actor_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    action = Column(SAEnum(AuditAction, name="audit_action"), nullable=False)
+    action = Column(
+        SAEnum(AuditAction, name="audit_action", values_callable=_enum_values),
+        nullable=False,
+    )
     entity_type = Column(String(64), nullable=False)
     entity_id = Column(Integer, nullable=False)
     before = Column(JSON, nullable=True)
