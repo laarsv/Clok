@@ -128,36 +128,47 @@ def notify(
     ctx: dict,
     period_key: Optional[str] = None,
 ) -> bool:
-    setting_field, template_base, subject_tpl = _TEMPLATES[kind]
-    if not _setting_enabled(db, recipient, setting_field):
-        log.info("Mail %s an user_id=%s übersprungen (deaktiviert)", kind.value, recipient.id)
-        return False
-
-    if period_key and _already_sent(db, recipient.id, kind, period_key):
-        log.info("Mail %s an user_id=%s skipped (already sent for %s)",
-                 kind.value, recipient.id, period_key)
-        return False
-
-    full_ctx = {
-        "subject": subject_tpl,
-        "requester_full_name": ctx.get("requester", {}).get("full_name", ""),
-        "remaining": ctx.get("remaining"),
-        "month": ctx.get("month"),
-        "decision": "genehmigt" if ctx.get("approved") else "abgelehnt",
-        **ctx,
-    }
+    """Verschickt eine Notification-Mail. Wirft NIE eine Exception nach
+    außen – jeder Fehler (Template, Render, Resend, DB) wird geloggt
+    und zu False reduziert. Mail-Versand darf nie eine User-Aktion
+    abbrechen."""
     try:
-        subject = subject_tpl.format(**full_ctx)
+        setting_field, template_base, subject_tpl = _TEMPLATES[kind]
+        if not _setting_enabled(db, recipient, setting_field):
+            log.info("Mail %s an user_id=%s übersprungen (deaktiviert)", kind.value, recipient.id)
+            return False
+
+        if period_key and _already_sent(db, recipient.id, kind, period_key):
+            log.info("Mail %s an user_id=%s skipped (already sent for %s)",
+                     kind.value, recipient.id, period_key)
+            return False
+
+        full_ctx = {
+            "subject": subject_tpl,
+            "requester_full_name": ctx.get("requester", {}).get("full_name", ""),
+            "remaining": ctx.get("remaining"),
+            "month": ctx.get("month"),
+            "decision": "genehmigt" if ctx.get("approved") else "abgelehnt",
+            **ctx,
+        }
+        try:
+            subject = subject_tpl.format(**full_ctx)
+        except Exception:  # noqa: BLE001
+            subject = subject_tpl
+
+        text = _env.get_template(f"{template_base}.txt.j2").render(**full_ctx)
+        html = _env.get_template(f"{template_base}.html.j2").render(subject=subject, **full_ctx)
+
+        result = resend.send(to=recipient.email, subject=subject, html=html, text=text)
+
+        if result.ok and period_key:
+            db.add(NotificationLog(user_id=recipient.id, kind=kind.value, period_key=period_key))
+            db.commit()
+
+        return result.ok
     except Exception:  # noqa: BLE001
-        subject = subject_tpl
-
-    text = _env.get_template(f"{template_base}.txt.j2").render(**full_ctx)
-    html = _env.get_template(f"{template_base}.html.j2").render(subject=subject, **full_ctx)
-
-    result = resend.send(to=recipient.email, subject=subject, html=html, text=text)
-
-    if result.ok and period_key:
-        db.add(NotificationLog(user_id=recipient.id, kind=kind.value, period_key=period_key))
-        db.commit()
-
-    return result.ok
+        log.exception(
+            "notify(%s, recipient=%s) crashte – User-Aktion läuft trotzdem weiter",
+            kind.value, recipient.id,
+        )
+        return False

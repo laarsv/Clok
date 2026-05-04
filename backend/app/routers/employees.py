@@ -1,5 +1,6 @@
 """Mitarbeiter-Verwaltung: Anlegen, Auflisten, Stammdaten ändern, CSV-Import,
 Offboarding/Reactivate und Hard-Delete (Admin)."""
+import logging
 import secrets
 from datetime import datetime, timedelta
 from typing import Optional
@@ -7,6 +8,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
+
+log = logging.getLogger(__name__)
 
 from app.auth import get_current_user, hash_password
 from app.config import get_settings
@@ -163,22 +166,33 @@ def create_employee(
 
 
 def _send_invite(db: Session, recipient: User, actor: User, token: str) -> None:
-    base = get_settings().app_base_url.rstrip("/")
-    link = f"{base}/onboarding/{token}"
-    ctx = {
-        "requester": {
-            "first_name": (recipient.full_name or recipient.username).split()[0],
-            "full_name": recipient.full_name or recipient.username,
-            "email": recipient.email,
-        },
-        "approver": {
-            "first_name": (actor.full_name or actor.username).split()[0],
-            "full_name": actor.full_name or actor.username,
-        },
-        "link": link,
-        "valid_days": ONBOARDING_TOKEN_VALID_DAYS,
-    }
-    notify(db, kind=NotificationKind.INVITE_EMPLOYEE, recipient=recipient, ctx=ctx)
+    """Verschickt die Onboarding-Einladung. Wirft selbst nichts –
+    falls der Mailversand crasht, wird das geloggt, der User-Anlegen-
+    Vorgang gilt aber als erfolgreich (Re-Invite-Button im Drill-Down
+    löst es später erneut aus)."""
+    try:
+        base = get_settings().app_base_url.rstrip("/")
+        link = f"{base}/onboarding/{token}"
+        ctx = {
+            "requester": {
+                "first_name": (recipient.full_name or recipient.username).split()[0],
+                "full_name": recipient.full_name or recipient.username,
+                "email": recipient.email,
+            },
+            "approver": {
+                "first_name": (actor.full_name or actor.username).split()[0],
+                "full_name": actor.full_name or actor.username,
+            },
+            "link": link,
+            "valid_days": ONBOARDING_TOKEN_VALID_DAYS,
+        }
+        notify(db, kind=NotificationKind.INVITE_EMPLOYEE, recipient=recipient, ctx=ctx)
+    except Exception:  # noqa: BLE001
+        log.exception(
+            "Invite-Mail an user_id=%s konnte nicht verschickt werden – "
+            "Mitarbeiter ist trotzdem angelegt, Re-Invite via UI möglich.",
+            recipient.id,
+        )
 
 
 @router.post("/{user_id}/resend-invite", response_model=UserOut)
