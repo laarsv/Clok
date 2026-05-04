@@ -308,6 +308,9 @@ td button:hover { color: var(--error); background: transparent; }
 .hint { display: block; color: var(--text-muted); font-size: 0.8rem; margin-top: 0.2rem; }
 .hint-error { color: var(--error); }
 
+.current-terms { background: rgba(0, 169, 132, 0.1); }
+.current-terms td { font-weight: 600; }
+
 /* Profil */
 .profile { display: flex; flex-direction: column; gap: 1.5rem; }
 .card-section {

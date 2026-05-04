@@ -153,6 +153,20 @@ export const api = {
   resendInvite: (id: number) =>
     request<User>(`/employees/${id}/resend-invite`, { method: "POST" }),
 
+  // Vertragsverlauf
+  listTerms: (employeeId: number) =>
+    request<EmploymentTerms[]>(`/employees/${employeeId}/terms`),
+  createTerms: (employeeId: number, payload: TermsPayload) =>
+    request<EmploymentTerms>(`/employees/${employeeId}/terms`, {
+      method: "POST", body: JSON.stringify(payload),
+    }),
+  updateTerms: (employeeId: number, termsId: number, payload: Partial<TermsPayload>) =>
+    request<EmploymentTerms>(`/employees/${employeeId}/terms/${termsId}`, {
+      method: "PATCH", body: JSON.stringify(payload),
+    }),
+  deleteTerms: (employeeId: number, termsId: number) =>
+    request<void>(`/employees/${employeeId}/terms/${termsId}`, { method: "DELETE" }),
+
   // Onboarding (öffentlich, kein Token nötig)
   onboardingPreview: async (token: string) => {
     const res = await fetch(`${BASE}/onboarding/${token}`);
@@ -248,6 +262,32 @@ export interface EmployeeCreatePayload {
   initial_remaining_vacation?: number;
   federal_state?: FederalState;
   hire_date?: string;
+}
+
+export interface EmploymentTerms {
+  id: number;
+  user_id: number;
+  valid_from: string; // YYYY-MM-DD
+  billing_mode: BillingMode;
+  hourly_rate_eur: number;
+  monthly_target_hours: number;
+  weekly_hours?: number | null;
+  work_days?: WeekDay[] | null;
+  annual_vacation_days?: number | null;
+  note?: string | null;
+  created_at: string;
+  created_by?: number | null;
+}
+
+export interface TermsPayload {
+  valid_from: string;
+  billing_mode?: BillingMode;
+  hourly_rate_eur?: number;
+  monthly_target_hours?: number;
+  weekly_hours?: number;
+  work_days?: WeekDay[];
+  annual_vacation_days?: number;
+  note?: string;
 }
 
 export interface OnboardingPreview {

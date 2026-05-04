@@ -1,18 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import Shell from "../../components/Shell";
-import { api, type Absence, type TimeEntry, type User } from "../../api";
-import { addDays, deWeekday, fmtDe, fmtHours, isoDate, startOfWeek } from "../../lib/datetime";
+import EmployeeMasterDataForm from "../../components/EmployeeMasterDataForm";
+import TermsForm from "../../components/TermsForm";
+import {
+  api,
+  type Absence, type EmploymentTerms, type TermsPayload, type TimeEntry, type User,
+} from "../../api";
+import {
+  addDays, deWeekday, fmtDe, fmtHours, isoDate, startOfWeek,
+} from "../../lib/datetime";
+
+type EditMode = null | "master" | "new-terms" | { kind: "edit-terms"; id: number };
 
 export default function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
   const employeeId = Number(id);
   const [employee, setEmployee] = useState<User | null>(null);
+  const [terms, setTerms] = useState<EmploymentTerms[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [absences, setAbsences] = useState<Absence[]>([]);
   const [holidays, setHolidays] = useState<Record<string, string>>({});
   const [anchor, setAnchor] = useState<Date>(new Date());
   const [busy, setBusy] = useState(false);
+  const [edit, setEdit] = useState<EditMode>(null);
 
   const days = useMemo(() => {
     const start = startOfWeek(anchor);
@@ -21,8 +32,12 @@ export default function EmployeeDetail() {
 
   const load = async () => {
     if (!employeeId) return;
-    const emp = await api.getEmployee(employeeId);
+    const [emp, t] = await Promise.all([
+      api.getEmployee(employeeId),
+      api.listTerms(employeeId),
+    ]);
     setEmployee(emp);
+    setTerms(t);
     const start = days[0];
     const end = addDays(days[6], 1);
     const [es, abs] = await Promise.all([
@@ -47,18 +62,32 @@ export default function EmployeeDetail() {
     try {
       const u = await api.offboardEmployee(employee.id);
       setEmployee(u);
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   };
   const reactivate = async () => {
     setBusy(true);
     try {
       const u = await api.reactivateEmployee(employee.id);
       setEmployee(u);
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
+  };
+
+  const submitNewTerms = async (payload: TermsPayload) => {
+    await api.createTerms(employeeId, payload);
+    setEdit(null);
+    await load();
+  };
+  const submitEditTerms = async (termsId: number, payload: TermsPayload) => {
+    await api.updateTerms(employeeId, termsId, payload);
+    setEdit(null);
+    await load();
+  };
+  const removeTerms = async (termsId: number) => {
+    if (!confirm("Vertragseintrag löschen?")) return;
+    try {
+      await api.deleteTerms(employeeId, termsId);
+      await load();
+    } catch (e: any) { alert(e.message); }
   };
 
   const entriesByDay: Record<string, TimeEntry[]> = {};
@@ -70,8 +99,13 @@ export default function EmployeeDetail() {
     const k = isoDate(d);
     return absences.find((a) => a.start_date <= k && a.end_date >= k);
   };
-
   const total = entries.reduce((s, e) => s + (e.net_hours || 0), 0);
+  const today = new Date().toISOString().slice(0, 10);
+  const currentTerms = [...terms].reverse().find((t) => t.valid_from <= today) ?? terms[terms.length - 1];
+
+  const editingTerms =
+    edit && typeof edit === "object" && edit.kind === "edit-terms"
+      ? terms.find((t) => t.id === edit.id) : undefined;
 
   return (
     <Shell>
@@ -97,14 +131,71 @@ export default function EmployeeDetail() {
         </div>
 
         <section className="card-section">
-          <h3>Stammdaten</h3>
-          <div className="profile-grid">
-            <div className="profile-field"><div className="muted small">Bundesland</div><div>{employee.federal_state ?? "–"}</div></div>
-            <div className="profile-field"><div className="muted small">Wochenstunden</div><div>{employee.weekly_hours ?? "–"}</div></div>
-            <div className="profile-field"><div className="muted small">Urlaub/Jahr</div><div>{employee.annual_vacation_days ?? "–"}</div></div>
-            <div className="profile-field"><div className="muted small">Eintritt</div><div>{employee.hire_date ?? "–"}</div></div>
-            <div className="profile-field"><div className="muted small">Abrechnung</div><div>{employee.billing_mode === "hourly" ? `${employee.hourly_rate_eur} €/h` : `${employee.monthly_target_hours} h/Monat`}</div></div>
+          <div className="dashboard-toolbar">
+            <h3 style={{ margin: 0 }}>Stammdaten</h3>
+            <span className="spacer" />
+            <button onClick={() => setEdit("master")}>Bearbeiten</button>
           </div>
+          <div className="profile-grid">
+            <div className="profile-field"><div className="muted small">E-Mail</div><div>{employee.email}</div></div>
+            <div className="profile-field"><div className="muted small">Telefon</div><div>{employee.phone || "–"}</div></div>
+            <div className="profile-field"><div className="muted small">Geburtsdatum</div><div>{employee.date_of_birth || "–"}</div></div>
+            <div className="profile-field"><div className="muted small">Adresse</div><div>{[employee.address_line1, employee.postal_code && `${employee.postal_code} ${employee.city ?? ""}`].filter(Boolean).join(", ") || "–"}</div></div>
+            <div className="profile-field"><div className="muted small">Bundesland</div><div>{employee.federal_state ?? "–"}</div></div>
+            <div className="profile-field"><div className="muted small">Eintritt</div><div>{employee.hire_date ?? "–"}</div></div>
+            <div className="profile-field"><div className="muted small">SV-Nummer</div><div>{employee.social_security_number || "–"}</div></div>
+            <div className="profile-field"><div className="muted small">IBAN</div><div>{employee.iban || "–"}</div></div>
+            <div className="profile-field"><div className="muted small">Notfallkontakt</div><div>{[employee.emergency_contact_name, employee.emergency_contact_phone].filter(Boolean).join(" · ") || "–"}</div></div>
+          </div>
+        </section>
+
+        <section className="card-section">
+          <div className="dashboard-toolbar">
+            <h3 style={{ margin: 0 }}>Vertragsverlauf</h3>
+            <span className="spacer" />
+            <button onClick={() => setEdit("new-terms")}>+ Neuer Vertrag</button>
+          </div>
+          <p className="muted small">
+            Jeder Eintrag gilt ab seinem Stichtag bis zum Stichtag des nächsten.
+            Vergangenheits-Berechnungen (Saldo, Resturlaub) bleiben stabil, wenn
+            du einen neuen Vertrag mit zukünftigem Stichtag anlegst.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Gültig ab</th>
+                <th>Abrechnung</th>
+                <th>Soll/h-Satz</th>
+                <th>Wochen-h</th>
+                <th>Arbeitstage</th>
+                <th>Urlaub</th>
+                <th>Notiz</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...terms].reverse().map((t) => (
+                <tr key={t.id} className={t.id === currentTerms?.id ? "current-terms" : ""}>
+                  <td>{t.valid_from}{t.id === currentTerms?.id && <span className="badge small" style={{ marginLeft: 6 }}>aktuell</span>}</td>
+                  <td>{t.billing_mode === "hourly" ? "Stundenbasis" : "Festgehalt"}</td>
+                  <td>{t.billing_mode === "hourly" ? `${t.hourly_rate_eur.toFixed(2)} €/h` : `${t.monthly_target_hours} h/Monat`}</td>
+                  <td>{t.weekly_hours ?? "–"}</td>
+                  <td>{(t.work_days ?? []).join(", ") || "–"}</td>
+                  <td>{t.annual_vacation_days ?? "–"}</td>
+                  <td className="muted small">{t.note ?? ""}</td>
+                  <td>
+                    <button onClick={() => setEdit({ kind: "edit-terms", id: t.id })}>Bearbeiten</button>
+                    {terms.length > 1 && (
+                      <button className="danger" onClick={() => removeTerms(t.id)}>Löschen</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {terms.length === 0 && (
+                <tr><td colSpan={8} className="muted">Noch keine Vertragsdaten.</td></tr>
+              )}
+            </tbody>
+          </table>
         </section>
 
         <section className="card-section">
@@ -148,6 +239,33 @@ export default function EmployeeDetail() {
             })}
           </div>
         </section>
+
+        {edit && (
+          <div className="modal-backdrop" onClick={() => setEdit(null)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ width: 640 }}>
+              {edit === "master" && (
+                <EmployeeMasterDataForm
+                  user={employee}
+                  onSaved={(u) => { setEmployee(u); setEdit(null); }}
+                  onCancel={() => setEdit(null)}
+                />
+              )}
+              {edit === "new-terms" && (
+                <TermsForm
+                  onSubmit={submitNewTerms}
+                  onCancel={() => setEdit(null)}
+                />
+              )}
+              {editingTerms && (
+                <TermsForm
+                  initial={editingTerms}
+                  onSubmit={(p) => submitEditTerms(editingTerms.id, p)}
+                  onCancel={() => setEdit(null)}
+                />
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </Shell>
   );
