@@ -154,10 +154,10 @@ def notify(
     text = _env.get_template(f"{template_base}.txt.j2").render(**full_ctx)
     html = _env.get_template(f"{template_base}.html.j2").render(subject=subject, **full_ctx)
 
-    ok = resend.send(to=recipient.email, subject=subject, html=html, text=text)
+    result = resend.send(to=recipient.email, subject=subject, html=html, text=text)
 
-    if ok and period_key:
+    if result.ok and period_key:
         db.add(NotificationLog(user_id=recipient.id, kind=kind.value, period_key=period_key))
         db.commit()
 
-    return ok
+    return result.ok

@@ -83,29 +83,77 @@ Frontend: http://localhost:8080 · API-Docs: http://localhost:8000/docs
 
 Mail-Versand läuft über [Resend](https://resend.com). Solange
 `RESEND_API_KEY` leer ist, läuft das Backend im **Dev-Modus**: Mails
-werden strukturiert geloggt, **nicht** versendet. So kannst du das
-System lokal benutzen, ohne dass deine Domain bei Resend verifiziert
-sein muss.
+werden strukturiert geloggt, **nicht** versendet.
 
-### Schritte für die produktive Aktivierung
+In diesem Setup ist die Subdomain `send.f-lv.de` als Absender-Domain
+bei Resend verifiziert (DKIM/SPF/Return-Path bei All-Inkl gesetzt),
+Default-Absender ist `clok@send.f-lv.de`.
 
-1. **Resend-Account anlegen**, im Dashboard die Domain hinzufügen
-   (in diesem Setup: `f-lv.de`).
+### Schritte für die produktive Aktivierung (für eine andere Domain)
+
+1. **Resend-Account anlegen**, Domain im Dashboard hinzufügen.
 2. **DKIM + SPF + Return-Path** als DNS-Einträge bei deinem
-   DNS-Provider (z. B. All-Inkl) eintragen, wie Resend sie anzeigt.
-3. Domain-Status muss „verified" sein, sonst werden alle Mails von
-   Resend abgelehnt.
+   DNS-Provider eintragen.
+3. Domain-Status muss „verified" sein, sonst lehnt Resend alle
+   Mails ab.
 4. **API-Key** im Resend-Dashboard erzeugen, in `.env` als
-   `RESEND_API_KEY=…` eintragen, Container neu starten.
+   `RESEND_API_KEY=re_…` eintragen, Container neu starten.
 
 ### Variablen
 
 | Variable             | Bedeutung                                  |
 | -------------------- | ------------------------------------------ |
 | `RESEND_API_KEY`     | Resend-Schlüssel; leer = Dev-Modus         |
-| `RESEND_FROM_EMAIL`  | Absender, default `lars.verwiebe@f-lv.de`  |
+| `RESEND_FROM_EMAIL`  | Absender, default `clok@send.f-lv.de`      |
 | `RESEND_REPLY_TO`    | Optional: Reply-To-Adresse                 |
 | `APP_BASE_URL`       | Basis-URL für Mail-Links                   |
+
+### Test-Workflow
+
+Drei Wege, Mailversand zu prüfen:
+
+**1. CLI im Backend-Container** (am direktesten):
+
+```bash
+docker compose exec backend python -m app.cli send-test-email --to lars@example.com
+```
+
+Mögliche Ausgaben:
+- `OK – an lars@example.com verschickt. message_id=<uuid>` – Mail bei
+  Resend angenommen, Message-ID lässt sich im Resend-Dashboard prüfen.
+- `Dev-Modus aktiv …` – `RESEND_API_KEY` nicht gesetzt.
+- `FEHLER 4xx <name>: <message>` – Resend hat abgelehnt, Text aus der
+  API-Response.
+
+**2. Admin-Endpoint** `POST /api/admin/test-email` (Rolle Admin):
+
+```bash
+TOKEN=$(curl -s -X POST https://clok.home.f-lv.de/api/auth/login \
+  -d "username=lars&password=…" \
+  -H "Content-Type: application/x-www-form-urlencoded" | jq -r .access_token)
+
+curl -s -X POST https://clok.home.f-lv.de/api/admin/test-email \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"to": "lars@example.com"}' | jq
+```
+
+Response: `dev_mode`, `success`, `message_id`, `status_code`,
+`error_name`, `error_message`.
+
+**3. UI-Button im Profil** (Admin/Arbeitgeber): testet immer an die
+eigene E-Mail-Adresse.
+
+### Fehler-Diagnose
+
+Bei jedem Resend-Fehler (4xx/5xx) loggt der Wrapper den vollen
+Response-Body als `logger.error`:
+
+```bash
+docker compose logs backend | grep "Resend"
+```
+
+Im Erfolgsfall: `Resend ok message_id=<uuid> to=… subject=…`.
 
 ### Trigger im Überblick
 

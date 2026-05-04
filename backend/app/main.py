@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.db_migrate import upgrade_to_head
 from app.routers import (
-    absences, auth, employees, employer, entries, exports, holidays,
+    absences, admin, auth, employees, employer, entries, exports, holidays,
     notifications, onboarding, stats, terms,
 )
 from app.scheduler import start_scheduler, stop_scheduler
@@ -43,6 +43,7 @@ app.include_router(employees.router)
 app.include_router(employer.router)
 app.include_router(onboarding.router)
 app.include_router(terms.router)
+app.include_router(admin.router)
 
 
 @app.get("/api/health")

@@ -1,6 +1,7 @@
 """Auth router: login + self-service profile + password reset."""
 import secrets
 from datetime import datetime, timedelta
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -157,6 +158,10 @@ class TestEmailOut(BaseModel):
     success: bool
     sent_to: EmailStr
     from_address: str
+    message_id: Optional[str] = None
+    status_code: Optional[int] = None
+    error_name: Optional[str] = None
+    error_message: Optional[str] = None
 
 
 @router.post("/test-email", response_model=TestEmailOut)
@@ -185,15 +190,19 @@ def send_test_email(
         f"App-URL: <code>{settings.app_base_url}</code></p>"
         f"<p>– Clok</p>"
     )
-    ok = resend.send(
+    result = resend.send(
         to=user.email,
         subject="Clok – Test-Mail",
         html=html,
         text=text,
     )
     return TestEmailOut(
-        dev_mode=settings.email_dev_mode,
-        success=ok,
+        dev_mode=result.dev_mode,
+        success=result.ok,
         sent_to=user.email,
         from_address=settings.resend_from_email,
+        message_id=result.message_id,
+        status_code=result.status_code,
+        error_name=result.error_name,
+        error_message=result.error_message,
     )

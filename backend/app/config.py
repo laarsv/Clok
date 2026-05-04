@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     # Resend / Mailing
     resend_api_key: str = ""
-    resend_from_email: str = "lars.verwiebe@f-lv.de"
+    resend_from_email: str = "clok@send.f-lv.de"
     resend_reply_to: str = ""
     app_base_url: str = "https://clok.home.f-lv.de"
 
