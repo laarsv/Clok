@@ -60,6 +60,22 @@ def _parse_date(s: str):
     raise ValueError(f"datum ungültig: {s!r} (erwartet TT.MM.JJJJ)")
 
 
+def _parse_time(s: str) -> time:
+    """Akzeptiert HH:MM, H:MM und HH:MM:SS (Sekunden werden verworfen)."""
+    s = s.strip()
+    parts = s.split(":")
+    if len(parts) < 2:
+        raise ValueError(f"zeit ungültig: {s!r} (erwartet HH:MM)")
+    try:
+        h = int(parts[0])
+        m = int(parts[1])
+    except ValueError as err:
+        raise ValueError(f"zeit ungültig: {s!r} (erwartet HH:MM)") from err
+    if not (0 <= h <= 23 and 0 <= m <= 59):
+        raise ValueError(f"zeit ungültig: {s!r} (Stunden 0-23, Minuten 0-59)")
+    return time(h, m)
+
+
 def parse_csv(content: bytes) -> tuple[list[dict], list[ImportError]]:
     """Liefert (Zeilen-dicts, parse-Fehler). Header-Mismatch raised ValueError."""
     text = content.decode("utf-8-sig")  # tolerant gegenüber BOM
@@ -84,8 +100,8 @@ def parse_csv(content: bytes) -> tuple[list[dict], list[ImportError]]:
             continue
         try:
             d = _parse_date(row[0])
-            t_start = datetime.strptime(row[1].strip(), "%H:%M").time()
-            t_end = datetime.strptime(row[2].strip(), "%H:%M").time()
+            t_start = _parse_time(row[1])
+            t_end = _parse_time(row[2])
             pause = _parse_int(row[3]) if row[3].strip() else 0
         except ValueError as e:
             errors.append(ImportError(i, f"Format ungültig: {e}"))
