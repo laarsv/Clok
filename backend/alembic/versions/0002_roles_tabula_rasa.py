@@ -8,6 +8,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 revision: str = "0002"
@@ -24,7 +25,7 @@ def upgrade() -> None:
     sa.Enum("admin", "employer", "employee", name="user_role").create(
         op.get_bind(), checkfirst=True,
     )
-    user_role_ref = sa.Enum(
+    user_role_ref = postgresql.ENUM(
         "admin", "employer", "employee", name="user_role", create_type=False,
     )
 

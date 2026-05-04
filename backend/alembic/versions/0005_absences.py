@@ -8,6 +8,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 revision: str = "0005"
@@ -23,10 +24,10 @@ def upgrade() -> None:
     sa.Enum("pending", "approved", "rejected", name="absence_status").create(
         op.get_bind(), checkfirst=True,
     )
-    absence_type = sa.Enum(
+    absence_type = postgresql.ENUM(
         "vacation", "sick", "unpaid", name="absence_type", create_type=False,
     )
-    absence_status = sa.Enum(
+    absence_status = postgresql.ENUM(
         "pending", "approved", "rejected", name="absence_status", create_type=False,
     )
 
