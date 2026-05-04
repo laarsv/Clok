@@ -49,6 +49,17 @@ def _parse_int(value: str) -> int:
     return int(value)
 
 
+def _parse_date(s: str):
+    """Akzeptiert TT.MM.JJJJ und TT.MM.JJ (Excel-DE schreibt oft kurz)."""
+    s = s.strip()
+    for fmt in ("%d.%m.%Y", "%d.%m.%y"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            continue
+    raise ValueError(f"datum ungültig: {s!r} (erwartet TT.MM.JJJJ)")
+
+
 def parse_csv(content: bytes) -> tuple[list[dict], list[ImportError]]:
     """Liefert (Zeilen-dicts, parse-Fehler). Header-Mismatch raised ValueError."""
     text = content.decode("utf-8-sig")  # tolerant gegenüber BOM
@@ -72,7 +83,7 @@ def parse_csv(content: bytes) -> tuple[list[dict], list[ImportError]]:
             errors.append(ImportError(i, "Zu wenige Spalten."))
             continue
         try:
-            d = datetime.strptime(row[0].strip(), "%d.%m.%Y").date()
+            d = _parse_date(row[0])
             t_start = datetime.strptime(row[1].strip(), "%H:%M").time()
             t_end = datetime.strptime(row[2].strip(), "%H:%M").time()
             pause = _parse_int(row[3]) if row[3].strip() else 0
