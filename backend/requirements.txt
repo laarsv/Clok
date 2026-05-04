@@ -9,3 +9,4 @@ python-jose[cryptography]==3.3.0
 bcrypt==4.2.1
 python-multipart==0.0.20
 typer==0.15.1
+holidays==0.62
