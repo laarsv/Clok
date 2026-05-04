@@ -394,31 +394,111 @@ td button:hover { color: var(--error); background: transparent; }
                 Monatsraster verkleinern)
    ========================================================================== */
 
+.burger { display: none; }
+
 @media (max-width: 900px) {
   .app { padding: 1rem 0.75rem; }
 
   header {
-    flex-wrap: wrap;
-    gap: 0.5rem 1rem;
+    align-items: center;
     margin-bottom: 1.25rem;
   }
   header .brand-text { font-size: 1.2rem; }
   header .brand-icon { width: 32px; height: 32px; }
 
-  .nav {
-    order: 3;
-    width: 100%;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 0.25rem;
-    margin: 0;
-    justify-content: flex-start;
-  }
-  .nav a { white-space: nowrap; flex-shrink: 0; }
+  /* Inline-Nav und Inline-Actions verstecken sich auf Mobile;
+     Inhalte landen im Drawer */
+  .nav-inline { display: none; }
+  .header-actions-inline { display: none; }
 
-  .header-actions { gap: 0.5rem; }
-  .header-actions span { display: none; } /* Username weg, Logout reicht */
+  .burger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.55rem 0.7rem;
+    cursor: pointer;
+    margin-left: auto;
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .burger:hover { background: var(--surface); }
+  .burger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--text);
+    border-radius: 2px;
+  }
+}
+
+/* Drawer (mobile) */
+.drawer-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 200;
+  display: flex; justify-content: flex-end;
+  animation: drawer-fade 120ms ease-out;
+}
+.drawer {
+  width: min(300px, 85vw);
+  height: 100vh;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 1.25rem 1rem;
+  gap: 0.4rem;
+  animation: drawer-slide 160ms ease-out;
+  overflow-y: auto;
+}
+.drawer-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  row-gap: 0.1rem;
+  padding-bottom: 0.9rem;
+  margin-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+.drawer-head strong { grid-column: 1 / 2; }
+.drawer-close {
+  grid-row: 1 / 3;
+  grid-column: 2 / 3;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.6rem;
+  line-height: 1;
+  padding: 0.1rem 0.5rem;
+  min-height: auto;
+  border-radius: var(--radius);
+}
+.drawer-close:hover { color: var(--text); background: var(--bg); }
+.drawer-links { display: flex; flex-direction: column; gap: 0.2rem; }
+.drawer-links a {
+  color: var(--text);
+  text-decoration: none;
+  padding: 0.85rem 0.7rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+}
+.drawer-links a:hover { background: var(--bg); }
+.drawer-links a.active {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+.drawer-logout {
+  margin-top: auto;
+}
+
+@keyframes drawer-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes drawer-slide {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
 
   /* Inline-Tabellen scrollbar machen, statt überlaufen zu lassen.
      Trick: section um die Tabelle bekommt overflow-x:auto über
