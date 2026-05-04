@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api, type FederalState, type User } from "../api";
+import { useCurrentUser } from "../auth/CurrentUser";
 
 const FEDERAL_STATES: FederalState[] = [
   "BW", "BY", "BE", "BB", "HB", "HH", "HE", "MV",
@@ -13,6 +14,19 @@ interface Props {
 }
 
 export default function EmployeeMasterDataForm({ user, onSaved, onCancel }: Props) {
+  const { user: currentUser } = useCurrentUser();
+  const isAdmin = currentUser?.role === "admin";
+  const [employers, setEmployers] = useState<User[]>([]);
+  const [supervisorId, setSupervisorId] = useState<number | null>(user.supervisor_id ?? null);
+
+  useEffect(() => {
+    if (isAdmin) {
+      api.listEmployees(false).then((all) =>
+        setEmployers(all.filter((u) => u.role === "employer")),
+      );
+    }
+  }, [isAdmin]);
+
   const [data, setData] = useState({
     full_name: user.full_name ?? "",
     email: user.email,
@@ -40,6 +54,9 @@ export default function EmployeeMasterDataForm({ user, onSaved, onCancel }: Prop
       const payload: any = {};
       for (const [k, v] of Object.entries(data)) {
         payload[k] = v === "" ? null : v;
+      }
+      if (isAdmin && supervisorId !== (user.supervisor_id ?? null)) {
+        payload.supervisor_id = supervisorId;
       }
       const updated = await api.updateEmployee(user.id, payload);
       onSaved(updated);
@@ -80,6 +97,17 @@ export default function EmployeeMasterDataForm({ user, onSaved, onCancel }: Prop
         <label>Eintrittsdatum<input type="date" value={data.hire_date} onChange={(e) => set("hire_date", e.target.value)} /></label>
         <label>Notfallkontakt Name<input value={data.emergency_contact_name} onChange={(e) => set("emergency_contact_name", e.target.value)} /></label>
         <label>Notfallkontakt Telefon<input value={data.emergency_contact_phone} onChange={(e) => set("emergency_contact_phone", e.target.value)} /></label>
+        {isAdmin && user.role === "employee" && (
+          <label className="full">Arbeitgeber
+            <select value={supervisorId ?? ""}
+              onChange={(e) => setSupervisorId(e.target.value ? parseInt(e.target.value, 10) : null)}>
+              <option value="">– kein Arbeitgeber (direkt unter Admin) –</option>
+              {employers.map((em) => (
+                <option key={em.id} value={em.id}>{em.full_name || em.username}</option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
       {error && <div className="error">{error}</div>}
       <div className="row-actions">
