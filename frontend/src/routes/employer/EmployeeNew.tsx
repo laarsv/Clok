@@ -107,7 +107,11 @@ export default function EmployeeNew() {
 
         <section className="card-section">
           <h3>Optional: bestehende Zeiten importieren</h3>
-          <p className="muted small">CSV mit Header <code>datum;start;ende;pause_min;projekt;notiz</code> – Excel-DE-Format. Details: <code>docs/import-format.md</code>.</p>
+          <p className="muted small">
+            CSV mit Header <code>datum;start;ende;pause_min;projekt;notiz</code> – Excel-DE-Format.{" "}
+            <a href={api.importTemplateUrl()} download>Vorlage herunterladen</a> ·{" "}
+            Details: <code>docs/import-format.md</code>.
+          </p>
           <input type="file" accept=".csv,text/csv"
             onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)} />
           {importReport && (

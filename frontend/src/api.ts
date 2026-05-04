@@ -111,6 +111,8 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  importTemplateUrl: () => `${BASE}/employees/import-template.csv`,
+
   // Employees / Onboarding
   listEmployees: (includeOffboarded = false) =>
     request<User[]>(

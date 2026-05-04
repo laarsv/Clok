@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user, hash_password
@@ -17,6 +18,29 @@ from app.schemas import EmployeeCreate, UserOut, UserUpdate
 HARD_DELETE_RETENTION_DAYS = 365 * 10  # 10 Jahre Aufbewahrung
 
 router = APIRouter(prefix="/api/employees", tags=["employees"])
+
+
+_IMPORT_TEMPLATE = (
+    "﻿"  # UTF-8 BOM für Excel-DE
+    "datum;start;ende;pause_min;projekt;notiz\r\n"
+    "04.05.2026;09:00;17:30;30;Kunde A;Sprint Planning\r\n"
+    "05.05.2026;08:30;17:00;45;;\r\n"
+    "06.05.2026;09:00;13:00;0;;Halber Tag\r\n"
+)
+
+
+@router.get("/import-template.csv")
+def import_template():
+    """CSV-Vorlage zum Download. Kein Auth nötig – Inhalt ist statisch
+    und enthält nur Beispiel-Werte."""
+    return Response(
+        content=_IMPORT_TEMPLATE,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": 'attachment; filename="clok-zeiteintraege-vorlage.csv"',
+            "Cache-Control": "public, max-age=3600",
+        },
+    )
 
 
 @router.get("", response_model=list[UserOut])
