@@ -81,8 +81,8 @@ sein muss.
 
 ### Schritte für die produktive Aktivierung
 
-1. **Resend-Account anlegen**, im Dashboard eine Domain hinzufügen
-   (`send.f-lv.de` für dieses Setup).
+1. **Resend-Account anlegen**, im Dashboard die Domain hinzufügen
+   (in diesem Setup: `f-lv.de`).
 2. **DKIM + SPF + Return-Path** als DNS-Einträge bei deinem
    DNS-Provider (z. B. All-Inkl) eintragen, wie Resend sie anzeigt.
 3. Domain-Status muss „verified" sein, sonst werden alle Mails von
@@ -92,12 +92,12 @@ sein muss.
 
 ### Variablen
 
-| Variable             | Bedeutung                                |
-| -------------------- | ---------------------------------------- |
-| `RESEND_API_KEY`     | Resend-Schlüssel; leer = Dev-Modus       |
-| `RESEND_FROM_EMAIL`  | Absender, default `clok@send.f-lv.de`    |
-| `RESEND_REPLY_TO`    | Optional: Reply-To-Adresse               |
-| `APP_BASE_URL`       | Basis-URL für Mail-Links                 |
+| Variable             | Bedeutung                                  |
+| -------------------- | ------------------------------------------ |
+| `RESEND_API_KEY`     | Resend-Schlüssel; leer = Dev-Modus         |
+| `RESEND_FROM_EMAIL`  | Absender, default `lars.verwiebe@f-lv.de`  |
+| `RESEND_REPLY_TO`    | Optional: Reply-To-Adresse                 |
+| `APP_BASE_URL`       | Basis-URL für Mail-Links                   |
 
 ### Trigger im Überblick
 
