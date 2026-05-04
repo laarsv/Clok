@@ -1,14 +1,20 @@
 """FastAPI app entry point."""
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import Base, engine
+from app.db_migrate import upgrade_to_head
 from app.routers import auth, entries, exports, stats
 
-# Rohfassung: Tabellen direkt anlegen. Später durch Alembic ersetzen.
-Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Clok", version="0.1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    upgrade_to_head()
+    yield
+
+
+app = FastAPI(title="Clok", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

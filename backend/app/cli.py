@@ -1,19 +1,27 @@
-"""Admin CLI for bootstrapping. Usage:
+"""Admin CLI. Subcommands:
 
-    docker compose exec backend python -m app.cli create-user \
-        --username lars --password "..." --admin
+    upgrade-db
+    create-user --username … --password …
 """
 import typer
 
 from app.auth import hash_password
-from app.database import Base, SessionLocal, engine
+from app.database import SessionLocal
+from app.db_migrate import upgrade_to_head
 from app.models import BillingMode, User
 
 cli = typer.Typer(no_args_is_help=True)
 
 
-@cli.command()
-def create_user(
+@cli.command("upgrade-db")
+def cmd_upgrade_db():
+    """Alembic-Migrationen bis HEAD ausführen."""
+    upgrade_to_head()
+    typer.echo("DB ist auf HEAD.")
+
+
+@cli.command("create-user")
+def cmd_create_user(
     username: str = typer.Option(...),
     password: str = typer.Option(...),
     full_name: str = typer.Option(""),
@@ -22,7 +30,7 @@ def create_user(
     rate: float = typer.Option(0.0, help="Stundensatz in EUR (nur bei hourly)"),
     target: float = typer.Option(160.0, help="Soll-Stunden/Monat (nur bei salary)"),
 ):
-    Base.metadata.create_all(bind=engine)
+    upgrade_to_head()
     db = SessionLocal()
     try:
         if db.query(User).filter(User.username == username).first():
