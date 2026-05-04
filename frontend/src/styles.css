@@ -291,3 +291,23 @@ td button:hover { color: var(--error); background: transparent; }
 .month-cell-day { font-weight: 600; font-size: 0.9rem; }
 .month-sum { font-size: 0.8rem; color: var(--accent); margin-top: auto; }
 .badge.small { font-size: 0.65rem; padding: 1px 4px; }
+
+/* Profil */
+.profile { display: flex; flex-direction: column; gap: 1.5rem; }
+.card-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.profile-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.profile-field { display: flex; flex-direction: column; gap: 0.2rem; }
+.small { font-size: 0.8rem; }
+.settings-list { list-style: none; padding: 0; margin: 0; }
+.settings-list li { padding: 0.4rem 0; }
+.toggle { display: flex; align-items: center; gap: 0.6rem; flex-direction: row; margin: 0; }
+.toggle input { width: auto; }
