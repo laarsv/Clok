@@ -316,3 +316,6 @@ td button:hover { color: var(--error); background: transparent; }
 .status-pending { background: rgba(255, 204, 77, 0.2); color: var(--warning); }
 .status-approved { background: rgba(0, 169, 132, 0.2); color: var(--accent); }
 .status-rejected { background: rgba(255, 107, 107, 0.2); color: var(--error); }
+
+.dashboard-toolbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
+.negative { color: var(--error); }
