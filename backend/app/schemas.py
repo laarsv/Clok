@@ -137,6 +137,27 @@ class UserUpdate(BaseModel):
     initial_remaining_vacation: Optional[float] = Field(None, ge=0)
 
 
+# ---------- Balance Adjustments ----------
+
+class BalanceAdjustmentIn(BaseModel):
+    effective_date: date
+    hours: float
+    reason: str = Field(min_length=3, max_length=500)
+
+
+class BalanceAdjustmentOut(BaseModel):
+    id: int
+    user_id: int
+    effective_date: date
+    hours: float
+    reason: str
+    created_at: datetime
+    created_by: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
 # ---------- Employment Terms ----------
 
 class TermsIn(BaseModel):

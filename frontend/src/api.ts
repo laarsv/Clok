@@ -189,6 +189,18 @@ export const api = {
   resendInvite: (id: number) =>
     request<User>(`/employees/${id}/resend-invite`, { method: "POST" }),
 
+  // Saldo-Korrekturen
+  listBalanceAdjustments: (employeeId: number) =>
+    request<BalanceAdjustment[]>(`/employees/${employeeId}/balance-adjustments`),
+  createBalanceAdjustment: (employeeId: number, payload: BalanceAdjustmentInput) =>
+    request<BalanceAdjustment>(`/employees/${employeeId}/balance-adjustments`, {
+      method: "POST", body: JSON.stringify(payload),
+    }),
+  deleteBalanceAdjustment: (employeeId: number, adjId: number) =>
+    request<void>(`/employees/${employeeId}/balance-adjustments/${adjId}`, {
+      method: "DELETE",
+    }),
+
   // Vertragsverlauf
   listTerms: (employeeId: number) =>
     request<EmploymentTerms[]>(`/employees/${employeeId}/terms`),
@@ -320,6 +332,22 @@ export interface TermsPayload {
   work_days?: WeekDay[];
   annual_vacation_days?: number;
   note?: string;
+}
+
+export interface BalanceAdjustment {
+  id: number;
+  user_id: number;
+  effective_date: string;
+  hours: number;
+  reason: string;
+  created_at: string;
+  created_by?: number | null;
+}
+
+export interface BalanceAdjustmentInput {
+  effective_date: string;
+  hours: number;
+  reason: string;
 }
 
 export interface OnboardingPreview {
