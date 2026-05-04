@@ -47,15 +47,34 @@ def log_change(
     action: AuditAction,
     entity_type: str,
     entity_id: int,
+    subject_user_id: Optional[int] = None,
     before: Any = None,
     after: Any = None,
 ) -> None:
-    """Schreibt einen Audit-Eintrag. Caller muss db.commit() selbst auslösen."""
+    """Schreibt einen Audit-Eintrag. Caller muss db.commit() selbst auslösen.
+
+    `subject_user_id` ist der betroffene Mitarbeiter – wird vom
+    Audit-Viewer für den Filter "alle Änderungen an User X" genutzt.
+    Wenn nicht übergeben, wird er aus before/after abgeleitet (für
+    Entitäten mit user_id-Feld).
+    """
+    if subject_user_id is None:
+        for src in (after, before):
+            if isinstance(src, dict) and "user_id" in src and src["user_id"]:
+                subject_user_id = int(src["user_id"])
+                break
+            if src is not None and hasattr(src, "user_id") and getattr(src, "user_id"):
+                subject_user_id = int(getattr(src, "user_id"))
+                break
+        if subject_user_id is None and entity_type == "user":
+            subject_user_id = entity_id
+
     db.add(AuditLog(
         actor_user_id=actor_user_id,
         action=action,
         entity_type=entity_type,
         entity_id=entity_id,
+        subject_user_id=subject_user_id,
         before=_to_dict(before),
         after=_to_dict(after),
     ))
