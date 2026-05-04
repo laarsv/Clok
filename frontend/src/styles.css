@@ -321,6 +321,13 @@ td button:hover { color: var(--error); background: transparent; }
 }
 .manual-grid .field.full { grid-column: 1 / -1; }
 
+.entries-log table { margin-top: 1rem; }
+.entries-log td button { margin-right: 0.4rem; }
+.entries-log button:disabled { opacity: 0.4; cursor: not-allowed; }
+.abs-vacation-row td:first-child { border-left: 3px solid var(--accent); }
+.abs-sick-row td:first-child { border-left: 3px solid var(--error); }
+.abs-unpaid-row td:first-child { border-left: 3px solid var(--text-muted); }
+
 /* Profil */
 .profile { display: flex; flex-direction: column; gap: 1.5rem; }
 .card-section {

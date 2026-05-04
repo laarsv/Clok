@@ -39,3 +39,12 @@ export function fmtDe(d: Date): string {
 export function deWeekday(d: Date): string {
   return d.toLocaleDateString("de-DE", { weekday: "short" });
 }
+
+/** True, wenn das Datum im aktuellen oder direkt vorhergehenden Kalendermonat liegt.
+ *  Mitarbeiter dürfen ihre eigenen Einträge nur in diesem Fenster ändern. */
+export function isInEditableWindow(isoDay: string): boolean {
+  const day = new Date(isoDay);
+  const today = new Date();
+  const floor = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  return day >= floor;
+}
