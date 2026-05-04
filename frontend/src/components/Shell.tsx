@@ -8,6 +8,7 @@ const NAV: Record<Role, { to: string; label: string }[]> = {
     { to: "/me", label: "Woche" },
     { to: "/me/month", label: "Monat" },
     { to: "/me/log", label: "Liste" },
+    { to: "/me/year", label: "Jahr" },
     { to: "/me/absences", label: "Abwesenheiten" },
     { to: "/me/profile", label: "Profil" },
   ],
