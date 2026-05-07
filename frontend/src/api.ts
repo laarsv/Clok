@@ -201,6 +201,23 @@ export const api = {
   resendInvite: (id: number) =>
     request<User>(`/employees/${id}/resend-invite`, { method: "POST" }),
 
+  // Admin: Employer-Invites
+  listEmployerInvites: (status?: EmployerInviteStatusFilter) => {
+    const q = new URLSearchParams();
+    if (status && status !== "all") q.set("status", status);
+    return request<EmployerInvite[]>(`/admin/employer-invites?${q}`);
+  },
+  createEmployerInvite: (payload: EmployerInviteInput) =>
+    request<EmployerInviteCreated>("/admin/employer-invites", {
+      method: "POST", body: JSON.stringify(payload),
+    }),
+  deleteEmployerInvite: (id: number) =>
+    request<void>(`/admin/employer-invites/${id}`, { method: "DELETE" }),
+  resendEmployerInvite: (id: number) =>
+    request<EmployerInviteResent>(`/admin/employer-invites/${id}/resend`, {
+      method: "POST",
+    }),
+
   // Employer-Onboarding-Wizard
   inviteOnboardingPreview: async (token: string) => {
     const res = await fetch(`${BASE}/onboarding/invite/${token}`);
@@ -519,6 +536,50 @@ export interface BalanceAdjustmentInput {
   effective_date: string;
   hours: number;
   reason: string;
+}
+
+export type EmployerInviteStatus = "pending" | "accepted" | "expired" | "revoked";
+export type EmployerInviteStatusFilter = EmployerInviteStatus | "all";
+
+export const EMPLOYER_INVITE_STATUS_LABELS: Record<EmployerInviteStatus, string> = {
+  pending: "offen",
+  accepted: "eingelöst",
+  expired: "abgelaufen",
+  revoked: "zurückgezogen",
+};
+
+export interface EmployerInvite {
+  id: number;
+  email: string;
+  full_name?: string | null;
+  company_name?: string | null;
+  status: EmployerInviteStatus;
+  expires_at: string;
+  created_at: string;
+  created_by_admin_id?: number | null;
+  accepted_at?: string | null;
+  accepted_by_user_id?: number | null;
+  revoked_at?: string | null;
+  revoked_by_admin_id?: number | null;
+  last_resent_at?: string | null;
+  resent_by_admin_id?: number | null;
+}
+
+export interface EmployerInviteInput {
+  email: string;
+  full_name?: string;
+  company_name?: string;
+}
+
+export interface EmployerInviteCreated {
+  invite: EmployerInvite;
+  plaintext_token: string;
+  onboarding_url: string;
+}
+
+export interface EmployerInviteResent {
+  invite: EmployerInvite;
+  expires_extended: boolean;
 }
 
 export interface InvitePreview {

@@ -23,6 +23,7 @@ import EmployerAbsenceInbox from "./routes/employer/AbsenceInbox";
 import AdminEmployers from "./routes/admin/Employers";
 import AdminEmployerDetail from "./routes/admin/EmployerDetail";
 import AdminFeedbackInbox from "./routes/admin/FeedbackInbox";
+import AdminInvites from "./routes/admin/Invites";
 import Feedback from "./routes/Feedback";
 
 function HomeRedirect() {
@@ -106,6 +107,9 @@ export default function App() {
           } />
           <Route path="/admin/feedback" element={
             <RoleGuard allow={["admin"]}><AdminFeedbackInbox /></RoleGuard>
+          } />
+          <Route path="/admin/invites" element={
+            <RoleGuard allow={["admin"]}><AdminInvites /></RoleGuard>
           } />
 
           <Route path="/feedback" element={

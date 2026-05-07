@@ -950,3 +950,31 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
   .stepper-label { display: none; }
   .stepper-item:not(:last-child)::after { top: 14px; }
 }
+
+/* Employer-Invites Admin */
+.invite-status-pending  { background: rgba(255, 204, 77, 0.18); color: var(--warning); }
+.invite-status-accepted { background: rgba(0, 169, 132, 0.28); color: var(--accent); }
+.invite-status-expired  { background: rgba(255, 107, 107, 0.18); color: var(--error); }
+.invite-status-revoked  { background: var(--border); color: var(--text-muted); }
+
+.invite-fresh { border-left: 3px solid var(--accent); }
+.invite-link-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  margin-top: 0.7rem;
+  flex-wrap: wrap;
+}
+.invite-link {
+  flex: 1;
+  min-width: 280px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  word-break: break-all;
+  user-select: all;
+}
+.action-cell { white-space: nowrap; }
+.action-cell button { margin-right: 0.4rem; }
