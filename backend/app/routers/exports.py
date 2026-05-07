@@ -7,12 +7,11 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
 from app.balance import target_hours_for_period
 from app.database import get_db
 from app.models import BillingMode, TimeEntry, User
 from app.pdf_timesheet import build_monthly_pdf
-from app.permissions import visible_user_ids
+from app.permissions import require_active_user, visible_user_ids
 
 router = APIRouter(prefix="/api/exports", tags=["exports"])
 
@@ -30,7 +29,7 @@ def _fmt_num(n: float) -> str:
 def monthly_csv(
     year: int = Query(...),
     month: int = Query(..., ge=1, le=12),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     start = datetime.combine(datetime(year, month, 1).date(), time.min)
@@ -109,7 +108,7 @@ def monthly_pdf(
     year: int = Query(...),
     month: int = Query(..., ge=1, le=12),
     user_id: int | None = Query(None, description="Admin/AG: anderer MA"),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     """Stundenzettel als PDF (DIN A4) zur Vorlage in der Lohnbuchhaltung."""

@@ -6,12 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.audit import log_change
-from app.auth import get_current_user
 from app.config import get_settings
 from app.database import get_db
 from app.models import Absence, AbsenceStatus, AbsenceType, AuditAction, Role, User
 from app.notifications.service import NotificationKind, notify
-from app.permissions import is_in_editable_window, supervises, visible_user_ids
+from app.permissions import is_in_editable_window, require_active_user, supervises, visible_user_ids
 from app.schemas import AbsenceDecision, AbsenceIn, AbsenceOut, AbsenceUpdate
 
 router = APIRouter(prefix="/api/absences", tags=["absences"])
@@ -68,7 +67,7 @@ def _build_ctx(absence: Absence, requester: User, approver: User | None) -> dict
 @router.get("", response_model=list[AbsenceOut])
 def list_absences(
     user_id: Optional[int] = Query(None),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     if user_id is None:
@@ -91,7 +90,7 @@ def list_absences(
 @router.post("", response_model=AbsenceOut, status_code=status.HTTP_201_CREATED)
 def create_absence(
     payload: AbsenceIn,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     if payload.end_date < payload.start_date:
@@ -223,7 +222,7 @@ def _check_absence_write(absence: Absence, actor: User, db: Session) -> User:
 def update_absence(
     absence_id: int,
     payload: AbsenceUpdate,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     absence = db.query(Absence).filter(Absence.id == absence_id).first()
@@ -264,7 +263,7 @@ def update_absence(
 def approve_absence(
     absence_id: int,
     payload: AbsenceDecision,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     absence = _decide(absence_id, AbsenceStatus.APPROVED, payload, user, db)
@@ -276,7 +275,7 @@ def approve_absence(
 def reject_absence(
     absence_id: int,
     payload: AbsenceDecision,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     absence = _decide(absence_id, AbsenceStatus.REJECTED, payload, user, db)
@@ -287,7 +286,7 @@ def reject_absence(
 @router.delete("/{absence_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_absence(
     absence_id: int,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     absence = db.query(Absence).filter(Absence.id == absence_id).first()

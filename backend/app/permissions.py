@@ -13,13 +13,32 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import Role, User
+from app.models import OnboardingStatus, Role, User
+
+
+def require_active_user(user: User = Depends(get_current_user)) -> User:
+    """Wirft 409, wenn der User mitten im Arbeitgeber-Onboarding steckt.
+    Alle „normalen" Endpoints (Zeiterfassung, Mitarbeiter-Verwaltung,
+    Stats, …) sollen Onboarding-User ausschließen, damit niemand
+    versehentlich Daten anlegt, bevor der Wizard durchgelaufen ist.
+
+    Ausgenommen sind bewusst:
+    - /api/auth/me + /api/auth/change-password (Self-Service ist immer ok)
+    - /api/onboarding/* (das sind die Wizard-Endpoints selbst)
+    - öffentliche Pfade ohne Auth (Login, Forgot-Password, Invite-Preview)
+    """
+    if user.onboarding_status != OnboardingStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Onboarding noch nicht abgeschlossen.",
+        )
+    return user
 
 
 def require_role(*roles: Role):
     allowed = set(roles)
 
-    def dep(user: User = Depends(get_current_user)) -> User:
+    def dep(user: User = Depends(require_active_user)) -> User:
         if user.role not in allowed:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -47,7 +66,7 @@ def visible_user_ids(viewer: User, db: Session) -> set[int]:
 def require_can_view_user(target_user_id: int):
     """Wirft 403, wenn viewer den Zieluser nicht sehen darf."""
     def dep(
-        viewer: User = Depends(get_current_user),
+        viewer: User = Depends(require_active_user),
         db: Session = Depends(get_db),
     ) -> User:
         if target_user_id not in visible_user_ids(viewer, db):

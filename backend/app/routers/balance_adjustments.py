@@ -16,10 +16,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.audit import log_change
-from app.auth import get_current_user
 from app.database import get_db
 from app.models import AuditAction, BalanceAdjustment, Role, User
-from app.permissions import supervises, visible_user_ids
+from app.permissions import require_active_user, supervises, visible_user_ids
 from app.schemas import BalanceAdjustmentIn, BalanceAdjustmentOut
 
 router = APIRouter(prefix="/api/employees", tags=["balance"])
@@ -46,7 +45,7 @@ def _check_target_write(actor: User, target_id: int, db: Session) -> User:
 @router.get("/{user_id}/balance-adjustments", response_model=list[BalanceAdjustmentOut])
 def list_adjustments(
     user_id: int,
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     _check_target_read(actor, user_id, db)
@@ -67,7 +66,7 @@ def list_adjustments(
 def create_adjustment(
     user_id: int,
     payload: BalanceAdjustmentIn,
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     _check_target_write(actor, user_id, db)
@@ -100,7 +99,7 @@ def create_adjustment(
 def delete_adjustment(
     user_id: int,
     adj_id: int,
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     _check_target_write(actor, user_id, db)

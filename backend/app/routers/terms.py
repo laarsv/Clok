@@ -9,12 +9,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.audit import log_change
-from app.auth import get_current_user
 from app.database import get_db
 from app.models import (
     AuditAction, EmploymentTerms, Role, User,
 )
-from app.permissions import supervises, visible_user_ids
+from app.permissions import require_active_user, supervises, visible_user_ids
 from app.schemas import TermsIn, TermsOut, TermsPatch
 from app.terms import (
     apply_new_terms, list_terms, refresh_user_mirror,
@@ -47,7 +46,7 @@ def _check_target_writable(actor: User, target_id: int, db: Session) -> User:
 @router.get("/{user_id}/terms", response_model=list[TermsOut])
 def get_terms(
     user_id: int,
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     target = _check_target(actor, user_id, db)
@@ -58,7 +57,7 @@ def get_terms(
 def post_terms(
     user_id: int,
     payload: TermsIn,
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     target = _check_target_writable(actor, user_id, db)
@@ -107,7 +106,7 @@ def patch_terms(
     user_id: int,
     terms_id: int,
     payload: TermsPatch,
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     target = _check_target_writable(actor, user_id, db)
@@ -145,7 +144,7 @@ def patch_terms(
 def delete_terms(
     user_id: int,
     terms_id: int,
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     target = _check_target_writable(actor, user_id, db)

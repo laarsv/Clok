@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.absences import remaining_vacation_days
-from app.auth import get_current_user
+from app.permissions import require_active_user
 from app.balance import saldo_for_user, target_hours_for_period
 from app.database import get_db
 from app.models import (
@@ -81,7 +81,7 @@ def _sick_days(db: Session, user_id: int, start: date, end: date) -> int:
 @router.get("/dashboard", response_model=EmployerDashboard)
 def dashboard(
     reference: date = Query(default_factory=date.today),
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     if actor.role == Role.EMPLOYEE:

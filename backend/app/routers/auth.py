@@ -14,7 +14,7 @@ from app.database import get_db
 from app.models import Role, User
 from app.notifications import resend
 from app.notifications.service import NotificationKind, notify
-from app.permissions import require_role
+from app.permissions import require_active_user, require_role
 from app.schemas import Token, UserOut, UserUpdate
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -62,7 +62,7 @@ def me(user: User = Depends(get_current_user)):
 @router.patch("/me", response_model=UserOut)
 def update_me(
     payload: UserUpdate,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     for field, value in payload.model_dump(exclude_unset=True).items():

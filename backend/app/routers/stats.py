@@ -5,13 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.absences import remaining_vacation_days
-from app.auth import get_current_user
 from app.balance import saldo_for_user, target_hours_for_period
 from app.database import get_db
 from app.models import (
     Absence, AbsenceStatus, AbsenceType, BillingMode, TimeEntry, User,
 )
-from app.permissions import visible_user_ids
+from app.permissions import require_active_user, visible_user_ids
 from app.schemas import MonthSummary, PeriodSummary, YearOverview
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
@@ -57,7 +56,7 @@ def _summary(db: Session, user: User, period: str, start: datetime, end: datetim
 @router.get("/summary", response_model=list[PeriodSummary])
 def summary(
     reference: datetime = Query(default_factory=datetime.utcnow),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     """Liefert Tag/Woche/Monat-Summen rund um das Referenzdatum."""
@@ -109,7 +108,7 @@ def _absence_days_in_range(
 def year_overview(
     year: int = Query(default_factory=lambda: date.today().year, ge=2000, le=2100),
     user_id: int | None = Query(None, description="Admin/AG: anderer MA"),
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     """Pro Monat: Soll, Ist, Saldo am Monatsende, Urlaubs-/Krank-/sonstige

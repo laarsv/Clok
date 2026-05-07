@@ -8,10 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.arbzg import gross_hours, validate_entry
 from app.audit import log_change
-from app.auth import get_current_user
 from app.database import get_db
 from app.models import AuditAction, Role, TimeEntry, User
-from app.permissions import is_in_editable_window, supervises, visible_user_ids
+from app.permissions import is_in_editable_window, require_active_user, supervises, visible_user_ids
 from app.schemas import (
     TimeEntryCreateResponse, TimeEntryIn, TimeEntryOut, ValidationIssueOut,
 )
@@ -114,7 +113,7 @@ def list_entries(
     from_: Optional[datetime] = Query(None, alias="from"),
     to: Optional[datetime] = None,
     user_id: Optional[int] = Query(None),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     target_id = user_id if user_id is not None else user.id
@@ -132,7 +131,7 @@ def list_entries(
 @router.post("", response_model=TimeEntryCreateResponse, status_code=status.HTTP_201_CREATED)
 def create_entry(
     payload: TimeEntryIn,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     issues = _validate(db, user, payload)
@@ -159,7 +158,7 @@ def create_entry(
 def update_entry(
     entry_id: int,
     payload: TimeEntryIn,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     entry = db.query(TimeEntry).filter(TimeEntry.id == entry_id).first()
@@ -193,7 +192,7 @@ def update_entry(
 @router.delete("/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_entry(
     entry_id: int,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     entry = db.query(TimeEntry).filter(TimeEntry.id == entry_id).first()

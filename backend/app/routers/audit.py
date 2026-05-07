@@ -11,10 +11,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
 from app.database import get_db
 from app.models import AuditLog, Role, User
-from app.permissions import visible_user_ids
+from app.permissions import require_active_user, visible_user_ids
 
 router = APIRouter(prefix="/api/audit-log", tags=["audit"])
 
@@ -39,7 +38,7 @@ def list_audit(
     entity_type: Optional[str] = Query(None),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     if actor.role == Role.EMPLOYEE:

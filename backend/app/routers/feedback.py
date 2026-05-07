@@ -10,7 +10,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
+from app.permissions import require_active_user
 from app.database import get_db
 from app.models import (
     Feedback, FeedbackKind, FeedbackStatus, Role, User,
@@ -42,7 +42,7 @@ def _to_out(fb: Feedback, reporter: Optional[User]) -> FeedbackOut:
 @router.post("", response_model=FeedbackOut, status_code=status.HTTP_201_CREATED)
 def create_feedback(
     payload: FeedbackIn,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     fb = Feedback(
@@ -62,7 +62,7 @@ def create_feedback(
 def list_feedback(
     kind: Optional[FeedbackKind] = Query(None),
     fb_status: Optional[FeedbackStatus] = Query(None, alias="status"),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     q = db.query(Feedback)
@@ -89,7 +89,7 @@ def list_feedback(
 def update_feedback(
     feedback_id: int,
     payload: FeedbackUpdate,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     if user.role != Role.ADMIN:
@@ -122,7 +122,7 @@ def update_feedback(
 @router.delete("/{feedback_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_feedback(
     feedback_id: int,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     fb = db.query(Feedback).filter(Feedback.id == feedback_id).first()

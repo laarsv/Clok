@@ -12,14 +12,14 @@ from sqlalchemy.orm import Session
 log = logging.getLogger(__name__)
 
 from app.audit import log_change
-from app.auth import get_current_user, hash_password
+from app.auth import hash_password
 from app.config import get_settings
 from app.database import get_db
 from app.importers.absences_csv import import_absences
 from app.importers.time_entries_csv import import_time_entries
 from app.models import AuditAction, Role, User
 from app.notifications.service import NotificationKind, notify
-from app.permissions import require_role, supervises, visible_user_ids
+from app.permissions import require_active_user, require_role, supervises, visible_user_ids
 from app.schemas import EmployeeCreate, UserOut, UserUpdate
 from app.terms import create_initial_terms
 from app.work_days import legal_min_vacation_days, normalize as normalize_work_days
@@ -74,7 +74,7 @@ def import_template_absences():
 @router.get("", response_model=list[UserOut])
 def list_employees(
     include_offboarded: bool = Query(False),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     if user.role == Role.EMPLOYEE:
@@ -199,7 +199,7 @@ def _send_invite(db: Session, recipient: User, actor: User, token: str) -> None:
 @router.post("/{user_id}/resend-invite", response_model=UserOut)
 def resend_invite(
     user_id: int,
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     target = _check_import_access(actor, user_id, db)
@@ -221,7 +221,7 @@ def resend_invite(
 @router.get("/{user_id}", response_model=UserOut)
 def get_employee(
     user_id: int,
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     if user_id not in visible_user_ids(actor, db):
@@ -236,7 +236,7 @@ def get_employee(
 def update_employee(
     user_id: int,
     payload: UserUpdate,
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     target = db.query(User).filter(User.id == user_id).first()
@@ -286,7 +286,7 @@ def update_employee(
 @router.post("/{user_id}/offboard", response_model=UserOut)
 def offboard_employee(
     user_id: int,
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     target = db.query(User).filter(User.id == user_id).first()
@@ -306,7 +306,7 @@ def offboard_employee(
 @router.post("/{user_id}/reactivate", response_model=UserOut)
 def reactivate_employee(
     user_id: int,
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     target = db.query(User).filter(User.id == user_id).first()
@@ -372,7 +372,7 @@ def _check_import_access(actor: User, target_id: int, db: Session) -> User:
 async def import_times_csv(
     user_id: int,
     file: UploadFile = File(...),
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     target = _check_import_access(actor, user_id, db)
@@ -391,7 +391,7 @@ async def import_times_csv(
 async def import_absences_csv(
     user_id: int,
     file: UploadFile = File(...),
-    actor: User = Depends(get_current_user),
+    actor: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
     target = _check_import_access(actor, user_id, db)
