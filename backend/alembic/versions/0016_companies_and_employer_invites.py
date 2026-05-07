@@ -39,18 +39,17 @@ _COMPANY_SIZE_BUCKET_VALUES = ("1", "2_5", "6_10", "11_plus")
 def upgrade() -> None:
     bind = op.get_bind()
 
-    # 1. Neue Enums anlegen (federal_state und billing_mode existieren bereits).
-    # create_type=False ist hier defensiv – die temporären sa.Enum-Objekte
-    # werden ohnehin nirgends an Spalten gebunden (Spalten verwenden weiter
-    # unten frische postgresql.ENUM(..., create_type=False)). Das Flag stellt
-    # sicher, dass auch zukünftige Wiederverwendung dieses Patterns kein
-    # automatisches Doppel-CREATE auslöst.
-    sa.Enum(
-        *_ONBOARDING_STATUS_VALUES, name="onboarding_status", create_type=False,
-    ).create(bind, checkfirst=True)
-    sa.Enum(
-        *_COMPANY_SIZE_BUCKET_VALUES, name="company_size_bucket", create_type=False,
-    ).create(bind, checkfirst=True)
+    # 1. Neue Enums explizit anlegen (federal_state und billing_mode existieren
+    # bereits). Bewusst postgresql.ENUM statt sa.Enum, und die Spalten unten
+    # bauen FRISCHE ENUM-Instanzen mit create_type=False – das Pattern ist die
+    # einzige zuverlässige Variante, um doppelte CREATE-TYPE-Hooks beim
+    # create_table zu vermeiden.
+    postgresql.ENUM(*_ONBOARDING_STATUS_VALUES, name="onboarding_status").create(
+        bind, checkfirst=True,
+    )
+    postgresql.ENUM(*_COMPANY_SIZE_BUCKET_VALUES, name="company_size_bucket").create(
+        bind, checkfirst=True,
+    )
 
     # 2. companies-Tabelle
     op.create_table(
@@ -217,5 +216,5 @@ def downgrade() -> None:
     op.drop_table("employer_invites")
     op.drop_table("companies")
 
-    sa.Enum(name="company_size_bucket").drop(op.get_bind(), checkfirst=True)
-    sa.Enum(name="onboarding_status").drop(op.get_bind(), checkfirst=True)
+    postgresql.ENUM(name="company_size_bucket").drop(op.get_bind(), checkfirst=True)
+    postgresql.ENUM(name="onboarding_status").drop(op.get_bind(), checkfirst=True)
