@@ -114,6 +114,17 @@ export const api = {
 
   // Stats / Exports
   summary: () => request<PeriodSummary[]>("/stats/summary"),
+  balance: (userId?: number, asOf?: string) => {
+    const q = new URLSearchParams();
+    if (userId) q.set("user_id", String(userId));
+    if (asOf) q.set("as_of", asOf);
+    return request<BalanceOut>(`/stats/balance?${q}`);
+  },
+  periodKpis: (start: string, end: string, userId?: number) => {
+    const q = new URLSearchParams({ start, end });
+    if (userId) q.set("user_id", String(userId));
+    return request<PeriodKpiOut>(`/stats/period?${q}`);
+  },
   yearOverview: (year?: number, userId?: number) => {
     const q = new URLSearchParams();
     if (year) q.set("year", String(year));
@@ -677,7 +688,7 @@ export interface MonthSummary {
   month: number; // 1..12
   actual_hours: number;
   target_hours: number;
-  balance_at_end: number;
+  balance_at_end: number | null;
   vacation_days: number;
   sick_days: number;
   other_absence_days: number;
@@ -689,10 +700,28 @@ export interface YearOverview {
   total_actual: number;
   total_target: number;
   balance_at_year_start: number;
-  balance_at_year_end: number;
+  // balance_at_year_end wurde 2026-05-07 entfernt – siehe
+  // /api/stats/balance für den aktuellen Saldo.
   vacation_used: number;
   vacation_remaining: number;
   sick_total: number;
+}
+
+export interface BalanceOut {
+  balance_hours: number;
+  as_of: string;
+  actual_hours_to_date: number;
+  target_hours_to_date: number;
+}
+
+export interface PeriodKpiOut {
+  start: string;
+  end: string;
+  actual_hours: number;
+  target_hours: number;
+  vacation_days: number;
+  sick_days: number;
+  other_absence_days: number;
 }
 
 export interface PeriodSummary {

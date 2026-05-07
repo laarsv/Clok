@@ -440,26 +440,57 @@ class PeriodSummary(BaseModel):
     billable_eur: Optional[float] = None  # nur bei hourly
 
 
+class BalanceOut(BaseModel):
+    """Saldo per Stichtag (Default: heute). Saldo = Ist bis Stichtag minus
+    Soll bis Stichtag (ab hire_date) plus initial_overtime und
+    BalanceAdjustments. Liefert für hourly-User 0.0."""
+    balance_hours: float
+    as_of: date
+    actual_hours_to_date: float
+    target_hours_to_date: float
+
+
+class PeriodKpiOut(BaseModel):
+    """KPIs für einen frei wählbaren Zeitraum (Dashboard-Filter)."""
+    start: date
+    end: date  # inclusive
+    actual_hours: float
+    target_hours: float
+    vacation_days: int
+    sick_days: int
+    other_absence_days: int
+
+
 class MonthSummary(BaseModel):
     """Ein Monatsslot in der Jahresübersicht. Wird in stats.year_overview
-    pro Kalendermonat befüllt."""
+    pro Kalendermonat befüllt – nur für Monate, deren Beginn bereits
+    erreicht ist."""
     month: int                   # 1..12
     actual_hours: float
     target_hours: float          # 0.0 bei billing_mode=hourly
-    balance_at_end: float        # kumulierter Saldo zum Monatsende
+    # Saldo zum Monatsende. None für den laufenden Monat – wir sind
+    # nicht am Monatsende, eine Hochrechnung wäre genauso irreführend
+    # wie das frühere balance_at_year_end.
+    balance_at_end: Optional[float] = None
     vacation_days: int
     sick_days: int
     other_absence_days: int      # unpaid + special + parental + training
 
 
 class YearOverview(BaseModel):
-    """Antwort von GET /api/stats/year-overview."""
+    """Antwort von GET /api/stats/year-overview.
+
+    `months` enthält nur Monate, deren 1. bereits erreicht ist – keine
+    Zukunftsmonate. Es gibt bewusst kein `balance_at_year_end`-Feld:
+    eine Hochrechnung des Jahresend-Saldos aus aktuellem Ist gegen
+    Jahres-Soll wäre für ein laufendes Jahr irreführend (Bug-Fix
+    2026-05-07). Wer den aktuellen Saldo will, fragt
+    `GET /api/stats/balance` ab."""
     year: int
     months: list[MonthSummary]
     total_actual: float
     total_target: float
     balance_at_year_start: float
-    balance_at_year_end: float
     vacation_used: int
     vacation_remaining: float
     sick_total: int

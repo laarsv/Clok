@@ -11,7 +11,9 @@ from app.models import (
     Absence, AbsenceStatus, AbsenceType, BillingMode, TimeEntry, User,
 )
 from app.permissions import require_active_user, visible_user_ids
-from app.schemas import MonthSummary, PeriodSummary, YearOverview
+from app.schemas import (
+    BalanceOut, MonthSummary, PeriodKpiOut, PeriodSummary, YearOverview,
+)
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
 
@@ -84,6 +86,97 @@ def summary(
     ]
 
 
+def _resolve_target(actor: User, user_id: int | None, db: Session) -> User:
+    target_id = user_id if user_id is not None else actor.id
+    if target_id != actor.id and target_id not in visible_user_ids(actor, db):
+        raise HTTPException(status_code=403, detail="Kein Zugriff.")
+    target = db.query(User).filter(User.id == target_id).first()
+    if target is None:
+        raise HTTPException(status_code=404, detail="User nicht gefunden.")
+    return target
+
+
+@router.get("/balance", response_model=BalanceOut)
+def balance(
+    as_of: date = Query(default_factory=date.today, description="Stichtag, default heute"),
+    user_id: int | None = Query(None, description="Admin/AG: anderer MA"),
+    actor: User = Depends(require_active_user),
+    db: Session = Depends(get_db),
+):
+    """Saldo-Kennzahl für die UI. Adressiert den Bug, dass die alte
+    year-overview-Antwort `balance_at_year_end` für das laufende Jahr
+    das ganze Jahres-Soll gegen das aktuelle Ist rechnet – Default
+    `as_of=heute` liefert hier die realistische Zahl."""
+    target = _resolve_target(actor, user_id, db)
+
+    saldo = saldo_for_user(db, target, as_of)
+
+    # Ist und Soll separat – fürs UI hilfreich, weil so klar wird,
+    # woher der Saldo kommt (z. B. "16 h Ist gegen 48 h Soll").
+    until_dt = datetime.combine(as_of + timedelta(days=1), time.min)
+    entries = db.query(TimeEntry).filter(
+        TimeEntry.user_id == target.id,
+        TimeEntry.start_at < until_dt,
+    ).all()
+    actual = _net(entries)
+
+    if target.billing_mode == BillingMode.SALARY and target.hire_date:
+        target_hours = target_hours_for_period(db, target, target.hire_date, as_of)
+    else:
+        target_hours = 0.0
+
+    return BalanceOut(
+        balance_hours=round(saldo, 2),
+        as_of=as_of,
+        actual_hours_to_date=round(actual, 2),
+        target_hours_to_date=round(target_hours, 2),
+    )
+
+
+@router.get("/period", response_model=PeriodKpiOut)
+def period_kpis(
+    start: date = Query(...),
+    end: date = Query(..., description="inclusive"),
+    user_id: int | None = Query(None),
+    actor: User = Depends(require_active_user),
+    db: Session = Depends(get_db),
+):
+    """KPIs für einen frei wählbaren Zeitraum. Vom Dashboard-Tab
+    benutzt, der einen Preset- oder Custom-Range-Filter setzt."""
+    if end < start:
+        raise HTTPException(status_code=422, detail="end < start.")
+    target = _resolve_target(actor, user_id, db)
+
+    s_dt = datetime.combine(start, time.min)
+    e_dt = datetime.combine(end + timedelta(days=1), time.min)
+    entries = db.query(TimeEntry).filter(
+        TimeEntry.user_id == target.id,
+        TimeEntry.start_at >= s_dt,
+        TimeEntry.start_at < e_dt,
+    ).all()
+    actual = _net(entries)
+
+    if target.billing_mode == BillingMode.SALARY:
+        tgt = target_hours_for_period(db, target, start, end)
+    else:
+        tgt = 0.0
+
+    vac = _absence_days_in_range(db, target.id, (AbsenceType.VACATION,), start, end)
+    sick = _absence_days_in_range(db, target.id, (AbsenceType.SICK,), start, end)
+    other = _absence_days_in_range(
+        db, target.id,
+        (AbsenceType.UNPAID, AbsenceType.SPECIAL, AbsenceType.PARENTAL, AbsenceType.TRAINING),
+        start, end,
+    )
+
+    return PeriodKpiOut(
+        start=start, end=end,
+        actual_hours=round(actual, 2),
+        target_hours=round(tgt, 2),
+        vacation_days=vac, sick_days=sick, other_absence_days=other,
+    )
+
+
 def _absence_days_in_range(
     db: Session, user_id: int, types: tuple, start: date, end_inclusive: date,
 ) -> int:
@@ -122,6 +215,7 @@ def year_overview(
     if target is None:
         raise HTTPException(status_code=404, detail="User nicht gefunden.")
 
+    today = date.today()
     months: list[MonthSummary] = []
     total_actual = 0.0
     total_target = 0.0
@@ -129,6 +223,11 @@ def year_overview(
 
     for m in range(1, 13):
         m_start = date(year, m, 1)
+        # Zukunftsmonate komplett überspringen – kein Soll, kein Ist,
+        # kein Saldo. Strikte Lesart von Lars' Refactor-Spec: nirgendwo
+        # Soll-/Saldo-Werte für die Zukunft.
+        if m_start > today:
+            break
         if m == 12:
             m_end_exclusive = date(year + 1, 1, 1)
         else:
@@ -145,13 +244,21 @@ def year_overview(
         ).all()
         actual = _net(entries)
 
-        # Soll-Stunden (nur Salary, sonst 0)
+        # Soll-Stunden (nur Salary, sonst 0). Beim laufenden Monat
+        # bleibt das Soll für den ganzen Monat stehen – das zeigt dem
+        # User, was er bis Monatsende erreichen muss. Das ist keine
+        # Saldo-Hochrechnung.
         if target.billing_mode == BillingMode.SALARY:
             tgt = target_hours_for_period(db, target, m_start, m_end_inclusive)
         else:
             tgt = 0.0
 
-        balance_at_end = saldo_for_user(db, target, m_end_inclusive)
+        # balance_at_end: nur für abgeschlossene Monate. Für den
+        # laufenden Monat None – wir sind nicht am Monatsende.
+        if m_end_inclusive < today:
+            bal = round(saldo_for_user(db, target, m_end_inclusive), 2)
+        else:
+            bal = None
 
         vac = _absence_days_in_range(db, target_id,
                                      (AbsenceType.VACATION,), m_start, m_end_inclusive)
@@ -167,7 +274,7 @@ def year_overview(
             month=m,
             actual_hours=round(actual, 2),
             target_hours=round(tgt, 2),
-            balance_at_end=round(balance_at_end, 2),
+            balance_at_end=bal,
             vacation_days=vac,
             sick_days=sick,
             other_absence_days=other,
@@ -177,7 +284,6 @@ def year_overview(
         sick_total += sick
 
     balance_at_year_start = saldo_for_user(db, target, date(year - 1, 12, 31))
-    balance_at_year_end = saldo_for_user(db, target, date(year, 12, 31))
     vac_remaining = remaining_vacation_days(db, target, year)
     vac_used = sum(m.vacation_days for m in months)
 
@@ -187,7 +293,6 @@ def year_overview(
         total_actual=round(total_actual, 2),
         total_target=round(total_target, 2),
         balance_at_year_start=round(balance_at_year_start, 2),
-        balance_at_year_end=round(balance_at_year_end, 2),
         vacation_used=vac_used,
         vacation_remaining=vac_remaining,
         sick_total=sick_total,
