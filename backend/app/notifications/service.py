@@ -86,6 +86,19 @@ _TEMPLATES: dict[NotificationKind, tuple[str, str, str]] = {
 }
 
 
+def render_template(template_base: str, ctx: dict) -> tuple[str, str]:
+    """Reines Rendern (text, html) für Mails an Empfänger ohne User-
+    Datensatz – z. B. Arbeitgeber-Einladungen. Kein Setting-Check,
+    keine Dedup, kein Versand."""
+    full_ctx = {
+        "subject": ctx.get("subject", ""),
+        **ctx,
+    }
+    text = _env.get_template(f"{template_base}.txt.j2").render(**full_ctx)
+    html = _env.get_template(f"{template_base}.html.j2").render(**full_ctx)
+    return text, html
+
+
 def _first_name(u: User) -> str:
     if u.full_name:
         return u.full_name.split()[0]

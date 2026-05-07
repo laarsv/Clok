@@ -294,6 +294,57 @@ class AbsenceOut(BaseModel):
         from_attributes = True
 
 
+# ---------- Employer-Invites ----------
+
+class EmployerInviteIn(BaseModel):
+    email: EmailStr
+    full_name: Optional[str] = Field(None, max_length=128)
+    company_name: Optional[str] = Field(None, max_length=255)
+
+
+class EmployerInviteOut(BaseModel):
+    """Listendarstellung. `status` ist aus den Timestamps abgeleitet."""
+    id: int
+    email: EmailStr
+    full_name: Optional[str] = None
+    company_name: Optional[str] = None
+    status: Literal["pending", "accepted", "expired", "revoked"]
+    expires_at: datetime
+    created_at: datetime
+    created_by_admin_id: Optional[int] = None
+    accepted_at: Optional[datetime] = None
+    accepted_by_user_id: Optional[int] = None
+    revoked_at: Optional[datetime] = None
+    revoked_by_admin_id: Optional[int] = None
+    last_resent_at: Optional[datetime] = None
+    resent_by_admin_id: Optional[int] = None
+
+
+class EmployerInviteCreatedOut(BaseModel):
+    """Antwort auf POST /api/admin/employer-invites. Klartext-Token wird
+    NUR hier zurückgegeben und nirgends sonst nochmal preisgegeben."""
+    invite: EmployerInviteOut
+    plaintext_token: str
+    onboarding_url: str
+
+
+class EmployerInviteResendOut(BaseModel):
+    """Antwort auf POST /api/admin/employer-invites/{id}/resend.
+
+    Resend rotiert IMMER den Token (alter Klartext-Link wird damit
+    ungültig) und verlängert die Frist; der neue Klartext-Link
+    erreicht den Empfänger ausschließlich per Mail. In der Response
+    wird kein Klartext zurückgegeben – das verhindert, dass ein zweiter
+    Admin per Resend an einen Onboarding-Link kommt, den nur der
+    erstellende Admin im Erstellungsmoment gesehen hat.
+
+    `expires_extended` zeigt an, ob die Ablauffrist neu gesetzt wurde
+    (true) oder nur die Mail rausgegangen ist – aktuell immer true,
+    bleibt aber als Feld für Tooling/Audit erhalten."""
+    invite: EmployerInviteOut
+    expires_extended: bool
+
+
 # ---------- Feedback ----------
 
 class FeedbackIn(BaseModel):

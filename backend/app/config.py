@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     resend_reply_to: str = ""
     app_base_url: str = "https://clok.home.f-lv.de"
 
+    # Onboarding
+    employer_invite_ttl_days: int = 14
+    public_signup_enabled: bool = False  # vorbereitet, nicht aktiv – siehe docs/onboarding-flow.md §11
+
     @property
     def database_url(self) -> str:
         return (

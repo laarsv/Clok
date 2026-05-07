@@ -1,0 +1,10 @@
+{% extends "_layout.html.j2" %}
+{% block body %}
+<p>Hi{% if recipient_first_name %} {{ recipient_first_name }}{% endif %},</p>
+<p>du wurdest eingeladen, dein Unternehmen bei <strong>Clok</strong> einzurichten.
+Mit Clok behältst du Arbeitszeiten, Urlaub und Krankheit deiner Mitarbeiter im Griff –
+ohne Excel-Tabellen, ohne Papierzettel.</p>
+<p>Klick den Link, leg dein Konto an und durchlauf die wenigen Onboarding-Schritte:</p>
+<p><a href="{{ link }}" style="display:inline-block;padding:10px 18px;background:#1c1c1c;color:#fff;text-decoration:none;border-radius:8px;">Onboarding starten →</a></p>
+<p style="color:#888;font-size:14px;">Der Link ist {{ valid_days }} Tage gültig. Wenn du nichts mit Clok zu tun hast, ignorier die Mail einfach – ohne deinen Klick passiert nichts.</p>
+{% endblock %}
