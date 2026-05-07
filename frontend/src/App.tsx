@@ -16,6 +16,8 @@ import EmployerEmployeeDetail from "./routes/employer/EmployeeDetail";
 import EmployerAbsenceInbox from "./routes/employer/AbsenceInbox";
 import AdminEmployers from "./routes/admin/Employers";
 import AdminEmployerDetail from "./routes/admin/EmployerDetail";
+import AdminFeedbackInbox from "./routes/admin/FeedbackInbox";
+import Feedback from "./routes/Feedback";
 
 function HomeRedirect() {
   const { user } = useCurrentUser();
@@ -74,6 +76,13 @@ export default function App() {
           } />
           <Route path="/admin/employers/:id" element={
             <RoleGuard allow={["admin"]}><AdminEmployerDetail /></RoleGuard>
+          } />
+          <Route path="/admin/feedback" element={
+            <RoleGuard allow={["admin"]}><AdminFeedbackInbox /></RoleGuard>
+          } />
+
+          <Route path="/feedback" element={
+            <RoleGuard allow={["employee", "employer"]}><Feedback /></RoleGuard>
           } />
 
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -4,7 +4,10 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
-from app.models import AbsenceStatus, AbsenceType, BillingMode, FederalState, Role
+from app.models import (
+    AbsenceStatus, AbsenceType, BillingMode, FederalState,
+    FeedbackKind, FeedbackStatus, Role,
+)
 
 
 # ---------- Auth ----------
@@ -289,6 +292,37 @@ class AbsenceOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ---------- Feedback ----------
+
+class FeedbackIn(BaseModel):
+    kind: FeedbackKind
+    title: str = Field(min_length=3, max_length=200)
+    description: str = Field(min_length=5, max_length=5000)
+
+
+class FeedbackUpdate(BaseModel):
+    """Admin-Update: Status setzen und/oder antworten."""
+    status: Optional[FeedbackStatus] = None
+    admin_response: Optional[str] = Field(None, max_length=5000)
+
+
+class FeedbackOut(BaseModel):
+    id: int
+    reporter_user_id: Optional[int] = None
+    reporter_username: Optional[str] = None
+    reporter_full_name: Optional[str] = None
+    reporter_role: Optional[Role] = None
+    kind: FeedbackKind
+    status: FeedbackStatus
+    title: str
+    description: str
+    admin_response: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    decided_at: Optional[datetime] = None
+    decided_by: Optional[int] = None
 
 
 # ---------- Stats ----------

@@ -10,15 +10,18 @@ const NAV: Record<Role, { to: string; label: string }[]> = {
     { to: "/me/log", label: "Liste" },
     { to: "/me/year", label: "Jahr" },
     { to: "/me/absences", label: "Abwesenheiten" },
+    { to: "/feedback", label: "Feedback" },
     { to: "/me/profile", label: "Profil" },
   ],
   employer: [
     { to: "/employer", label: "Team" },
     { to: "/employer/absences", label: "Anträge" },
+    { to: "/feedback", label: "Feedback" },
     { to: "/me/profile", label: "Profil" },
   ],
   admin: [
     { to: "/admin", label: "Arbeitgeber" },
+    { to: "/admin/feedback", label: "Feedback" },
     { to: "/me/profile", label: "Profil" },
   ],
 };
