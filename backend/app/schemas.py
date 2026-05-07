@@ -55,6 +55,17 @@ class UserOut(BaseModel):
     offboarded_at: Optional[datetime] = None
     onboarding_pending: bool = False
 
+    # Firma & HR-Kontakt (nur Arbeitgeber-Profile)
+    company_name: Optional[str] = None
+    company_address_line1: Optional[str] = None
+    company_address_line2: Optional[str] = None
+    company_postal_code: Optional[str] = None
+    company_city: Optional[str] = None
+    company_country: Optional[str] = None
+    hr_contact_name: Optional[str] = None
+    hr_contact_email: Optional[str] = None
+    hr_contact_phone: Optional[str] = None
+
     class Config:
         from_attributes = True
 
@@ -135,6 +146,16 @@ class UserUpdate(BaseModel):
     annual_vacation_days: Optional[float] = Field(None, ge=0, le=60)
     initial_overtime_hours: Optional[float] = None
     initial_remaining_vacation: Optional[float] = Field(None, ge=0)
+    # Firma & HR (nur sinnvoll für Arbeitgeber-User)
+    company_name: Optional[str] = None
+    company_address_line1: Optional[str] = None
+    company_address_line2: Optional[str] = None
+    company_postal_code: Optional[str] = None
+    company_city: Optional[str] = None
+    company_country: Optional[str] = None
+    hr_contact_name: Optional[str] = None
+    hr_contact_email: Optional[EmailStr] = None
+    hr_contact_phone: Optional[str] = None
 
 
 # ---------- Balance Adjustments ----------

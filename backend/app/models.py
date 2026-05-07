@@ -84,6 +84,19 @@ class User(Base):
     emergency_contact_name = Column(String(128), nullable=True)
     emergency_contact_phone = Column(String(64), nullable=True)
 
+    # Firma (nur Arbeitgeber). Adresse, Name, HR-Ansprechpartner.
+    # Bei Mitarbeitern bleiben diese Felder leer; Privatanschrift liegt
+    # in den address_*-Feldern oben.
+    company_name = Column(String(255), nullable=True)
+    company_address_line1 = Column(String(255), nullable=True)
+    company_address_line2 = Column(String(255), nullable=True)
+    company_postal_code = Column(String(10), nullable=True)
+    company_city = Column(String(128), nullable=True)
+    company_country = Column(String(2), nullable=True)
+    hr_contact_name = Column(String(128), nullable=True)
+    hr_contact_email = Column(String(255), nullable=True)
+    hr_contact_phone = Column(String(64), nullable=True)
+
     # Beschäftigung
     hire_date = Column(Date, nullable=True)
     federal_state = Column(
