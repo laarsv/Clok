@@ -216,11 +216,23 @@ export default function EmployeeDetail() {
           </div>
         </details>
 
-        <section className="card-section">
-          <div className="dashboard-toolbar">
+        <details className="card-section disclosure">
+          <summary className="disclosure-head">
+            <span className="disclosure-chevron" aria-hidden="true">▸</span>
             <h3 style={{ margin: 0 }}>Vertragsverlauf</h3>
             <span className="spacer" />
-            <button onClick={() => setEdit("new-terms")}>+ Neuer Vertrag</button>
+            <span className="muted small">
+              {currentTerms
+                ? `aktuell ab ${currentTerms.valid_from} · ${terms.length} Einträge`
+                : "noch keine Verträge"}
+            </span>
+          </summary>
+          <div className="disclosure-body">
+          <div className="dashboard-toolbar" style={{ marginTop: "0.6rem" }}>
+            <span className="spacer" />
+            <button onClick={(e) => { e.preventDefault(); setEdit("new-terms"); }}>
+              + Neuer Vertrag
+            </button>
           </div>
           <p className="muted small">
             Jeder Eintrag gilt ab seinem Stichtag bis zum Stichtag des nächsten.
@@ -263,12 +275,20 @@ export default function EmployeeDetail() {
               )}
             </tbody>
           </table>
-        </section>
+          </div>
+        </details>
 
-        <section className="card-section">
-          <h3>Saldo-Korrekturen</h3>
-          <BalanceAdjustments employeeId={employee.id} />
-        </section>
+        <details className="card-section disclosure">
+          <summary className="disclosure-head">
+            <span className="disclosure-chevron" aria-hidden="true">▸</span>
+            <h3 style={{ margin: 0 }}>Saldo-Korrekturen</h3>
+            <span className="spacer" />
+            <span className="muted small">manuelle Buchungen, z.B. Auszahlungen</span>
+          </summary>
+          <div className="disclosure-body">
+            <BalanceAdjustments employeeId={employee.id} />
+          </div>
+        </details>
 
         <section className="card-section">
           <div className="dashboard-toolbar" style={{ marginBottom: "0.8rem" }}>
@@ -333,10 +353,17 @@ export default function EmployeeDetail() {
           )}
         </section>
 
-        <section className="card-section">
-          <h3>Stundenzettel-Export</h3>
-          <MonthDownloads employeeId={employee.id} />
-        </section>
+        <details className="card-section disclosure">
+          <summary className="disclosure-head">
+            <span className="disclosure-chevron" aria-hidden="true">▸</span>
+            <h3 style={{ margin: 0 }}>Stundenzettel-Export</h3>
+            <span className="spacer" />
+            <span className="muted small">CSV / PDF pro Monat</span>
+          </summary>
+          <div className="disclosure-body">
+            <MonthDownloads employeeId={employee.id} />
+          </div>
+        </details>
 
         {edit && (
           <div className="modal-backdrop" onClick={() => setEdit(null)}>
