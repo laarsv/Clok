@@ -808,6 +808,33 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
   }
 }
 
+@media (max-width: 768px) {
+  /* Pfeil-Navigation kompakt: nur 36×44 Touch-Target, kein Wort.
+     Sub-Texte wie "Woche" / "Monat" stecken jetzt im aria-label. */
+  .nav-arrow {
+    min-width: 36px;
+    width: 36px;
+    padding: 0.6rem 0;
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+  /* Datum-Range nimmt allen verfügbaren Platz, bricht nicht um. */
+  .period-range {
+    flex: 1 1 auto;
+    text-align: center;
+    min-width: 0;
+    font-size: 0.9rem;
+  }
+  /* Summe in zweite Zeile schieben (eigene Breite), damit die
+     Navigation oben kompakt bleibt. */
+  .period-sum {
+    flex-basis: 100%;
+    text-align: right;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+}
+
 @media (max-width: 600px) {
   /* Wochenansicht: 7 Spalten passen nicht – Stack pro Tag */
   .week-grid {
@@ -816,6 +843,9 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
   .day {
     min-height: auto;
   }
+  /* Per-Tag "+"-Button im Wochen-View überflüssig: globaler Add-Button
+     im Zeiterfassungs-Header tut das gleiche und ist immer sichtbar. */
+  .day-foot button { display: none; }
 
   /* Monatsansicht: behalten als 7-Spalten-Grid, aber kompakter */
   .month-cell {

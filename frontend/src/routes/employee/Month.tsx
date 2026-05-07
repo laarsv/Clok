@@ -56,12 +56,16 @@ export default function Month() {
   return (
     <div className="month">
         <div className="month-toolbar">
-          <button onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1))}>← Monat</button>
-          <strong>{anchor.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}</strong>
-          <button onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>Monat →</button>
+          <button className="nav-arrow" aria-label="Vorheriger Monat"
+            onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1))}>←</button>
+          <strong className="period-range">
+            {anchor.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}
+          </strong>
+          <button className="nav-arrow" aria-label="Nächster Monat"
+            onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>→</button>
           <button onClick={() => setAnchor(new Date())}>Heute</button>
           <span className="spacer" />
-          <span>Summe: <strong>{fmtHours(total)}</strong></span>
+          <span className="period-sum">Summe: <strong>{fmtHours(total)}</strong></span>
         </div>
 
         <div className="month-grid">

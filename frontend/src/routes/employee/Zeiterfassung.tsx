@@ -26,15 +26,20 @@ export default function Zeiterfassung() {
   const urlView = params.view as View | undefined;
   const isMobile = useMediaQuery("(max-width: 768px)");
 
-  // Wenn die Route ohne View geöffnet wird (`/zeit`), auf den
-  // gemerkten View umleiten – damit Bookmarks und Refresh funktionieren.
+  // Wenn die Route ohne View geöffnet wird (`/zeit`), auf den passenden
+  // Default umleiten. Mobile bekommt unabhängig vom localStorage IMMER
+  // die Listenansicht – Wochen-/Monats-Grid ist auf 380–768 px-Phones
+  // unhandlich. Wer auf Mobile bewusst Woche/Monat will, wechselt per
+  // Toggle und landet ab dann unter /zeit/woche resp. /zeit/monat;
+  // dieser explizite Pfad wird respektiert.
   useEffect(() => {
     if (!urlView) {
-      navigate(`/zeit/${readStored()}`, { replace: true });
+      const target: View = isMobile ? "liste" : readStored();
+      navigate(`/zeit/${target}`, { replace: true });
     } else if (VIEWS.includes(urlView)) {
       localStorage.setItem(STORAGE_KEY, urlView);
     }
-  }, [urlView, navigate]);
+  }, [urlView, navigate, isMobile]);
 
   const view: View = (urlView && VIEWS.includes(urlView)) ? urlView : readStored();
 

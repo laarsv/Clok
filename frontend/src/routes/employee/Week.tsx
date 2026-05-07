@@ -56,14 +56,16 @@ export default function Week() {
   return (
     <div className="week">
         <div className="week-toolbar">
-          <button onClick={() => setAnchor(addDays(anchor, -7))}>← Woche</button>
-          <strong>
+          <button className="nav-arrow" aria-label="Vorherige Woche"
+            onClick={() => setAnchor(addDays(anchor, -7))}>←</button>
+          <strong className="period-range">
             {fmtDe(days[0])} – {fmtDe(days[6])}
           </strong>
-          <button onClick={() => setAnchor(addDays(anchor, 7))}>Woche →</button>
+          <button className="nav-arrow" aria-label="Nächste Woche"
+            onClick={() => setAnchor(addDays(anchor, 7))}>→</button>
           <button onClick={() => setAnchor(new Date())}>Heute</button>
           <span className="spacer" />
-          <span>Summe: <strong>{fmtHours(totalNet)}</strong></span>
+          <span className="period-sum">Summe: <strong>{fmtHours(totalNet)}</strong></span>
         </div>
 
         <div className="week-grid">
