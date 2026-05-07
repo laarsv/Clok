@@ -163,7 +163,6 @@ export default function EmployeeNew() {
             </p>
           )}
         </section>
-        </section>
 
         <section className="card-section">
           <h3>Optional: bestehende Daten importieren</h3>
