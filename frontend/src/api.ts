@@ -267,8 +267,19 @@ export const api = {
 // ---- Types ----
 export type Role = "admin" | "employer" | "employee";
 export type BillingMode = "hourly" | "salary";
-export type AbsenceType = "vacation" | "sick" | "unpaid";
+export type AbsenceType =
+  | "vacation" | "sick" | "unpaid"
+  | "special" | "parental" | "training";
 export type AbsenceStatus = "pending" | "approved" | "rejected";
+
+export const ABSENCE_TYPE_LABELS: Record<AbsenceType, string> = {
+  vacation: "Urlaub",
+  sick: "Krankheit",
+  unpaid: "Unbezahlt",
+  special: "Sonderurlaub",
+  parental: "Elternzeit",
+  training: "Fortbildung",
+};
 export type WeekDay = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 export type FederalState =
   | "BW" | "BY" | "BE" | "BB" | "HB" | "HH" | "HE" | "MV"
