@@ -7,6 +7,7 @@ import EmployeeMasterDataForm from "../../components/EmployeeMasterDataForm";
 import MonthDownloads from "../../components/MonthDownloads";
 import EntriesLog from "../../components/EntriesLog";
 import ImportPanel from "../../components/ImportPanel";
+import StammdatenView from "../../components/StammdatenView";
 import TermsForm from "../../components/TermsForm";
 import { useCurrentUser } from "../../auth/CurrentUser";
 import {
