@@ -966,6 +966,34 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
   .stepper-item:not(:last-child)::after { top: 14px; }
 }
 
+/* Disclosure-Block (Stammdaten / Import auf der Detail-Seite) */
+.disclosure { padding: 0.9rem 1.1rem; }
+.disclosure > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-weight: 500;
+}
+.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure-chevron {
+  display: inline-block;
+  transition: transform 0.15s ease;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+.disclosure[open] > summary .disclosure-chevron { transform: rotate(90deg); color: var(--accent); }
+.disclosure-body { margin-top: 0.6rem; }
+.disclosure-sub-h {
+  margin-top: 1.4rem;
+  margin-bottom: 0.6rem;
+  font-size: 1rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* Dashboard-Filter */
 .dashboard-filter { display: flex; flex-direction: column; gap: 0.7rem; }
 .filter-presets { display: flex; flex-wrap: wrap; gap: 0.5rem; }

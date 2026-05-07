@@ -163,14 +163,26 @@ export default function EmployeeDetail() {
           )}
         </div>
 
-        <section className="card-section">
-          <div className="dashboard-toolbar">
-            <h3 style={{ margin: 0 }}>Stammdaten</h3>
+        <details className="card-section disclosure">
+          <summary className="disclosure-head">
+            <span className="disclosure-chevron" aria-hidden="true">▸</span>
+            <h3 style={{ margin: 0 }}>Stammdaten &amp; Historie</h3>
             <span className="spacer" />
-            <button onClick={() => setEdit("master")}>Bearbeiten</button>
+            <span className="muted small">selten benötigt – ausklappen zum Ansehen</span>
+          </summary>
+          <div className="disclosure-body">
+            <div className="dashboard-toolbar" style={{ marginTop: "0.6rem" }}>
+              <span className="spacer" />
+              <button onClick={(e) => { e.preventDefault(); setEdit("master"); }}>
+                Bearbeiten
+              </button>
+            </div>
+            <StammdatenView user={employee} />
+
+            <h4 className="disclosure-sub-h">Änderungs-Historie</h4>
+            <AuditLogViewer employeeId={employee.id} />
           </div>
-          <StammdatenView user={employee} />
-        </section>
+        </details>
 
         <section className="card-section">
           <div className="dashboard-toolbar">
@@ -234,21 +246,6 @@ export default function EmployeeDetail() {
         <section className="card-section">
           <h3>Stundenzettel-Export</h3>
           <MonthDownloads employeeId={employee.id} />
-        </section>
-
-        <section className="card-section">
-          <h3>Änderungs-Historie</h3>
-          <AuditLogViewer employeeId={employee.id} />
-        </section>
-
-        <section className="card-section">
-          <h3>Daten importieren</h3>
-          <p className="muted small">
-            CSVs für Zeiteinträge und Abwesenheiten können jederzeit
-            nachträglich hochgeladen werden – z. B. Daten aus dem Vorjahr,
-            Korrekturen oder ein Wechsel von einem anderen System.
-          </p>
-          <ImportPanel employeeId={employee.id} />
         </section>
 
         <section className="card-section">
