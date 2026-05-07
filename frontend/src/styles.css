@@ -711,14 +711,18 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
 }
 .drawer {
   width: min(300px, 85vw);
-  height: 100vh;
+  /* Höhe kommt aus dem flex-Stretch des backdrops (inset:0). Bewusst
+     KEIN 100vh – auf iOS Safari rechnet 100vh die Adress-Leiste mit
+     ein, wodurch der untere Teil des Drawers (mitsamt Logout) unter
+     die sichtbare Browserkante rutscht. */
   background: var(--surface);
   border-left: 1px solid var(--border);
   display: flex; flex-direction: column;
   padding: 1.25rem 1rem;
   gap: 0.4rem;
   animation: drawer-slide 160ms ease-out;
-  overflow-y: auto;
+  /* Overflow auf den scrollbaren Bereich (drawer-links) verlagert,
+     damit der Logout-Button als flex-child ganz unten fix bleibt. */
 }
 .drawer-head {
   display: grid;
@@ -742,7 +746,14 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
   border-radius: var(--radius);
 }
 .drawer-close:hover { color: var(--text); background: var(--bg); }
-.drawer-links { display: flex; flex-direction: column; gap: 0.2rem; }
+.drawer-links {
+  display: flex; flex-direction: column; gap: 0.2rem;
+  /* Scrollt eigenständig, falls die Nav-Liste höher als der Drawer ist.
+     min-height:0 ist nötig, damit flex-overflow funktioniert. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
 .drawer-links a {
   color: var(--text);
   text-decoration: none;
@@ -757,7 +768,14 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
   font-weight: 600;
 }
 .drawer-logout {
-  margin-top: auto;
+  /* Ans untere Ende des Drawers; flex-shrink:0 schützt davor, dass der
+     Button bei knappem Platz gestaucht wird. width:100% macht ihn als
+     volle Aktions-Fläche erkennbar. */
+  flex-shrink: 0;
+  width: 100%;
+  margin-top: 0.8rem;
+  padding: 0.85rem 1rem;
+  font-weight: 600;
 }
 
 @keyframes drawer-fade { from { opacity: 0; } to { opacity: 1; } }
