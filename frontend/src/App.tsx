@@ -10,15 +10,10 @@ import OnboardingCompany from "./routes/onboarding/Company";
 import OnboardingDefaults from "./routes/onboarding/Defaults";
 import OnboardingFirstEmployee from "./routes/onboarding/FirstEmployee";
 import OnboardingDone from "./routes/onboarding/Done";
-import EmployeeWeek from "./routes/employee/Week";
-import EmployeeMonth from "./routes/employee/Month";
 import EmployeeAbsences from "./routes/employee/Absences";
-import EmployeeLog from "./routes/employee/Log";
-import EmployeeYear from "./routes/employee/Year";
 import EmployeeProfile from "./routes/employee/Profile";
 import Zeiterfassung from "./routes/employee/Zeiterfassung";
 import Dashboard from "./routes/Dashboard";
-import Shell from "./components/Shell";
 import EmployerDashboard from "./routes/employer/Dashboard";
 import EmployerEmployeeNew from "./routes/employer/EmployeeNew";
 import EmployerEmployeeDetail from "./routes/employer/EmployeeDetail";
@@ -80,23 +75,15 @@ export default function App() {
             <RoleGuard allow={["employee", "employer", "admin"]}><Dashboard /></RoleGuard>
           } />
 
-          {/* Alte /me/*-Routen bleiben funktional bis Commit 5 die
-              Redirects setzt. Inner-Komponenten haben kein Shell mehr,
-              deshalb hier explizit wrappen. */}
-          <Route path="/me" element={
-            <RoleGuard allow={["employee", "employer", "admin"]}><Shell><EmployeeWeek /></Shell></RoleGuard>
-          } />
-          <Route path="/me/month" element={
-            <RoleGuard allow={["employee", "employer", "admin"]}><Shell><EmployeeMonth /></Shell></RoleGuard>
-          } />
+          {/* Alte /me/*-Routen → Redirect auf neue Pfade. Bookmarks
+              und externe Links bleiben damit funktional. */}
+          <Route path="/me" element={<Navigate to="/zeit" replace />} />
+          <Route path="/me/month" element={<Navigate to="/zeit/monat" replace />} />
+          <Route path="/me/log" element={<Navigate to="/zeit/liste" replace />} />
+          <Route path="/me/year" element={<Navigate to="/dashboard" replace />} />
+
           <Route path="/me/absences" element={
             <RoleGuard allow={["employee", "employer", "admin"]}><EmployeeAbsences /></RoleGuard>
-          } />
-          <Route path="/me/log" element={
-            <RoleGuard allow={["employee", "employer", "admin"]}><Shell><EmployeeLog /></Shell></RoleGuard>
-          } />
-          <Route path="/me/year" element={
-            <RoleGuard allow={["employee", "employer", "admin"]}><EmployeeYear /></RoleGuard>
           } />
           <Route path="/me/profile" element={
             <RoleGuard allow={["employee", "employer", "admin"]}><EmployeeProfile /></RoleGuard>
