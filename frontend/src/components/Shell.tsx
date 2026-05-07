@@ -18,8 +18,7 @@ const NAV: Record<Role, { to: string; label: string }[]> = {
     { to: "/me/profile", label: "Profil" },
   ],
   admin: [
-    { to: "/admin", label: "Alle Mitarbeiter" },
-    { to: "/admin/employers", label: "Arbeitgeber" },
+    { to: "/admin", label: "Arbeitgeber" },
     { to: "/me/profile", label: "Profil" },
   ],
 };
