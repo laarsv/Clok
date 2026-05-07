@@ -17,7 +17,7 @@ export default function OnboardingDone() {
 
     (async () => {
       try {
-        await api.onboardingComplete();
+        await api.employerOnboardingComplete();
         await refresh();
         // kurze visuelle Pause, dann ins Dashboard
         setTimeout(() => navigate("/employer", { replace: true }), 1500);

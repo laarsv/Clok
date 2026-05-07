@@ -251,7 +251,7 @@ export const api = {
     request<OnboardingStatusOut>("/onboarding/defaults", {
       method: "POST", body: JSON.stringify(payload),
     }),
-  onboardingComplete: () =>
+  employerOnboardingComplete: () =>
     request<OnboardingStatusOut>("/onboarding/complete", { method: "POST" }),
 
   // Feedback

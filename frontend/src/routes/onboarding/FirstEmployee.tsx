@@ -17,7 +17,7 @@ export default function OnboardingFirstEmployee() {
     setBusy(true);
     setError(null);
     try {
-      await api.onboardingComplete();
+      await api.employerOnboardingComplete();
       await refresh();
       navigate("/employer/employees/new", { replace: true });
     } catch (e: any) {
