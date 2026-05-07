@@ -64,10 +64,10 @@ export default function App() {
 
           {/* Zeiterfassung – ein Tab, drei Views (Woche/Monat/Liste). */}
           <Route path="/zeit" element={
-            <RoleGuard allow={["employee", "employer", "admin"]}><Zeiterfassung /></RoleGuard>
+            <RoleGuard allow={["employee", "admin"]}><Zeiterfassung /></RoleGuard>
           } />
           <Route path="/zeit/:view" element={
-            <RoleGuard allow={["employee", "employer", "admin"]}><Zeiterfassung /></RoleGuard>
+            <RoleGuard allow={["employee", "admin"]}><Zeiterfassung /></RoleGuard>
           } />
 
           {/* Dashboard mit Zeitraum-Filter. */}
