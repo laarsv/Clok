@@ -324,6 +324,16 @@ export interface User {
   work_days?: WeekDay[] | null;
   offboarded_at?: string | null;
   onboarding_pending: boolean;
+  // Firma & HR (Arbeitgeber-Profile)
+  company_name?: string | null;
+  company_address_line1?: string | null;
+  company_address_line2?: string | null;
+  company_postal_code?: string | null;
+  company_city?: string | null;
+  company_country?: string | null;
+  hr_contact_name?: string | null;
+  hr_contact_email?: string | null;
+  hr_contact_phone?: string | null;
 }
 
 export interface EmployeeCreatePayload {

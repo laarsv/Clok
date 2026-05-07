@@ -168,17 +168,7 @@ export default function EmployeeDetail() {
             <span className="spacer" />
             <button onClick={() => setEdit("master")}>Bearbeiten</button>
           </div>
-          <div className="profile-grid">
-            <div className="profile-field"><div className="muted small">E-Mail</div><div>{employee.email}</div></div>
-            <div className="profile-field"><div className="muted small">Telefon</div><div>{employee.phone || "–"}</div></div>
-            <div className="profile-field"><div className="muted small">Geburtsdatum</div><div>{employee.date_of_birth || "–"}</div></div>
-            <div className="profile-field"><div className="muted small">Adresse</div><div>{[employee.address_line1, employee.postal_code && `${employee.postal_code} ${employee.city ?? ""}`].filter(Boolean).join(", ") || "–"}</div></div>
-            <div className="profile-field"><div className="muted small">Bundesland</div><div>{employee.federal_state ?? "–"}</div></div>
-            <div className="profile-field"><div className="muted small">Eintritt</div><div>{employee.hire_date ?? "–"}</div></div>
-            <div className="profile-field"><div className="muted small">SV-Nummer</div><div>{employee.social_security_number || "–"}</div></div>
-            <div className="profile-field"><div className="muted small">IBAN</div><div>{employee.iban || "–"}</div></div>
-            <div className="profile-field"><div className="muted small">Notfallkontakt</div><div>{[employee.emergency_contact_name, employee.emergency_contact_phone].filter(Boolean).join(" · ") || "–"}</div></div>
-          </div>
+          <StammdatenView user={employee} />
         </section>
 
         <section className="card-section">

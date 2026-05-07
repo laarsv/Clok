@@ -13,43 +13,69 @@ interface Props {
   onCancel: () => void;
 }
 
+/** Stammdaten-Bearbeitung mit rollenabhängigen Sektionen.
+ *
+ * - Mitarbeiter: Identität, Privatanschrift, Lohn & Notfall.
+ *   Vertragliche Daten (Stundensatz, Wochenstunden, Urlaub) laufen
+ *   über den Vertragsverlauf, damit Berechnungen historisch stabil
+ *   bleiben.
+ * - Arbeitgeber: Identität, Firmenanschrift, HR-Ansprechpartner.
+ * - Admin (Self): nur Identität.
+ */
 export default function EmployeeMasterDataForm({ user, onSaved, onCancel }: Props) {
   const { user: currentUser } = useCurrentUser();
   const isAdmin = currentUser?.role === "admin";
   const [employers, setEmployers] = useState<User[]>([]);
   const [supervisorId, setSupervisorId] = useState<number | null>(user.supervisor_id ?? null);
 
+  const role = user.role;
+  const isEmployee = role === "employee";
+  const isEmployer = role === "employer";
+
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin && isEmployee) {
       api.listEmployees(false).then((all) =>
         setEmployers(all.filter((u) => u.role === "employer")),
       );
     }
-  }, [isAdmin]);
+  }, [isAdmin, isEmployee]);
 
   const [data, setData] = useState({
+    // Identität
     full_name: user.full_name ?? "",
     email: user.email,
     phone: user.phone ?? "",
     date_of_birth: user.date_of_birth ?? "",
+    // Privatanschrift (Mitarbeiter)
     address_line1: user.address_line1 ?? "",
     address_line2: user.address_line2 ?? "",
     postal_code: user.postal_code ?? "",
     city: user.city ?? "",
     country: user.country ?? "DE",
+    federal_state: user.federal_state ?? "",
+    hire_date: user.hire_date ?? "",
+    // Lohn & Notfall (Mitarbeiter)
     social_security_number: user.social_security_number ?? "",
     iban: user.iban ?? "",
     emergency_contact_name: user.emergency_contact_name ?? "",
     emergency_contact_phone: user.emergency_contact_phone ?? "",
-    federal_state: user.federal_state ?? "",
-    hire_date: user.hire_date ?? "",
+    // Firma & HR (Arbeitgeber)
+    company_name: user.company_name ?? "",
+    company_address_line1: user.company_address_line1 ?? "",
+    company_address_line2: user.company_address_line2 ?? "",
+    company_postal_code: user.company_postal_code ?? "",
+    company_city: user.company_city ?? "",
+    company_country: user.company_country ?? "DE",
+    hr_contact_name: user.hr_contact_name ?? "",
+    hr_contact_email: user.hr_contact_email ?? "",
+    hr_contact_phone: user.hr_contact_phone ?? "",
   });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
     setError(null);
-    if (isAdmin && user.role === "employee" && !supervisorId) {
+    if (isAdmin && isEmployee && !supervisorId) {
       setError("Mitarbeiter brauchen einen Arbeitgeber.");
       return;
     }
@@ -76,43 +102,87 @@ export default function EmployeeMasterDataForm({ user, onSaved, onCancel }: Prop
   return (
     <div>
       <h3>Stammdaten bearbeiten</h3>
-      <p className="muted small">
-        Vertragliche Daten (Gehalt, Stunden, Urlaub) ändert man drüben im
-        Vertragsverlauf, damit historische Berechnungen stabil bleiben.
-      </p>
+      {isEmployee && (
+        <p className="muted small">
+          Vertragliche Daten (Gehalt, Stunden, Urlaub) liegen im
+          Vertragsverlauf, damit historische Berechnungen stabil bleiben.
+        </p>
+      )}
+
+      <h4 className="form-section-h">Identität &amp; Kontakt</h4>
       <div className="manual-grid">
         <label>Voller Name<input value={data.full_name} onChange={(e) => set("full_name", e.target.value)} /></label>
         <label>E-Mail<input type="email" value={data.email} onChange={(e) => set("email", e.target.value)} /></label>
         <label>Telefon<input value={data.phone} onChange={(e) => set("phone", e.target.value)} /></label>
         <label>Geburtsdatum<input type="date" value={data.date_of_birth} onChange={(e) => set("date_of_birth", e.target.value)} /></label>
-        <label>SV-Nummer<input value={data.social_security_number} onChange={(e) => set("social_security_number", e.target.value)} /></label>
-        <label>IBAN<input value={data.iban} onChange={(e) => set("iban", e.target.value)} /></label>
-        <label className="full">Adresse<input value={data.address_line1} onChange={(e) => set("address_line1", e.target.value)} /></label>
-        <label className="full">Adresszusatz<input value={data.address_line2} onChange={(e) => set("address_line2", e.target.value)} /></label>
-        <label>PLZ<input value={data.postal_code} onChange={(e) => set("postal_code", e.target.value)} /></label>
-        <label>Ort<input value={data.city} onChange={(e) => set("city", e.target.value)} /></label>
-        <label>Land<input value={data.country} onChange={(e) => set("country", e.target.value)} /></label>
-        <label>Bundesland
-          <select value={data.federal_state} onChange={(e) => set("federal_state", e.target.value)}>
-            <option value="">– bitte wählen –</option>
-            {FEDERAL_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </label>
-        <label>Eintrittsdatum<input type="date" value={data.hire_date} onChange={(e) => set("hire_date", e.target.value)} /></label>
-        <label>Notfallkontakt Name<input value={data.emergency_contact_name} onChange={(e) => set("emergency_contact_name", e.target.value)} /></label>
-        <label>Notfallkontakt Telefon<input value={data.emergency_contact_phone} onChange={(e) => set("emergency_contact_phone", e.target.value)} /></label>
-        {isAdmin && user.role === "employee" && (
-          <label className="full">Arbeitgeber
-            <select value={supervisorId ?? ""}
-              onChange={(e) => setSupervisorId(e.target.value ? parseInt(e.target.value, 10) : null)}>
-              <option value="">– bitte wählen –</option>
-              {employers.map((em) => (
-                <option key={em.id} value={em.id}>{em.full_name || em.username}</option>
-              ))}
-            </select>
-          </label>
-        )}
       </div>
+
+      {isEmployee && (
+        <>
+          <h4 className="form-section-h">Anschrift</h4>
+          <div className="manual-grid">
+            <label className="full">Straße<input value={data.address_line1} onChange={(e) => set("address_line1", e.target.value)} /></label>
+            <label className="full">Adresszusatz<input value={data.address_line2} onChange={(e) => set("address_line2", e.target.value)} /></label>
+            <label>PLZ<input value={data.postal_code} onChange={(e) => set("postal_code", e.target.value)} /></label>
+            <label>Ort<input value={data.city} onChange={(e) => set("city", e.target.value)} /></label>
+            <label>Land<input value={data.country} onChange={(e) => set("country", e.target.value)} /></label>
+            <label>Bundesland
+              <select value={data.federal_state} onChange={(e) => set("federal_state", e.target.value)}>
+                <option value="">– bitte wählen –</option>
+                {FEDERAL_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </label>
+            <label>Eintrittsdatum<input type="date" value={data.hire_date} onChange={(e) => set("hire_date", e.target.value)} /></label>
+          </div>
+
+          <h4 className="form-section-h">Lohn &amp; Notfall</h4>
+          <div className="manual-grid">
+            <label>SV-Nummer<input value={data.social_security_number} onChange={(e) => set("social_security_number", e.target.value)} /></label>
+            <label>IBAN<input value={data.iban} onChange={(e) => set("iban", e.target.value)} /></label>
+            <label>Notfallkontakt Name<input value={data.emergency_contact_name} onChange={(e) => set("emergency_contact_name", e.target.value)} /></label>
+            <label>Notfallkontakt Telefon<input value={data.emergency_contact_phone} onChange={(e) => set("emergency_contact_phone", e.target.value)} /></label>
+          </div>
+        </>
+      )}
+
+      {isEmployer && (
+        <>
+          <h4 className="form-section-h">Firma</h4>
+          <div className="manual-grid">
+            <label className="full">Firmenname<input value={data.company_name} onChange={(e) => set("company_name", e.target.value)} /></label>
+            <label className="full">Straße<input value={data.company_address_line1} onChange={(e) => set("company_address_line1", e.target.value)} /></label>
+            <label className="full">Adresszusatz<input value={data.company_address_line2} onChange={(e) => set("company_address_line2", e.target.value)} /></label>
+            <label>PLZ<input value={data.company_postal_code} onChange={(e) => set("company_postal_code", e.target.value)} /></label>
+            <label>Ort<input value={data.company_city} onChange={(e) => set("company_city", e.target.value)} /></label>
+            <label>Land<input value={data.company_country} onChange={(e) => set("company_country", e.target.value)} /></label>
+          </div>
+
+          <h4 className="form-section-h">Personalabteilung / Ansprechpartner</h4>
+          <div className="manual-grid">
+            <label>Name<input value={data.hr_contact_name} onChange={(e) => set("hr_contact_name", e.target.value)} /></label>
+            <label>E-Mail<input type="email" value={data.hr_contact_email} onChange={(e) => set("hr_contact_email", e.target.value)} /></label>
+            <label>Telefon<input value={data.hr_contact_phone} onChange={(e) => set("hr_contact_phone", e.target.value)} /></label>
+          </div>
+        </>
+      )}
+
+      {isAdmin && isEmployee && (
+        <>
+          <h4 className="form-section-h">Zuordnung</h4>
+          <div className="manual-grid">
+            <label className="full">Arbeitgeber
+              <select value={supervisorId ?? ""}
+                onChange={(e) => setSupervisorId(e.target.value ? parseInt(e.target.value, 10) : null)}>
+                <option value="">– bitte wählen –</option>
+                {employers.map((em) => (
+                  <option key={em.id} value={em.id}>{em.full_name || em.username}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </>
+      )}
+
       {error && <div className="error">{error}</div>}
       <div className="row-actions">
         <button onClick={submit} disabled={busy}>{busy ? "Speichere…" : "Speichern"}</button>
