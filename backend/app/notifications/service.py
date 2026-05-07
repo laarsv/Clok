@@ -44,6 +44,7 @@ class NotificationKind(str, Enum):
     WELCOME_EMPLOYER = "welcome_employer"
     ADMIN_EMPLOYER_ONBOARDING_STARTED = "admin_employer_onboarding_started"
     ADMIN_EMPLOYER_ONBOARDING_COMPLETED = "admin_employer_onboarding_completed"
+    EMPLOYER_INVITE_EXPIRED_DIGEST = "employer_invite_expired_digest"
 
 
 # kind → (settings-Feld am Empfänger, template-Basename, Subject-Template)
@@ -98,6 +99,10 @@ _TEMPLATES: dict[NotificationKind, tuple[str, str, str]] = {
     NotificationKind.ADMIN_EMPLOYER_ONBOARDING_COMPLETED: (
         "admin_employer_onboarding_completed", "admin_employer_onboarding_completed",
         "Arbeitgeber {employer_full_name} ist live",
+    ),
+    NotificationKind.EMPLOYER_INVITE_EXPIRED_DIGEST: (
+        "admin_employer_invite_expired_digest", "admin_employer_invite_expired",
+        "{count} Arbeitgeber-Einladungen abgelaufen",
     ),
 }
 

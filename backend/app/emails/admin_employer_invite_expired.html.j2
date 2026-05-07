@@ -1,0 +1,31 @@
+{% extends "_layout.html.j2" %}
+{% block body %}
+<p>Hi {{ admin_first_name }},</p>
+<p>folgende Arbeitgeber-Einladung{{ "en" if count != 1 else "" }} {{ "sind" if count != 1 else "ist" }} abgelaufen, ohne dass sie eingelöst wurde{{ "n" if count != 1 else "" }}:</p>
+<table style="width:100%;border-collapse:collapse;margin-top:0.8rem;">
+  <thead>
+    <tr style="text-align:left;color:#888;font-size:13px;">
+      <th style="padding:6px 10px;border-bottom:1px solid #eee;">Empfänger</th>
+      <th style="padding:6px 10px;border-bottom:1px solid #eee;">Firma</th>
+      <th style="padding:6px 10px;border-bottom:1px solid #eee;">Abgelaufen</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for inv in invites %}
+    <tr>
+      <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;">
+        {{ inv.full_name }}<br>
+        <span style="color:#888;font-size:13px;">{{ inv.email }}</span>
+      </td>
+      <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;">{{ inv.company_name }}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;">{{ inv.expired_at }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p style="color:#888;font-size:14px;margin-top:1rem;">
+Du kannst {{ "diese Einladungen" if count != 1 else "diese Einladung" }} im Admin-Bereich
+unter "Einladungen" erneut versenden – dabei rotiert das Token automatisch und der Empfänger
+bekommt einen frischen Link.
+</p>
+{% endblock %}

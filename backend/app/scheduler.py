@@ -31,7 +31,7 @@ from apscheduler.triggers.cron import CronTrigger
 from app.absences import remaining_vacation_days, working_days_in_range
 from app.database import SessionLocal
 from app.holidays_de import is_holiday
-from app.models import Role, TimeEntry, User
+from app.models import EmployerInvite, Role, TimeEntry, User
 from app.notifications.service import NotificationKind, notify
 
 log = logging.getLogger(__name__)
@@ -195,6 +195,76 @@ def job_remaining_vacation():
         db.close()
 
 
+def job_employer_invite_expired_digest():
+    """Tägliche Sammel-Mail an alle Admins über Arbeitgeber-Einladungen,
+    die in den letzten 24 h abgelaufen sind, ohne eingelöst zu werden.
+
+    Idempotenz auf zwei Ebenen:
+    - `expired_digest_sent_at` pro Invite verhindert, dass derselbe
+      Eintrag morgen erneut digested wird (Spam-Schutz).
+    - `notification_log` pro Admin pro Tag verhindert, dass derselbe
+      Admin bei Container-Restart eine zweite Mail kriegt.
+    """
+    today = date.today()
+    db = SessionLocal()
+    try:
+        now = datetime.utcnow()
+        invites = db.query(EmployerInvite).filter(
+            EmployerInvite.accepted_at.is_(None),
+            EmployerInvite.revoked_at.is_(None),
+            EmployerInvite.expires_at < now,
+            EmployerInvite.expired_digest_sent_at.is_(None),
+        ).order_by(EmployerInvite.expires_at).all()
+
+        if not invites:
+            return
+
+        # Markieren VOR Versand – wenn Resend crasht, wird zumindest nicht
+        # täglich neu gespammt; der Admin sieht die Einträge sowieso im
+        # /admin/invites-Listing.
+        for inv in invites:
+            inv.expired_digest_sent_at = now
+        db.commit()
+
+        admins = db.query(User).filter(
+            User.role == Role.ADMIN,
+            User.is_active.is_(True),
+        ).all()
+        if not admins:
+            return
+
+        invite_summaries = [
+            {
+                "email": inv.email,
+                "full_name": inv.full_name or "—",
+                "company_name": inv.company_name or "—",
+                "expired_at": inv.expires_at.strftime("%d.%m.%Y"),
+            }
+            for inv in invites
+        ]
+
+        for admin in admins:
+            admin_first = (admin.full_name or admin.username).split()[0]
+            ctx = {
+                "admin_first_name": admin_first,
+                "count": len(invites),
+                "invites": invite_summaries,
+                # notify() formatiert das Subject-Template mit full_ctx;
+                # die requester/approver-Stubs verhindern KeyError.
+                "requester": {"first_name": "", "full_name": ""},
+                "approver": {"first_name": admin_first},
+            }
+            notify(
+                db,
+                kind=NotificationKind.EMPLOYER_INVITE_EXPIRED_DIGEST,
+                recipient=admin,
+                ctx=ctx,
+                period_key=today.isoformat(),
+            )
+    finally:
+        db.close()
+
+
 _scheduler: BackgroundScheduler | None = None
 
 
@@ -208,6 +278,9 @@ def start_scheduler() -> None:
     sched.add_job(job_reminder_no_entry, CronTrigger(hour=18, minute=0), id="reminder_no_entry")
     sched.add_job(job_remaining_vacation, CronTrigger(day=1, hour=8, minute=0),
                   id="remaining_vacation")
+    sched.add_job(job_employer_invite_expired_digest,
+                  CronTrigger(hour=8, minute=0),
+                  id="employer_invite_expired_digest")
     sched.start()
     _scheduler = sched
     job_ids = [j.id for j in sched.get_jobs()]

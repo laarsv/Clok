@@ -1,0 +1,12 @@
+Hi {{ admin_first_name }},
+
+folgende Arbeitgeber-Einladung{{ "en" if count != 1 else "" }} {{ "sind" if count != 1 else "ist" }} abgelaufen, ohne dass sie eingelöst wurde{{ "n" if count != 1 else "" }}:
+
+{% for inv in invites %}- {{ inv.full_name }} <{{ inv.email }}> · {{ inv.company_name }} · abgelaufen am {{ inv.expired_at }}
+{% endfor %}
+
+Du kannst {{ "diese Einladungen" if count != 1 else "diese Einladung" }} im Admin-Bereich
+unter "Einladungen" erneut versenden – dabei rotiert das Token automatisch
+und der Empfänger bekommt einen frischen Link.
+
+– Clok
