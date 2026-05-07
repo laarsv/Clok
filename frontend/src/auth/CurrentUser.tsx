@@ -50,6 +50,13 @@ export function useCurrentUser() {
   return useContext(CurrentUserCtx);
 }
 
+const ONBOARDING_NEXT_STEP: Record<string, string> = {
+  onboarding_step_2: "/onboarding/company",
+  onboarding_step_3: "/onboarding/defaults",
+  onboarding_step_4: "/onboarding/first-employee",
+  onboarding_step_5: "/onboarding/done",
+};
+
 export function RoleGuard({
   allow,
   children,
@@ -60,6 +67,12 @@ export function RoleGuard({
   const { user } = useCurrentUser();
   const location = useLocation();
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+  // Wizard-User dürfen keine normalen Routen sehen – auf den nächsten
+  // offenen Schritt umlenken.
+  if (user.onboarding_status !== "active") {
+    const next = ONBOARDING_NEXT_STEP[user.onboarding_status];
+    return <Navigate to={next ?? "/login"} replace />;
+  }
   if (!allow.includes(user.role)) return <Navigate to="/" replace />;
   return <>{children}</>;
 }

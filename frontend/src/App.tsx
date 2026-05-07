@@ -1,9 +1,15 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { CurrentUserProvider, RoleGuard, homeForRole, useCurrentUser } from "./auth/CurrentUser";
+import OnboardingGuard from "./auth/OnboardingGuard";
 import Login from "./routes/Login";
 import ForgotPassword from "./routes/ForgotPassword";
 import ResetPassword from "./routes/ResetPassword";
 import Onboarding from "./routes/Onboarding";
+import OnboardingInviteAccept from "./routes/onboarding/InviteAccept";
+import OnboardingCompany from "./routes/onboarding/Company";
+import OnboardingDefaults from "./routes/onboarding/Defaults";
+import OnboardingFirstEmployee from "./routes/onboarding/FirstEmployee";
+import OnboardingDone from "./routes/onboarding/Done";
 import EmployeeWeek from "./routes/employee/Week";
 import EmployeeMonth from "./routes/employee/Month";
 import EmployeeAbsences from "./routes/employee/Absences";
@@ -34,6 +40,27 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+          {/* Arbeitgeber-Onboarding-Wizard. Spezifische Pfade VOR dem
+              generischen /onboarding/:token, damit react-router korrekt
+              priorisiert. */}
+          <Route path="/onboarding/invite/:token" element={<OnboardingInviteAccept />} />
+          <Route path="/onboarding/company" element={
+            <OnboardingGuard expects="onboarding_step_2"><OnboardingCompany /></OnboardingGuard>
+          } />
+          <Route path="/onboarding/defaults" element={
+            <OnboardingGuard expects="onboarding_step_3"><OnboardingDefaults /></OnboardingGuard>
+          } />
+          <Route path="/onboarding/first-employee" element={
+            <OnboardingGuard expects="onboarding_step_4"><OnboardingFirstEmployee /></OnboardingGuard>
+          } />
+          <Route path="/onboarding/done" element={
+            <OnboardingGuard expects={["onboarding_step_4", "onboarding_step_5"]}>
+              <OnboardingDone />
+            </OnboardingGuard>
+          } />
+
+          {/* Mitarbeiter-Onboarding (Bestand). */}
           <Route path="/onboarding/:token" element={<Onboarding />} />
 
           <Route path="/me" element={

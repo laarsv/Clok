@@ -201,6 +201,42 @@ export const api = {
   resendInvite: (id: number) =>
     request<User>(`/employees/${id}/resend-invite`, { method: "POST" }),
 
+  // Employer-Onboarding-Wizard
+  inviteOnboardingPreview: async (token: string) => {
+    const res = await fetch(`${BASE}/onboarding/invite/${token}`);
+    if (!res.ok) {
+      const err = new Error(await res.text()) as Error & { status?: number };
+      err.status = res.status;
+      throw err;
+    }
+    return res.json() as Promise<InvitePreview>;
+  },
+  inviteOnboardingAccept: async (token: string, payload: InviteAcceptPayload) => {
+    const res = await fetch(`${BASE}/onboarding/invite/${token}/accept`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = new Error(await res.text()) as Error & { status?: number };
+      err.status = res.status;
+      throw err;
+    }
+    return res.json() as Promise<InviteAcceptResult>;
+  },
+  onboardingStatus: () =>
+    request<OnboardingStatusOut>("/onboarding/status"),
+  onboardingPostCompany: (payload: OnboardingCompanyPayload) =>
+    request<OnboardingStatusOut>("/onboarding/company", {
+      method: "POST", body: JSON.stringify(payload),
+    }),
+  onboardingPostDefaults: (payload: OnboardingDefaultsPayload) =>
+    request<OnboardingStatusOut>("/onboarding/defaults", {
+      method: "POST", body: JSON.stringify(payload),
+    }),
+  onboardingComplete: () =>
+    request<OnboardingStatusOut>("/onboarding/complete", { method: "POST" }),
+
   // Feedback
   listFeedback: (params: { kind?: FeedbackKind; status?: FeedbackStatus } = {}) => {
     const q = new URLSearchParams();
@@ -313,6 +349,19 @@ export function legalMinVacationDays(workDays: WeekDay[] | null | undefined): nu
   return Math.floor((24 * days) / 6);
 }
 
+export type OnboardingStatus =
+  | "onboarding_step_1" | "onboarding_step_2" | "onboarding_step_3"
+  | "onboarding_step_4" | "onboarding_step_5" | "active";
+
+export type CompanySizeBucket = "1" | "2_5" | "6_10" | "11_plus";
+
+export const COMPANY_SIZE_BUCKET_LABELS: Record<CompanySizeBucket, string> = {
+  "1": "1 Mitarbeiter",
+  "2_5": "2–5 Mitarbeiter",
+  "6_10": "6–10 Mitarbeiter",
+  "11_plus": "11+ Mitarbeiter",
+};
+
 export interface User {
   id: number;
   username: string;
@@ -322,6 +371,8 @@ export interface User {
   supervisor_id?: number | null;
   billing_mode: BillingMode;
   hourly_rate_eur: number;
+  onboarding_status: OnboardingStatus;
+  company_id?: number | null;
   date_of_birth?: string | null;
   address_line1?: string | null;
   address_line2?: string | null;
@@ -468,6 +519,48 @@ export interface BalanceAdjustmentInput {
   effective_date: string;
   hours: number;
   reason: string;
+}
+
+export interface InvitePreview {
+  email: string;
+  full_name?: string | null;
+  company_name?: string | null;
+}
+
+export interface InviteAcceptPayload {
+  username: string;
+  password: string;
+  full_name: string;
+  accept_terms: boolean;
+}
+
+export interface InviteAcceptResult {
+  user: User;
+  token: { access_token: string; token_type?: string };
+}
+
+export interface OnboardingStatusOut {
+  onboarding_status: OnboardingStatus;
+  next_step: string | null;
+}
+
+export interface OnboardingCompanyPayload {
+  name: string;
+  address_street?: string;
+  address_zip?: string;
+  address_city?: string;
+  address_country: string;
+  vat_id?: string;
+  bundesland: FederalState;
+  industry?: string;
+  employee_count_bucket: CompanySizeBucket;
+}
+
+export interface OnboardingDefaultsPayload {
+  default_weekly_hours: number;
+  default_vacation_days: number;
+  default_bundesland: FederalState;
+  default_billing_mode: BillingMode;
 }
 
 export interface OnboardingPreview {

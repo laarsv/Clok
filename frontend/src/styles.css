@@ -844,3 +844,109 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
 .mini-bar-legend .dot {
   width: 10px; height: 10px; border-radius: 50%; display: inline-block;
 }
+
+/* Onboarding-Wizard */
+.onboarding-shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+.onboarding-card {
+  width: 100%;
+  margin: 1.5rem auto 0;
+}
+.onboarding-card h2 { margin-top: 0; }
+.onboarding-card.center-text { text-align: center; }
+.onboarding-actions {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-top: 1.2rem;
+}
+.onboarding-actions button { flex: 1 1 200px; }
+.onboarding-actions button.primary { background: var(--accent); color: var(--bg); }
+.onboarding-checkmark {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 2.2rem;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.stepper {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+  justify-content: space-between;
+}
+.stepper-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  position: relative;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.stepper-item:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: calc(50% + 18px);
+  right: calc(-50% + 18px);
+  height: 2px;
+  background: var(--border);
+}
+.stepper-item.done:not(:last-child)::after { background: var(--accent); }
+.stepper-bullet {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.stepper-item.active .stepper-bullet {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.stepper-item.active .stepper-label { color: var(--text); font-weight: 600; }
+.stepper-item.done .stepper-bullet {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.stepper-item.done .stepper-label { color: var(--text); }
+
+.checkbox-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+.checkbox-row input[type="checkbox"] {
+  margin-top: 0.2rem;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 600px) {
+  .stepper-label { display: none; }
+  .stepper-item:not(:last-child)::after { top: 14px; }
+}
