@@ -1021,8 +1021,50 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
 .filter-custom label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem; color: var(--text-muted); }
 .range-display { margin: 0; }
 
-/* Zeiterfassung Segment-Control */
+/* Zeiterfassung Segment-Control + Add-Button */
 .zeit { padding: 0; }
+.zeit-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.zeit-header .segment-control { margin-bottom: 0; }
+.add-entry-btn {
+  margin-left: auto;
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.add-entry-btn:hover { background: var(--accent-hover); }
+
+/* Bottom-Sheet-Variante des Modals (≤ 768px) */
+.modal-backdrop.as-bottom-sheet {
+  align-items: flex-end;
+  padding: 0;
+}
+.modal.as-bottom-sheet-modal {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  border-radius: 16px 16px 0 0;
+  animation: clok-slide-up 0.22s ease-out;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+@keyframes clok-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@media (max-width: 480px) {
+  .add-entry-btn {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
 .segment-control {
   display: inline-flex;
   background: var(--surface);
