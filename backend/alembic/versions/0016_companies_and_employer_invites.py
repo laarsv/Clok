@@ -39,13 +39,18 @@ _COMPANY_SIZE_BUCKET_VALUES = ("1", "2_5", "6_10", "11_plus")
 def upgrade() -> None:
     bind = op.get_bind()
 
-    # 1. Neue Enums anlegen (federal_state und billing_mode existieren bereits)
-    sa.Enum(*_ONBOARDING_STATUS_VALUES, name="onboarding_status").create(
-        bind, checkfirst=True,
-    )
-    sa.Enum(*_COMPANY_SIZE_BUCKET_VALUES, name="company_size_bucket").create(
-        bind, checkfirst=True,
-    )
+    # 1. Neue Enums anlegen (federal_state und billing_mode existieren bereits).
+    # create_type=False ist hier defensiv – die temporären sa.Enum-Objekte
+    # werden ohnehin nirgends an Spalten gebunden (Spalten verwenden weiter
+    # unten frische postgresql.ENUM(..., create_type=False)). Das Flag stellt
+    # sicher, dass auch zukünftige Wiederverwendung dieses Patterns kein
+    # automatisches Doppel-CREATE auslöst.
+    sa.Enum(
+        *_ONBOARDING_STATUS_VALUES, name="onboarding_status", create_type=False,
+    ).create(bind, checkfirst=True)
+    sa.Enum(
+        *_COMPANY_SIZE_BUCKET_VALUES, name="company_size_bucket", create_type=False,
+    ).create(bind, checkfirst=True)
 
     # 2. companies-Tabelle
     op.create_table(

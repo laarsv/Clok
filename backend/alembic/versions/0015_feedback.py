@@ -17,10 +17,16 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    feedback_kind = sa.Enum("bug", "idea", "improvement", name="feedback_kind")
+    # create_type=False, weil wir den Typ explizit per .create() anlegen.
+    # Ohne dieses Flag würde SQLAlchemy bei jedem column.create_all-Schritt
+    # erneut versuchen, den Typ zu erzeugen → DuplicateObjectError.
+    feedback_kind = sa.Enum(
+        "bug", "idea", "improvement",
+        name="feedback_kind", create_type=False,
+    )
     feedback_status = sa.Enum(
         "open", "in_progress", "done", "rejected", "duplicate",
-        name="feedback_status",
+        name="feedback_status", create_type=False,
     )
     feedback_kind.create(op.get_bind(), checkfirst=True)
     feedback_status.create(op.get_bind(), checkfirst=True)
