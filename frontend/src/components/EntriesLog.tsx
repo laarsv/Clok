@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import EntryForm from "./EntryForm";
 import AbsenceForm from "./AbsenceForm";
 import {
-  api, type Absence, type TimeEntry,
+  api, ABSENCE_TYPE_LABELS, type Absence, type TimeEntry,
 } from "../api";
 import {
   endOfMonth, fmtHours, isInEditableWindow, isoDate, startOfMonth,
