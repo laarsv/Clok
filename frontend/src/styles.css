@@ -966,6 +966,33 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
   .stepper-item:not(:last-child)::after { top: 14px; }
 }
 
+/* Dashboard-Filter */
+.dashboard-filter { display: flex; flex-direction: column; gap: 0.7rem; }
+.filter-presets { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.preset-pill {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.preset-pill:hover { border-color: var(--accent); color: var(--text); }
+.preset-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+.filter-custom {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.filter-custom label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem; color: var(--text-muted); }
+.range-display { margin: 0; }
+
 /* Zeiterfassung Segment-Control */
 .zeit { padding: 0; }
 .segment-control {

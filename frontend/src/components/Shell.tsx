@@ -7,7 +7,7 @@ const NAV: Record<Role, { to: string; label: string }[]> = {
   employee: [
     { to: "/zeit", label: "Zeiterfassung" },
     { to: "/me/absences", label: "Abwesenheiten" },
-    { to: "/me/year", label: "Dashboard" },
+    { to: "/dashboard", label: "Dashboard" },
     { to: "/feedback", label: "Feedback" },
     { to: "/me/profile", label: "Profil" },
   ],

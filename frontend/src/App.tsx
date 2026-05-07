@@ -17,6 +17,7 @@ import EmployeeLog from "./routes/employee/Log";
 import EmployeeYear from "./routes/employee/Year";
 import EmployeeProfile from "./routes/employee/Profile";
 import Zeiterfassung from "./routes/employee/Zeiterfassung";
+import Dashboard from "./routes/Dashboard";
 import Shell from "./components/Shell";
 import EmployerDashboard from "./routes/employer/Dashboard";
 import EmployerEmployeeNew from "./routes/employer/EmployeeNew";
@@ -72,6 +73,11 @@ export default function App() {
           } />
           <Route path="/zeit/:view" element={
             <RoleGuard allow={["employee", "employer", "admin"]}><Zeiterfassung /></RoleGuard>
+          } />
+
+          {/* Dashboard mit Zeitraum-Filter. */}
+          <Route path="/dashboard" element={
+            <RoleGuard allow={["employee", "employer", "admin"]}><Dashboard /></RoleGuard>
           } />
 
           {/* Alte /me/*-Routen bleiben funktional bis Commit 5 die
