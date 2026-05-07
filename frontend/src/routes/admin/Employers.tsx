@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Shell from "../../components/Shell";
 import { api, type EmployeeCreatePayload, type User } from "../../api";
@@ -6,6 +6,7 @@ import { api, type EmployeeCreatePayload, type User } from "../../api";
 export default function Employers() {
   const navigate = useNavigate();
   const [list, setList] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [showOff, setShowOff] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<EmployeeCreatePayload>({
@@ -16,9 +17,22 @@ export default function Employers() {
 
   const load = async () => {
     const all = await api.listEmployees(true);
+    setAllUsers(all);
     setList(all.filter((u) => u.role === "employer"));
   };
   useEffect(() => { load(); }, []);
+
+  const employeeCounts = useMemo(() => {
+    const counts: Record<number, { active: number; offboarded: number }> = {};
+    for (const u of allUsers) {
+      if (u.role !== "employee" || u.supervisor_id == null) continue;
+      const slot = counts[u.supervisor_id] ?? { active: 0, offboarded: 0 };
+      if (u.offboarded_at) slot.offboarded += 1;
+      else slot.active += 1;
+      counts[u.supervisor_id] = slot;
+    }
+    return counts;
+  }, [allUsers]);
 
   const submit = async () => {
     setError(null);
@@ -53,30 +67,41 @@ export default function Employers() {
 
         <table>
           <thead>
-            <tr><th>Name</th><th>Username</th><th>E-Mail</th><th>Status</th><th></th></tr>
+            <tr>
+              <th>Name</th>
+              <th>Firma</th>
+              <th>Username</th>
+              <th>Mitarbeiter</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
           </thead>
           <tbody>
-            {filtered.map((u) => (
-              <tr key={u.id}>
-                <td>{u.full_name ?? "–"}</td>
-                <td>{u.username}</td>
-                <td>{u.email}</td>
-                <td>{u.offboarded_at ? <span className="status status-rejected">offboarded</span> : <span className="status status-approved">aktiv</span>}</td>
-                <td>
-                  <button onClick={() => navigate(`/employer/employees/${u.id}`)}>Öffnen</button>
-                  {u.offboarded_at && (
-                    <button className="danger" onClick={async () => {
-                      if (!confirm("Endgültig löschen? Geht nur, wenn Aufbewahrungsfrist abgelaufen ist.")) return;
-                      try {
-                        await api.hardDeleteEmployee(u.id);
-                        load();
-                      } catch (e: any) { alert(e.message); }
-                    }}>Hard-Delete</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && <tr><td colSpan={5} className="muted">Keine Arbeitgeber.</td></tr>}
+            {filtered.map((u) => {
+              const c = employeeCounts[u.id] ?? { active: 0, offboarded: 0 };
+              return (
+                <tr key={u.id} onClick={() => navigate(`/admin/employers/${u.id}`)}
+                    style={{ cursor: "pointer" }}>
+                  <td><strong>{u.full_name ?? "–"}</strong></td>
+                  <td>{u.company_name ?? "–"}</td>
+                  <td className="muted small">@{u.username}</td>
+                  <td>
+                    {c.active}{c.offboarded > 0 && <span className="muted small"> (+ {c.offboarded} off.)</span>}
+                  </td>
+                  <td>
+                    {u.offboarded_at
+                      ? <span className="status status-rejected">offboarded</span>
+                      : <span className="status status-approved">aktiv</span>}
+                  </td>
+                  <td>
+                    <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/employers/${u.id}`); }}>
+                      Öffnen
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+            {filtered.length === 0 && <tr><td colSpan={6} className="muted">Keine Arbeitgeber.</td></tr>}
           </tbody>
         </table>
 
