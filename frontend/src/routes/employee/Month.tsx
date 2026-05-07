@@ -3,6 +3,7 @@ import Shell from "../../components/Shell";
 import { api, type Absence, type TimeEntry } from "../../api";
 import { useCurrentUser } from "../../auth/CurrentUser";
 import { endOfMonth, fmtHours, isoDate, startOfMonth } from "../../lib/datetime";
+import { isMissingDay } from "../../lib/missingDays";
 
 export default function Month() {
   const { user } = useCurrentUser();
@@ -75,8 +76,12 @@ export default function Month() {
             const sum = sumByDay[k] ?? 0;
             const holiday = holidays[k];
             const absence = absenceForDay(k);
+            const missing = !!user && isMissingDay({
+              date: d, user, hasEntry: sum > 0,
+              absences, holidays,
+            });
             return (
-              <div key={i} className={`month-cell ${holiday ? "holiday" : ""} ${absence ? `abs-${absence.type}` : ""}`}>
+              <div key={i} className={`month-cell ${holiday ? "holiday" : ""} ${absence ? `abs-${absence.type}` : ""} ${missing ? "missing" : ""}`}>
                 <div className="month-cell-day">{d.getDate()}</div>
                 {holiday && <div className="badge small">{holiday}</div>}
                 {absence && (
@@ -84,6 +89,7 @@ export default function Month() {
                     {absence.type === "vacation" ? "Urlaub" : absence.type === "sick" ? "Krank" : "Unbezahlt"}
                   </div>
                 )}
+                {missing && <div className="badge small badge-missing">fehlt</div>}
                 {sum > 0 && <div className="month-sum">{fmtHours(sum)}</div>}
               </div>
             );

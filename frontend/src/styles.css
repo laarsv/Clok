@@ -293,6 +293,16 @@ td button:hover { color: var(--error); background: transparent; }
 .day.abs-vacation { border-color: var(--accent); }
 .day.abs-sick { border-color: var(--error); }
 .day.abs-unpaid { border-color: var(--text-muted); }
+.day.missing {
+  border-style: dashed;
+  border-color: var(--warning);
+  background: rgba(255, 204, 77, 0.06);
+}
+.badge-missing {
+  background: rgba(255, 204, 77, 0.18);
+  color: var(--warning);
+  font-weight: 600;
+}
 
 .entry-row {
   display: flex; gap: 0.5rem;
@@ -337,6 +347,11 @@ td button:hover { color: var(--error); background: transparent; }
 .month-cell.holiday { border-color: var(--warning); }
 .month-cell.abs-vacation { border-color: var(--accent); }
 .month-cell.abs-sick { border-color: var(--error); }
+.month-cell.missing {
+  border-style: dashed;
+  border-color: var(--warning);
+  background: rgba(255, 204, 77, 0.06);
+}
 .month-cell-day { font-weight: 600; font-size: 0.9rem; }
 .month-sum { font-size: 0.8rem; color: var(--accent); margin-top: auto; }
 .badge.small { font-size: 0.65rem; padding: 1px 4px; }

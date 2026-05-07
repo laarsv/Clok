@@ -4,6 +4,7 @@ import EntryForm from "../../components/EntryForm";
 import { api, type Absence, type TimeEntry } from "../../api";
 import { useCurrentUser } from "../../auth/CurrentUser";
 import { addDays, deWeekday, fmtDe, fmtHours, isoDate, startOfWeek } from "../../lib/datetime";
+import { isMissingDay } from "../../lib/missingDays";
 
 export default function Week() {
   const { user } = useCurrentUser();
@@ -74,8 +75,12 @@ export default function Week() {
             const sum = dayEntries.reduce((s, e) => s + (e.net_hours || 0), 0);
             const holiday = holidays[k];
             const absence = absenceFor(d);
+            const missing = !!user && isMissingDay({
+              date: d, user, hasEntry: dayEntries.length > 0,
+              absences, holidays,
+            });
             return (
-              <div key={k} className={`day ${holiday ? "holiday" : ""} ${absence ? `abs-${absence.type}` : ""}`}>
+              <div key={k} className={`day ${holiday ? "holiday" : ""} ${absence ? `abs-${absence.type}` : ""} ${missing ? "missing" : ""}`}>
                 <div className="day-head">
                   <strong>{deWeekday(d)} {d.getDate()}.</strong>
                   {holiday && <span className="badge">{holiday}</span>}
@@ -85,6 +90,7 @@ export default function Week() {
                       {absence.status === "pending" ? " (offen)" : ""}
                     </span>
                   )}
+                  {missing && <span className="badge badge-missing">fehlt</span>}
                 </div>
                 {dayEntries.map((e) => (
                   <div key={e.id} className="entry-row" onClick={() => setEditing(e)}>
