@@ -280,3 +280,28 @@ class PeriodSummary(BaseModel):
     target_hours: Optional[float] = None  # nur bei salary
     remaining_hours: Optional[float] = None
     billable_eur: Optional[float] = None  # nur bei hourly
+
+
+class MonthSummary(BaseModel):
+    """Ein Monatsslot in der Jahresübersicht. Wird in stats.year_overview
+    pro Kalendermonat befüllt."""
+    month: int                   # 1..12
+    actual_hours: float
+    target_hours: float          # 0.0 bei billing_mode=hourly
+    balance_at_end: float        # kumulierter Saldo zum Monatsende
+    vacation_days: int
+    sick_days: int
+    other_absence_days: int      # unpaid + special + parental + training
+
+
+class YearOverview(BaseModel):
+    """Antwort von GET /api/stats/year-overview."""
+    year: int
+    months: list[MonthSummary]
+    total_actual: float
+    total_target: float
+    balance_at_year_start: float
+    balance_at_year_end: float
+    vacation_used: int
+    vacation_remaining: float
+    sick_total: int
