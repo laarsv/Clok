@@ -22,10 +22,15 @@ produktiv auf Proxmox/Docker im Homelab.
   und Urlaub/Krankheit als farbigen Tagesblock.
 - **Arbeitgeber-Dashboard** mit aggregierter Übersicht (Soll/Ist, Saldo,
   Urlaubsstand, Krankheitstage, letzte Aktivität).
-- **Self-Service-Onboarding**: Arbeitgeber legt nur Vertragsdaten an
-  (E-Mail, Beschäftigung, Urlaub, Bundesland), Mitarbeiter bekommt
-  eine Einladungsmail mit Link, setzt Passwort und ergänzt persönliche
-  Stammdaten (Adresse, IBAN, …) selbst.
+- **Self-Service-Onboarding für Mitarbeiter**: Arbeitgeber legt nur
+  Vertragsdaten an (E-Mail, Beschäftigung, Urlaub, Bundesland),
+  Mitarbeiter bekommt eine Einladungsmail mit Link, setzt Passwort
+  und ergänzt persönliche Stammdaten (Adresse, IBAN, …) selbst.
+- **Invite-basiertes Onboarding für Arbeitgeber**: Admin lädt einen
+  Arbeitgeber per Mail ein, dieser durchläuft einen 5-Schritt-Wizard
+  (Account → Firmendaten → MA-Defaults → Erster MA optional → Live)
+  und legt direkt los. Token-Lebenszyklus mit Resend, Revoke und
+  Daily-Digest abgelaufener Invites. Details: `docs/onboarding-flow.md`.
 - **Arbeitstage pro Woche** (`work_days`) pro Mitarbeiter wählbar.
   Mindesturlaub nach BUrlG § 3 wird automatisch berechnet
   (24 / 6 × Arbeitstage) und als Floor erzwungen; mehr als das Minimum
@@ -167,6 +172,10 @@ Im Erfolgsfall: `Resend ok message_id=<uuid> to=… subject=…`.
 | Letzter Werktag des Monats getrackt       | Arbeitgeber/Admin  | Scheduler      |
 | Zwei Werktage ohne Eintrag                | Mitarbeiter        | Scheduler      |
 | Resturlaub-Erinnerung (Q4, monatlich)     | Mitarbeiter        | Scheduler      |
+| Arbeitgeber eingeladen                    | Arbeitgeber        | API            |
+| Arbeitgeber-Onboarding gestartet          | Admins             | API            |
+| Arbeitgeber-Onboarding abgeschlossen      | Admins + neuer AG  | API            |
+| Arbeitgeber-Invites abgelaufen (Digest)   | Admins             | Scheduler      |
 
 Invite-Mails sind **nicht** über User-Settings abschaltbar – ohne sie
 kommt der MA nicht ins Konto.
