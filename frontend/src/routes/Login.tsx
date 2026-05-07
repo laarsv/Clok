@@ -31,11 +31,25 @@ export default function Login() {
     <div className="center">
       <div className="card">
         <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
-        <label>Benutzername<input value={username} onChange={(e) => setUsername(e.target.value)} autoFocus /></label>
+        <label>Benutzername
+          <input value={username} autoFocus
+            onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter im Username-Feld: einloggen, falls Passwort schon
+              // gesetzt ist – sonst stillschweigend ignorieren (kein
+              // Standard-Form-Submit, damit der User nicht versehentlich
+              // mit leerem Passwort abschickt).
+              if (e.key !== "Enter") return;
+              if (username && password) submit();
+            }} />
+        </label>
         <label>Passwort
           <input type="password" value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()} />
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              if (username && password) submit();
+            }} />
         </label>
         {error && <div className="error">{error}</div>}
         <button onClick={submit} disabled={busy}>{busy ? "Anmelden…" : "Anmelden"}</button>
