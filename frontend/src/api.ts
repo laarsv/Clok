@@ -201,6 +201,24 @@ export const api = {
   resendInvite: (id: number) =>
     request<User>(`/employees/${id}/resend-invite`, { method: "POST" }),
 
+  // Feedback
+  listFeedback: (params: { kind?: FeedbackKind; status?: FeedbackStatus } = {}) => {
+    const q = new URLSearchParams();
+    if (params.kind) q.set("kind", params.kind);
+    if (params.status) q.set("status", params.status);
+    return request<FeedbackEntry[]>(`/feedback?${q}`);
+  },
+  createFeedback: (payload: FeedbackInput) =>
+    request<FeedbackEntry>("/feedback", {
+      method: "POST", body: JSON.stringify(payload),
+    }),
+  updateFeedback: (id: number, payload: FeedbackUpdate) =>
+    request<FeedbackEntry>(`/feedback/${id}`, {
+      method: "PATCH", body: JSON.stringify(payload),
+    }),
+  deleteFeedback: (id: number) =>
+    request<void>(`/feedback/${id}`, { method: "DELETE" }),
+
   // Audit-Log
   listAuditLog: (params: { user_id?: number; entity_type?: string; limit?: number; offset?: number } = {}) => {
     const q = new URLSearchParams();
@@ -375,6 +393,51 @@ export interface TermsPayload {
   work_days?: WeekDay[];
   annual_vacation_days?: number;
   note?: string;
+}
+
+export type FeedbackKind = "bug" | "idea" | "improvement";
+export type FeedbackStatus = "open" | "in_progress" | "done" | "rejected" | "duplicate";
+
+export const FEEDBACK_KIND_LABELS: Record<FeedbackKind, string> = {
+  bug: "Fehler",
+  idea: "Neue Idee",
+  improvement: "Verbesserung",
+};
+
+export const FEEDBACK_STATUS_LABELS: Record<FeedbackStatus, string> = {
+  open: "offen",
+  in_progress: "in Arbeit",
+  done: "umgesetzt",
+  rejected: "abgelehnt",
+  duplicate: "Duplikat",
+};
+
+export interface FeedbackEntry {
+  id: number;
+  reporter_user_id?: number | null;
+  reporter_username?: string | null;
+  reporter_full_name?: string | null;
+  reporter_role?: Role | null;
+  kind: FeedbackKind;
+  status: FeedbackStatus;
+  title: string;
+  description: string;
+  admin_response?: string | null;
+  created_at: string;
+  updated_at: string;
+  decided_at?: string | null;
+  decided_by?: number | null;
+}
+
+export interface FeedbackInput {
+  kind: FeedbackKind;
+  title: string;
+  description: string;
+}
+
+export interface FeedbackUpdate {
+  status?: FeedbackStatus;
+  admin_response?: string;
 }
 
 export interface AuditLogEntry {

@@ -195,6 +195,47 @@ class Absence(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
+class FeedbackKind(str, Enum):
+    BUG = "bug"                   # Fehler
+    IDEA = "idea"                 # Neue Idee
+    IMPROVEMENT = "improvement"   # Verbesserung
+
+
+class FeedbackStatus(str, Enum):
+    OPEN = "open"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    REJECTED = "rejected"
+    DUPLICATE = "duplicate"
+
+
+class Feedback(Base):
+    """User-Feedback (Bugs, Ideen, Verbesserungen). Sichtbar für Reporter
+    selbst und für Admins. Admins können Status setzen und antworten."""
+    __tablename__ = "feedback"
+
+    id = Column(Integer, primary_key=True)
+    reporter_user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True,
+    )
+    kind = Column(
+        SAEnum(FeedbackKind, name="feedback_kind", values_callable=_enum_values),
+        nullable=False,
+    )
+    status = Column(
+        SAEnum(FeedbackStatus, name="feedback_status", values_callable=_enum_values),
+        default=FeedbackStatus.OPEN,
+        nullable=False,
+    )
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    admin_response = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    decided_at = Column(DateTime, nullable=True)
+    decided_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+
 class AuditAction(str, Enum):
     CREATE = "create"
     UPDATE = "update"

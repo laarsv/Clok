@@ -433,6 +433,40 @@ td button:hover { color: var(--error); background: transparent; }
   letter-spacing: 0.05em;
 }
 .form-section-h:first-of-type { margin-top: 0.6rem; }
+
+/* Feedback */
+textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.6rem;
+  border-radius: var(--radius);
+  width: 100%;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+}
+textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+
+.feedback-status-open        { background: rgba(255, 204, 77, 0.18); color: var(--warning); }
+.feedback-status-in_progress { background: rgba(0, 169, 132, 0.18); color: var(--accent); }
+.feedback-status-done        { background: rgba(0, 169, 132, 0.28); color: var(--accent); }
+.feedback-status-rejected    { background: rgba(255, 107, 107, 0.18); color: var(--error); }
+.feedback-status-duplicate   { background: var(--border); color: var(--text-muted); }
+
+.feedback-desc {
+  background: var(--bg);
+  padding: 0.7rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 240px;
+  overflow: auto;
+  font-family: inherit;
+  font-size: 0.9rem;
+  margin: 0.5rem 0 1rem;
+}
 @media (max-width: 600px) {
   .stamm-list { grid-template-columns: 1fr; }
   .stamm-list dt {
