@@ -966,6 +966,35 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
   .stepper-item:not(:last-child)::after { top: 14px; }
 }
 
+/* Zeiterfassung Segment-Control */
+.zeit { padding: 0; }
+.segment-control {
+  display: inline-flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+  gap: 2px;
+  margin-bottom: 1rem;
+}
+.segment {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 0.5rem 1.1rem;
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.segment:hover { background: var(--bg); color: var(--text); }
+.segment.active {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+.segment.active:hover { background: var(--accent-hover); }
+
 /* Employer-Invites Admin */
 .invite-status-pending  { background: rgba(255, 204, 77, 0.18); color: var(--warning); }
 .invite-status-accepted { background: rgba(0, 169, 132, 0.28); color: var(--accent); }

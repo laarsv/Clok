@@ -5,16 +5,15 @@ import { useCurrentUser } from "../auth/CurrentUser";
 
 const NAV: Record<Role, { to: string; label: string }[]> = {
   employee: [
-    { to: "/me", label: "Woche" },
-    { to: "/me/month", label: "Monat" },
-    { to: "/me/log", label: "Liste" },
-    { to: "/me/year", label: "Jahr" },
+    { to: "/zeit", label: "Zeiterfassung" },
     { to: "/me/absences", label: "Abwesenheiten" },
+    { to: "/me/year", label: "Dashboard" },
     { to: "/feedback", label: "Feedback" },
     { to: "/me/profile", label: "Profil" },
   ],
   employer: [
     { to: "/employer", label: "Team" },
+    { to: "/zeit", label: "Zeiterfassung" },
     { to: "/employer/absences", label: "Anträge" },
     { to: "/feedback", label: "Feedback" },
     { to: "/me/profile", label: "Profil" },
@@ -58,11 +57,18 @@ export default function Shell({ children }: { children: ReactNode }) {
           <span className="brand-text">clok</span>
         </Link>
         <nav className="nav nav-inline">
-          {items.map((it) => (
-            <Link key={it.to} to={it.to} className={loc.pathname === it.to ? "active" : ""}>
-              {it.label}
-            </Link>
-          ))}
+          {items.map((it) => {
+            // Top-Level-Tabs aktivieren auch ihre Sub-Routen
+            // (z. B. /zeit aktiv für /zeit/woche).
+            const active =
+              loc.pathname === it.to ||
+              (it.to !== "/" && loc.pathname.startsWith(it.to + "/"));
+            return (
+              <Link key={it.to} to={it.to} className={active ? "active" : ""}>
+                {it.label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="header-actions header-actions-inline">
           <span>{user.full_name || user.username}</span>
@@ -85,12 +91,17 @@ export default function Shell({ children }: { children: ReactNode }) {
                 onClick={() => setMenuOpen(false)}>×</button>
             </div>
             <div className="drawer-links">
-              {items.map((it) => (
-                <Link key={it.to} to={it.to}
-                  className={loc.pathname === it.to ? "active" : ""}>
-                  {it.label}
-                </Link>
-              ))}
+              {items.map((it) => {
+                const active =
+                  loc.pathname === it.to ||
+                  (it.to !== "/" && loc.pathname.startsWith(it.to + "/"));
+                return (
+                  <Link key={it.to} to={it.to}
+                    className={active ? "active" : ""}>
+                    {it.label}
+                  </Link>
+                );
+              })}
             </div>
             <button className="drawer-logout danger" onClick={logout}>
               Logout

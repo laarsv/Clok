@@ -80,5 +80,5 @@ export function RoleGuard({
 export function homeForRole(role: Role): string {
   if (role === "admin") return "/admin";
   if (role === "employer") return "/employer";
-  return "/me";
+  return "/zeit";
 }

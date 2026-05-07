@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import Shell from "../../components/Shell";
 import { api, type Absence, type TimeEntry } from "../../api";
 import { useCurrentUser } from "../../auth/CurrentUser";
 import { endOfMonth, fmtHours, isoDate, startOfMonth } from "../../lib/datetime";
@@ -55,8 +54,7 @@ export default function Month() {
   const total = Object.values(sumByDay).reduce((s, v) => s + v, 0);
 
   return (
-    <Shell>
-      <div className="month">
+    <div className="month">
         <div className="month-toolbar">
           <button onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1))}>← Monat</button>
           <strong>{anchor.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}</strong>
@@ -95,7 +93,6 @@ export default function Month() {
             );
           })}
         </div>
-      </div>
-    </Shell>
+    </div>
   );
 }

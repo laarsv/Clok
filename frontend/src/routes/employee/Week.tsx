@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import Shell from "../../components/Shell";
 import EntryForm from "../../components/EntryForm";
 import { api, type Absence, type TimeEntry } from "../../api";
 import { useCurrentUser } from "../../auth/CurrentUser";
@@ -55,8 +54,7 @@ export default function Week() {
   const totalNet = entries.reduce((s, e) => s + (e.net_hours || 0), 0);
 
   return (
-    <Shell>
-      <div className="week">
+    <div className="week">
         <div className="week-toolbar">
           <button onClick={() => setAnchor(addDays(anchor, -7))}>← Woche</button>
           <strong>
@@ -129,7 +127,6 @@ export default function Week() {
             </div>
           </div>
         )}
-      </div>
-    </Shell>
+    </div>
   );
 }
