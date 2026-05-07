@@ -11,18 +11,28 @@ interface Props {
   user: User;
   onSaved: (u: User) => void;
   onCancel: () => void;
+  /**
+   * `selfEdit=true`: der eingeloggte User editiert sich SELBST.
+   * Beschäftigungs-Felder (Eintrittsdatum, Bundesland) und alles, was
+   * vertraglich ist, werden ausgeblendet – die ändert nur der
+   * Arbeitgeber. Submit geht an PATCH /auth/me, das Backend hat eine
+   * eigene Whitelist als Sicherheitsnetz.
+   */
+  selfEdit?: boolean;
 }
 
 /** Stammdaten-Bearbeitung mit rollenabhängigen Sektionen.
  *
- * - Mitarbeiter: Identität, Privatanschrift, Lohn & Notfall.
- *   Vertragliche Daten (Stundensatz, Wochenstunden, Urlaub) laufen
- *   über den Vertragsverlauf, damit Berechnungen historisch stabil
- *   bleiben.
+ * - Mitarbeiter (Arbeitgeber-Edit): Identität, Privatanschrift,
+ *   Lohn & Notfall, Beschäftigung.
+ * - Mitarbeiter (Self-Edit): wie oben, ohne Beschäftigung.
  * - Arbeitgeber: Identität, Firmenanschrift, HR-Ansprechpartner.
  * - Admin (Self): nur Identität.
+ *
+ * Vertragliche Daten (Stundensatz, Wochenstunden, Urlaub) laufen über
+ * den Vertragsverlauf, damit Berechnungen historisch stabil bleiben.
  */
-export default function EmployeeMasterDataForm({ user, onSaved, onCancel }: Props) {
+export default function EmployeeMasterDataForm({ user, onSaved, onCancel, selfEdit = false }: Props) {
   const { user: currentUser } = useCurrentUser();
   const isAdmin = currentUser?.role === "admin";
   const [employers, setEmployers] = useState<User[]>([]);
@@ -83,12 +93,18 @@ export default function EmployeeMasterDataForm({ user, onSaved, onCancel }: Prop
     try {
       const payload: any = {};
       for (const [k, v] of Object.entries(data)) {
+        // Im Self-Edit-Modus die Beschäftigungs-Felder gar nicht erst
+        // mitschicken – das Backend würde sie sonst (zu Recht) mit 403
+        // abweisen.
+        if (selfEdit && (k === "hire_date" || k === "federal_state")) continue;
         payload[k] = v === "" ? null : v;
       }
-      if (isAdmin && supervisorId !== (user.supervisor_id ?? null)) {
+      if (isAdmin && !selfEdit && supervisorId !== (user.supervisor_id ?? null)) {
         payload.supervisor_id = supervisorId;
       }
-      const updated = await api.updateEmployee(user.id, payload);
+      const updated = selfEdit
+        ? await api.updateMe(payload)
+        : await api.updateEmployee(user.id, payload);
       onSaved(updated);
     } catch (e: any) {
       setError(e.message);
@@ -102,7 +118,14 @@ export default function EmployeeMasterDataForm({ user, onSaved, onCancel }: Prop
   return (
     <div>
       <h3>Stammdaten bearbeiten</h3>
-      {isEmployee && (
+      {isEmployee && selfEdit && (
+        <p className="muted small">
+          Identität, Anschrift, Lohn-Stammdaten und Notfallkontakt darfst
+          du selbst pflegen. Eintrittsdatum, Bundesland und Vertragsdaten
+          (Stunden, Urlaub, Gehalt) ändert dein Arbeitgeber.
+        </p>
+      )}
+      {isEmployee && !selfEdit && (
         <p className="muted small">
           Vertragliche Daten (Gehalt, Stunden, Urlaub) liegen im
           Vertragsverlauf, damit historische Berechnungen stabil bleiben.
@@ -126,13 +149,6 @@ export default function EmployeeMasterDataForm({ user, onSaved, onCancel }: Prop
             <label>PLZ<input value={data.postal_code} onChange={(e) => set("postal_code", e.target.value)} /></label>
             <label>Ort<input value={data.city} onChange={(e) => set("city", e.target.value)} /></label>
             <label>Land<input value={data.country} onChange={(e) => set("country", e.target.value)} /></label>
-            <label>Bundesland
-              <select value={data.federal_state} onChange={(e) => set("federal_state", e.target.value)}>
-                <option value="">– bitte wählen –</option>
-                {FEDERAL_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </label>
-            <label>Eintrittsdatum<input type="date" value={data.hire_date} onChange={(e) => set("hire_date", e.target.value)} /></label>
           </div>
 
           <h4 className="form-section-h">Lohn &amp; Notfall</h4>
@@ -142,6 +158,26 @@ export default function EmployeeMasterDataForm({ user, onSaved, onCancel }: Prop
             <label>Notfallkontakt Name<input value={data.emergency_contact_name} onChange={(e) => set("emergency_contact_name", e.target.value)} /></label>
             <label>Notfallkontakt Telefon<input value={data.emergency_contact_phone} onChange={(e) => set("emergency_contact_phone", e.target.value)} /></label>
           </div>
+
+          {!selfEdit && (
+            <>
+              <h4 className="form-section-h">Beschäftigung</h4>
+              <p className="muted small" style={{ marginTop: 0 }}>
+                Diese Felder darf nur der Arbeitgeber pflegen. Sie wirken
+                auf Feiertags-/Soll-Berechnung – wer sie ändert, muss die
+                Auswirkung auf den Vertragsverlauf bedenken.
+              </p>
+              <div className="manual-grid">
+                <label>Eintrittsdatum<input type="date" value={data.hire_date} onChange={(e) => set("hire_date", e.target.value)} /></label>
+                <label>Bundesland
+                  <select value={data.federal_state} onChange={(e) => set("federal_state", e.target.value)}>
+                    <option value="">– bitte wählen –</option>
+                    {FEDERAL_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </label>
+              </div>
+            </>
+          )}
         </>
       )}
 

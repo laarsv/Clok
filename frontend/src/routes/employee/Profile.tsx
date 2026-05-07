@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Shell from "../../components/Shell";
+import EmployeeMasterDataForm from "../../components/EmployeeMasterDataForm";
 import MonthDownloads from "../../components/MonthDownloads";
 import StammdatenView from "../../components/StammdatenView";
 import { api, type NotificationSettings, type Role, type User } from "../../api";
@@ -129,9 +130,10 @@ const TOGGLES_FOR_ROLE: Record<Role, (keyof NotificationSettings)[]> = {
 };
 
 export default function Profile() {
-  const { user } = useCurrentUser();
+  const { user, refresh } = useCurrentUser();
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
   const [savedNote, setSavedNote] = useState<string | null>(null);
+  const [editingMaster, setEditingMaster] = useState(false);
 
   useEffect(() => {
     api.getNotificationSettings().then(setSettings);
@@ -148,69 +150,131 @@ export default function Profile() {
     setTimeout(() => setSavedNote(null), 1500);
   };
 
+  const onMasterSaved = async (_u: User) => {
+    setEditingMaster(false);
+    await refresh();
+  };
+
   return (
     <Shell>
       <div className="profile">
         <h2>Profil</h2>
-        <section className="card-section">
-          <h3>Stammdaten</h3>
-          {user.role === "employee" && (
-            <p className="muted small">
-              Änderungen an Stammdaten nimmt dein Arbeitgeber vor.
-            </p>
-          )}
-          <StammdatenView user={user} />
-        </section>
 
-        <section className="card-section">
-          <h3>Benachrichtigungen</h3>
-          {(() => {
-            const allowed = TOGGLES_FOR_ROLE[user.role];
-            if (allowed.length === 0) {
+        <details className="card-section disclosure" open>
+          <summary className="disclosure-head">
+            <span className="disclosure-chevron" aria-hidden="true">▸</span>
+            <h3 style={{ margin: 0 }}>Stammdaten</h3>
+            <span className="spacer" />
+            {user.role === "employee" && (
+              <span className="muted small">Identität, Anschrift, IBAN bearbeitbar</span>
+            )}
+          </summary>
+          <div className="disclosure-body">
+            <div className="dashboard-toolbar" style={{ marginTop: "0.6rem" }}>
+              <span className="spacer" />
+              <button onClick={(e) => { e.preventDefault(); setEditingMaster(true); }}>
+                Bearbeiten
+              </button>
+            </div>
+            <StammdatenView user={user} />
+            {user.role === "employee" && (
+              <p className="muted small" style={{ marginTop: "0.8rem" }}>
+                Eintrittsdatum, Bundesland und Vertragsdaten (Stunden, Urlaub,
+                Gehalt) ändert dein Arbeitgeber.
+              </p>
+            )}
+          </div>
+        </details>
+
+        <details className="card-section disclosure">
+          <summary className="disclosure-head">
+            <span className="disclosure-chevron" aria-hidden="true">▸</span>
+            <h3 style={{ margin: 0 }}>Benachrichtigungen</h3>
+            <span className="spacer" />
+            <span className="muted small">Mail-Erinnerungen ein-/ausschalten</span>
+          </summary>
+          <div className="disclosure-body">
+            {(() => {
+              const allowed = TOGGLES_FOR_ROLE[user.role];
+              if (allowed.length === 0) {
+                return (
+                  <p className="muted">
+                    Als Admin bekommst du keine Status-Mails. Einladungs-Mails an
+                    neue Mitarbeiter werden in jedem Fall verschickt.
+                  </p>
+                );
+              }
+              if (!settings) return <div className="muted">Lade…</div>;
               return (
-                <p className="muted">
-                  Als Admin bekommst du keine Status-Mails. Einladungs-Mails an
-                  neue Mitarbeiter werden in jedem Fall verschickt.
-                </p>
+                <ul className="settings-list">
+                  {allowed.map((key) => (
+                    <li key={key}>
+                      <label className="toggle">
+                        <input type="checkbox"
+                          checked={settings[key]}
+                          onChange={() => toggle(key)} />
+                        <span>{NOTIF_LABEL[key]}</span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
               );
-            }
-            if (!settings) return <div className="muted">Lade…</div>;
-            return (
-              <ul className="settings-list">
-                {allowed.map((key) => (
-                  <li key={key}>
-                    <label className="toggle">
-                      <input type="checkbox"
-                        checked={settings[key]}
-                        onChange={() => toggle(key)} />
-                      <span>{NOTIF_LABEL[key]}</span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            );
-          })()}
-          {savedNote && <div className="muted">{savedNote}</div>}
-        </section>
+            })()}
+            {savedNote && <div className="muted">{savedNote}</div>}
+          </div>
+        </details>
 
-        <section className="card-section">
-          <h3>Stundenzettel-Export</h3>
-          <MonthDownloads />
-        </section>
+        <details className="card-section disclosure">
+          <summary className="disclosure-head">
+            <span className="disclosure-chevron" aria-hidden="true">▸</span>
+            <h3 style={{ margin: 0 }}>Stundenzettel-Export</h3>
+            <span className="spacer" />
+            <span className="muted small">CSV / PDF pro Monat</span>
+          </summary>
+          <div className="disclosure-body">
+            <MonthDownloads />
+          </div>
+        </details>
 
-        <section className="card-section">
-          <h3>Passwort ändern</h3>
-          <ChangePasswordPanel />
-        </section>
+        <details className="card-section disclosure">
+          <summary className="disclosure-head">
+            <span className="disclosure-chevron" aria-hidden="true">▸</span>
+            <h3 style={{ margin: 0 }}>Passwort ändern</h3>
+            <span className="spacer" />
+            <span className="muted small">aktuelles Passwort erforderlich</span>
+          </summary>
+          <div className="disclosure-body">
+            <ChangePasswordPanel />
+          </div>
+        </details>
 
         {(user.role === "admin" || user.role === "employer") && (
-          <section className="card-section">
-            <h3>E-Mail-Test</h3>
-            <TestEmailPanel />
-          </section>
+          <details className="card-section disclosure">
+            <summary className="disclosure-head">
+              <span className="disclosure-chevron" aria-hidden="true">▸</span>
+              <h3 style={{ margin: 0 }}>E-Mail-Test</h3>
+              <span className="spacer" />
+              <span className="muted small">Resend-Pipeline prüfen</span>
+            </summary>
+            <div className="disclosure-body">
+              <TestEmailPanel />
+            </div>
+          </details>
+        )}
+
+        {editingMaster && (
+          <div className="modal-backdrop" onClick={() => setEditingMaster(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ width: 640 }}>
+              <EmployeeMasterDataForm
+                user={user}
+                selfEdit={true}
+                onSaved={onMasterSaved}
+                onCancel={() => setEditingMaster(false)}
+              />
+            </div>
+          </div>
         )}
       </div>
     </Shell>
   );
 }
-

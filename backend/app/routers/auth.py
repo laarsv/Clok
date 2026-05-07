@@ -59,13 +59,65 @@ def me(user: User = Depends(get_current_user)):
     return user
 
 
+# Whitelist je Rolle: was darf ein User an seinem eigenen Datensatz
+# ändern? Beschäftigungs- und vertragliche Felder (hire_date,
+# federal_state, weekly_hours, billing_mode, hourly_rate_eur, supervisor,
+# work_days, …) sind absichtlich NICHT enthalten – die laufen über den
+# Vertragsverlauf bzw. den Arbeitgeber.
+_EMPLOYEE_SELF_EDITABLE = frozenset({
+    # Identität & Kontakt
+    "full_name", "email", "phone", "date_of_birth",
+    # Privatanschrift
+    "address_line1", "address_line2", "postal_code", "city", "country",
+    # Lohn-relevante Stammdaten + Notfall
+    "social_security_number", "iban",
+    "emergency_contact_name", "emergency_contact_phone",
+})
+_EMPLOYER_SELF_EDITABLE = frozenset({
+    # Identität & Kontakt
+    "full_name", "email", "phone", "date_of_birth",
+    # Firma + HR-Ansprechpartner
+    "company_name", "company_address_line1", "company_address_line2",
+    "company_postal_code", "company_city", "company_country",
+    "hr_contact_name", "hr_contact_email", "hr_contact_phone",
+})
+_ADMIN_SELF_EDITABLE = frozenset({
+    "full_name", "email", "phone", "date_of_birth",
+})
+
+
+def _self_edit_whitelist(role: Role) -> frozenset[str]:
+    if role == Role.EMPLOYEE:
+        return _EMPLOYEE_SELF_EDITABLE
+    if role == Role.EMPLOYER:
+        return _EMPLOYER_SELF_EDITABLE
+    return _ADMIN_SELF_EDITABLE
+
+
 @router.patch("/me", response_model=UserOut)
 def update_me(
     payload: UserUpdate,
     user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    incoming = payload.model_dump(exclude_unset=True)
+    allowed = _self_edit_whitelist(user.role)
+    forbidden = sorted(f for f in incoming if f not in allowed)
+    if forbidden:
+        # Fail-loud: das Frontend zeigt diese Felder dem User gar nicht
+        # erst zum Bearbeiten an. Wenn ein direkter API-Call sie doch
+        # mitschickt, soll er klar abgewiesen werden – kein stilles
+        # Verschlucken, sonst entstehen schwer auffindbare Bugs.
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Diese Felder darfst du nicht selbst ändern, "
+                "sondern nur über deinen Arbeitgeber bzw. den "
+                f"Vertragsverlauf: {', '.join(forbidden)}."
+            ),
+        )
+
+    for field, value in incoming.items():
         setattr(user, field, value)
     db.commit()
     db.refresh(user)
