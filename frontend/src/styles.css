@@ -225,6 +225,10 @@ td button:hover { color: var(--error); background: transparent; }
   padding: 2rem;
   width: 420px;
   max-width: 90vw;
+  /* Hohe Inhalte (Stammdaten-Form, Vertrags-Form, Tag-Detail mit Eingabe)
+     waren auf Laptop-Viewports sonst unten abgeschnitten. */
+  max-height: 90vh;
+  overflow-y: auto;
 }
 .modal-actions {
   display: flex;
