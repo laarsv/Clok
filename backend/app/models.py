@@ -28,6 +28,27 @@ class Role(str, Enum):
     EMPLOYEE = "employee"
 
 
+class OnboardingStatus(str, Enum):
+    """Stand des Arbeitgeber-Onboarding-Wizards. Der Wert beschreibt
+    jeweils den **nächsten offenen** Schritt; `active` heißt: fertig.
+    Bestandsuser bekommen per Migration `active`."""
+    STEP_1 = "onboarding_step_1"
+    STEP_2 = "onboarding_step_2"
+    STEP_3 = "onboarding_step_3"
+    STEP_4 = "onboarding_step_4"
+    STEP_5 = "onboarding_step_5"
+    ACTIVE = "active"
+
+
+class CompanySizeBucket(str, Enum):
+    """Statistik-Bucket aus dem Onboarding (Schritt 2). Kein
+    operativer Wert, nur Reporting."""
+    ONE = "1"
+    TWO_TO_FIVE = "2_5"
+    SIX_TO_TEN = "6_10"
+    ELEVEN_PLUS = "11_plus"
+
+
 class FederalState(str, Enum):
     BW = "BW"  # Baden-Württemberg
     BY = "BY"  # Bayern
@@ -122,8 +143,22 @@ class User(Base):
     # Lifecycle
     offboarded_at = Column(DateTime, nullable=True)
 
+    # Arbeitgeber-Onboarding (siehe docs/onboarding-flow.md). Bestandsuser
+    # sind per Migration auf `active` gesetzt; ein neuer Arbeitgeber durch-
+    # läuft die Steps 1–5 bevor `active` erreicht wird.
+    onboarding_status = Column(
+        SAEnum(OnboardingStatus, name="onboarding_status", values_callable=_enum_values),
+        nullable=False,
+        default=OnboardingStatus.ACTIVE,
+    )
+    email_verified_at = Column(DateTime, nullable=True)
+    company_id = Column(
+        Integer, ForeignKey("companies.id", ondelete="SET NULL"), nullable=True,
+    )
+
     entries = relationship("TimeEntry", back_populates="user", cascade="all, delete-orphan")
     supervisor = relationship("User", remote_side=[id], backref="reports")
+    company = relationship("Company", foreign_keys=[company_id])
 
     @property
     def onboarding_pending(self) -> bool:
@@ -193,6 +228,95 @@ class Absence(Base):
     note = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class Company(Base):
+    """Arbeitgeber-Firma. Hängt an User.company_id. Hält Stammdaten der
+    Firma und die Default-Werte, die beim Anlegen neuer Mitarbeiter als
+    Vorbelegung dienen (im Mitarbeiter-Datensatz pro MA überschreibbar)."""
+    __tablename__ = "companies"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+
+    address_street = Column(String(255), nullable=True)
+    address_zip = Column(String(10), nullable=True)
+    address_city = Column(String(128), nullable=True)
+    address_country = Column(String(2), nullable=True, default="DE")
+    vat_id = Column(String(32), nullable=True)
+    bundesland = Column(
+        SAEnum(FederalState, name="federal_state", values_callable=_enum_values),
+        nullable=True,
+    )
+    industry = Column(String(128), nullable=True)
+    employee_count_bucket = Column(
+        SAEnum(CompanySizeBucket, name="company_size_bucket",
+               values_callable=_enum_values),
+        nullable=True,
+    )
+
+    default_weekly_hours = Column(Float, nullable=True)
+    default_vacation_days = Column(Float, nullable=True)
+    default_bundesland = Column(
+        SAEnum(FederalState, name="federal_state", values_callable=_enum_values),
+        nullable=True,
+    )
+    default_billing_mode = Column(
+        SAEnum(BillingMode, name="billing_mode", values_callable=_enum_values),
+        nullable=True,
+    )
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_by_user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True,
+    )
+
+
+class EmployerInvite(Base):
+    """Token-basierter Invite, mit dem ein Admin einen neuen Arbeitgeber
+    in den Wizard einlädt. Klartext-Token wird nur in der Create-Response
+    zurückgegeben; in der DB liegt nur sein SHA-256-Hash. Status ergibt
+    sich aus den Timestamps:
+
+    - revoked_at IS NOT NULL  → revoked
+    - accepted_at IS NOT NULL → accepted
+    - expires_at < now()      → expired
+    - sonst                   → pending
+    """
+    __tablename__ = "employer_invites"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String(255), nullable=False, index=True)
+    full_name = Column(String(128), nullable=True)
+    company_name = Column(String(255), nullable=True)
+
+    # SHA-256 hex (64 chars), UNIQUE — Lookup ist deterministischer
+    # Hash-Vergleich (kein Constant-Time-Loop nötig, weil ein 256-bit-
+    # Random nicht ratebar ist).
+    token_hash = Column(String(64), nullable=False, unique=True)
+    expires_at = Column(DateTime, nullable=False)
+
+    created_by_admin_id = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True,
+    )
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    accepted_at = Column(DateTime, nullable=True)
+    accepted_by_user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True,
+    )
+
+    revoked_at = Column(DateTime, nullable=True)
+    revoked_by_admin_id = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True,
+    )
+
+    last_resent_at = Column(DateTime, nullable=True)
+    resent_by_admin_id = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True,
+    )
+
+    expired_digest_sent_at = Column(DateTime, nullable=True)
 
 
 class FeedbackKind(str, Enum):
@@ -268,6 +392,11 @@ class NotificationSettings(Base):
     incoming_vacation_request = Column(Boolean, default=True, nullable=False)
     incoming_sick_note = Column(Boolean, default=True, nullable=False)
     month_complete = Column(Boolean, default=True, nullable=False)
+    # Admin-Mails rund ums Arbeitgeber-Onboarding (Toggles für jeden User
+    # vorhanden, sinnvoll genutzt nur bei Admin-Rolle).
+    admin_employer_onboarding_started = Column(Boolean, default=True, nullable=False)
+    admin_employer_onboarding_completed = Column(Boolean, default=True, nullable=False)
+    admin_employer_invite_expired_digest = Column(Boolean, default=True, nullable=False)
 
 
 class NotificationLog(Base):
