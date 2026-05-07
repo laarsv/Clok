@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Shell from "../../components/Shell";
 import AuditLogViewer from "../../components/AuditLogViewer";
@@ -17,8 +17,10 @@ import {
 import {
   addDays, deWeekday, fmtDe, fmtHours, isoDate, startOfWeek,
 } from "../../lib/datetime";
+import { useMediaQuery } from "../../lib/useMediaQuery";
 
 type EditMode = null | "master" | "new-terms" | { kind: "edit-terms"; id: number };
+type EntryView = "woche" | "liste";
 
 export default function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
@@ -34,6 +36,19 @@ export default function EmployeeDetail() {
   const [anchor, setAnchor] = useState<Date>(new Date());
   const [busy, setBusy] = useState(false);
   const [edit, setEdit] = useState<EditMode>(null);
+
+  // Default-View nach Viewport: ≤ 768px = Liste, sonst Woche. Der
+  // initialView-Ref hält fest, dass wir den Default nur EINMAL beim
+  // ersten Match übernehmen – sonst würde ein Resize während der Sitzung
+  // den manuell gewählten View überschreiben.
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const [entryView, setEntryView] = useState<EntryView>("woche");
+  const initialViewSet = useRef(false);
+  useEffect(() => {
+    if (initialViewSet.current) return;
+    initialViewSet.current = true;
+    setEntryView(isMobile ? "liste" : "woche");
+  }, [isMobile]);
 
   const days = useMemo(() => {
     const start = startOfWeek(anchor);
@@ -239,55 +254,71 @@ export default function EmployeeDetail() {
         </section>
 
         <section className="card-section">
-          <h3>Alle Einträge &amp; Abwesenheiten</h3>
-          <EntriesLog employeeId={employee.id} canEditAll={true} />
+          <div className="dashboard-toolbar" style={{ marginBottom: "0.8rem" }}>
+            <h3 style={{ margin: 0 }}>Einträge &amp; Abwesenheiten</h3>
+            <span className="spacer" />
+            <div className="segment-control" role="tablist" aria-label="Ansicht">
+              <button role="tab" aria-selected={entryView === "woche"}
+                className={`segment ${entryView === "woche" ? "active" : ""}`}
+                onClick={() => setEntryView("woche")}>Woche</button>
+              <button role="tab" aria-selected={entryView === "liste"}
+                className={`segment ${entryView === "liste" ? "active" : ""}`}
+                onClick={() => setEntryView("liste")}>Liste</button>
+            </div>
+          </div>
+
+          {entryView === "liste" && (
+            <EntriesLog employeeId={employee.id} canEditAll={true} />
+          )}
+
+          {entryView === "woche" && (
+            <>
+              <div className="week-toolbar">
+                <button onClick={() => setAnchor(addDays(anchor, -7))}>← Woche</button>
+                <strong>{fmtDe(days[0])} – {fmtDe(days[6])}</strong>
+                <button onClick={() => setAnchor(addDays(anchor, 7))}>Woche →</button>
+                <button onClick={() => setAnchor(new Date())}>Heute</button>
+                <span className="spacer" />
+                <span>Summe: <strong>{fmtHours(total)}</strong></span>
+              </div>
+
+              <div className="week-grid">
+                {days.map((d) => {
+                  const k = isoDate(d);
+                  const dayEntries = entriesByDay[k] ?? [];
+                  const sum = dayEntries.reduce((s, e) => s + (e.net_hours || 0), 0);
+                  const holiday = holidays[k];
+                  const absence = absenceFor(d);
+                  return (
+                    <div key={k} className={`day ${holiday ? "holiday" : ""} ${absence ? `abs-${absence.type}` : ""}`}>
+                      <div className="day-head">
+                        <strong>{deWeekday(d)} {d.getDate()}.</strong>
+                        {holiday && <span className="badge">{holiday}</span>}
+                        {absence && (
+                          <span className="badge">
+                            {absence.type === "vacation" ? "Urlaub" : absence.type === "sick" ? "Krank" : "Unbezahlt"}
+                          </span>
+                        )}
+                      </div>
+                      {dayEntries.map((e) => (
+                        <div key={e.id} className="entry-row">
+                          <span>{e.start_at.slice(11, 16)}–{e.end_at?.slice(11, 16) ?? "—"}</span>
+                          <span>{fmtHours(e.net_hours)}</span>
+                          {e.project && <span className="muted">{e.project}</span>}
+                        </div>
+                      ))}
+                      <div className="day-foot"><span>{fmtHours(sum)}</span></div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </section>
 
         <section className="card-section">
           <h3>Stundenzettel-Export</h3>
           <MonthDownloads employeeId={employee.id} />
-        </section>
-
-        <section className="card-section">
-          <div className="week-toolbar">
-            <button onClick={() => setAnchor(addDays(anchor, -7))}>← Woche</button>
-            <strong>{fmtDe(days[0])} – {fmtDe(days[6])}</strong>
-            <button onClick={() => setAnchor(addDays(anchor, 7))}>Woche →</button>
-            <button onClick={() => setAnchor(new Date())}>Heute</button>
-            <span className="spacer" />
-            <span>Summe: <strong>{fmtHours(total)}</strong></span>
-          </div>
-
-          <div className="week-grid">
-            {days.map((d) => {
-              const k = isoDate(d);
-              const dayEntries = entriesByDay[k] ?? [];
-              const sum = dayEntries.reduce((s, e) => s + (e.net_hours || 0), 0);
-              const holiday = holidays[k];
-              const absence = absenceFor(d);
-              return (
-                <div key={k} className={`day ${holiday ? "holiday" : ""} ${absence ? `abs-${absence.type}` : ""}`}>
-                  <div className="day-head">
-                    <strong>{deWeekday(d)} {d.getDate()}.</strong>
-                    {holiday && <span className="badge">{holiday}</span>}
-                    {absence && (
-                      <span className="badge">
-                        {absence.type === "vacation" ? "Urlaub" : absence.type === "sick" ? "Krank" : "Unbezahlt"}
-                      </span>
-                    )}
-                  </div>
-                  {dayEntries.map((e) => (
-                    <div key={e.id} className="entry-row">
-                      <span>{e.start_at.slice(11, 16)}–{e.end_at?.slice(11, 16) ?? "—"}</span>
-                      <span>{fmtHours(e.net_hours)}</span>
-                      {e.project && <span className="muted">{e.project}</span>}
-                    </div>
-                  ))}
-                  <div className="day-foot"><span>{fmtHours(sum)}</span></div>
-                </div>
-              );
-            })}
-          </div>
         </section>
 
         {edit && (
