@@ -127,14 +127,6 @@ export default function Month() {
           <span className="period-sum">Summe: <strong>{fmtHours(total)}</strong></span>
         </div>
 
-        <div className="month-legend" aria-label="Legende der Tagesfärbungen">
-          <span className="legend-item"><span className="legend-swatch sw-vacation" /> Urlaub</span>
-          <span className="legend-item"><span className="legend-swatch sw-sick" /> Krank</span>
-          <span className="legend-item"><span className="legend-swatch sw-holiday" /> Feiertag</span>
-          <span className="legend-item"><span className="legend-swatch sw-missing" /> fehlt</span>
-          <span className="legend-hint muted small">Tag antippen für Details / Eintrag erfassen</span>
-        </div>
-
         <div className="month-grid">
           {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((w) => (
             <div key={w} className="month-head">{w}</div>
@@ -175,6 +167,13 @@ export default function Month() {
               </button>
             );
           })}
+        </div>
+
+        <div className="month-legend" aria-label="Legende der Tagesfärbungen">
+          <span className="legend-item"><span className="legend-swatch sw-vacation" /> Urlaub</span>
+          <span className="legend-item"><span className="legend-swatch sw-sick" /> Krank</span>
+          <span className="legend-item"><span className="legend-swatch sw-holiday" /> Feiertag</span>
+          <span className="legend-item"><span className="legend-swatch sw-missing" /> fehlt</span>
         </div>
 
         {selectedDay && selectedDayInfo && (
