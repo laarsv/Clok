@@ -199,6 +199,23 @@ export default function EmployeeDetail() {
           </div>
         </details>
 
+        <details className="card-section disclosure">
+          <summary className="disclosure-head">
+            <span className="disclosure-chevron" aria-hidden="true">▸</span>
+            <h3 style={{ margin: 0 }}>Daten importieren</h3>
+            <span className="spacer" />
+            <span className="muted small">einmaliger Vorgang beim Onboarding</span>
+          </summary>
+          <div className="disclosure-body">
+            <p className="muted small">
+              CSVs für Zeiteinträge und Abwesenheiten können jederzeit
+              nachträglich hochgeladen werden – z. B. Daten aus dem Vorjahr,
+              Korrekturen oder ein Wechsel von einem anderen System.
+            </p>
+            <ImportPanel employeeId={employee.id} />
+          </div>
+        </details>
+
         <section className="card-section">
           <div className="dashboard-toolbar">
             <h3 style={{ margin: 0 }}>Vertragsverlauf</h3>
