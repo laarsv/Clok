@@ -1,0 +1,12 @@
+{% extends "_layout.html.j2" %}
+{% block body %}
+<p>Hi {{ admin_first_name }},</p>
+<p>ein neu eingeladener Arbeitgeber hat das Onboarding komplett durchlaufen und ist jetzt aktiv:</p>
+<ul style="line-height:1.7;padding-left:20px;">
+  <li><strong>Name:</strong> {{ employer_full_name }}</li>
+  <li><strong>Firma:</strong> {{ company_name }}</li>
+  <li><strong>Bundesland:</strong> {{ bundesland }}</li>
+  {% if employee_count_bucket %}<li><strong>Geplante Mitarbeiter:</strong> {{ employee_count_bucket }}</li>{% endif %}
+</ul>
+<p style="color:#888;font-size:14px;">Ab jetzt kann der Arbeitgeber Mitarbeiter anlegen und Zeiten erfassen lassen.</p>
+{% endblock %}

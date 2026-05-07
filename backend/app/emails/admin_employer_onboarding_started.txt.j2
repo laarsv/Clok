@@ -1,0 +1,12 @@
+Hi {{ admin_first_name }},
+
+ein eingeladener Arbeitgeber hat den Onboarding-Wizard begonnen:
+
+- Name: {{ employer_full_name }}
+- E-Mail: {{ employer_email }}
+{% if company_name %}- Firma: {{ company_name }}
+{% endif %}- Eingeladen von: {{ inviter_full_name }}
+
+Du bekommst eine zweite Mail, wenn der Wizard komplett durchlaufen ist.
+
+– Clok

@@ -1,0 +1,15 @@
+Hi {{ admin_first_name }},
+
+ein neu eingeladener Arbeitgeber hat das Onboarding komplett durchlaufen
+und ist jetzt aktiv:
+
+- Name: {{ employer_full_name }}
+- Firma: {{ company_name }}
+- Bundesland: {{ bundesland }}
+{% if employee_count_bucket %}- Geplante Mitarbeiter: {{ employee_count_bucket }}
+{% endif %}
+
+Ab jetzt kann der Arbeitgeber Mitarbeiter anlegen und Zeiten erfassen
+lassen.
+
+– Clok

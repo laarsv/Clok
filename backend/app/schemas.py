@@ -5,8 +5,8 @@ from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr, Field
 
 from app.models import (
-    AbsenceStatus, AbsenceType, BillingMode, FederalState,
-    FeedbackKind, FeedbackStatus, Role,
+    AbsenceStatus, AbsenceType, BillingMode, CompanySizeBucket, FederalState,
+    FeedbackKind, FeedbackStatus, OnboardingStatus, Role,
 )
 
 
@@ -33,6 +33,8 @@ class UserOut(BaseModel):
     supervisor_id: Optional[int] = None
     billing_mode: BillingMode
     hourly_rate_eur: float
+    onboarding_status: OnboardingStatus
+    company_id: Optional[int] = None
 
     # Stammdaten
     date_of_birth: Optional[date] = None
@@ -292,6 +294,56 @@ class AbsenceOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ---------- Employer-Onboarding (Wizard) ----------
+
+class InvitePreviewOut(BaseModel):
+    """Antwort auf GET /api/onboarding/invite/{token}. Vorausgefüllte
+    Felder, die der Wizard beim Step 1 vorbelegt. Token-Status (ok /
+    abgelaufen / zurückgezogen / bereits eingelöst) wird über die HTTP-
+    Statuscodes signalisiert (siehe docs/onboarding-flow.md §4.2)."""
+    email: EmailStr
+    full_name: Optional[str] = None
+    company_name: Optional[str] = None
+
+
+class InviteAcceptIn(BaseModel):
+    username: str = Field(min_length=3, max_length=32, pattern=r"^[a-z0-9._-]{3,32}$")
+    password: str = Field(min_length=12, max_length=72)
+    full_name: str = Field(min_length=1, max_length=128)
+    accept_terms: bool
+
+
+class InviteAcceptOut(BaseModel):
+    user: UserOut
+    token: Token
+
+
+class OnboardingStatusOut(BaseModel):
+    """GET /api/onboarding/status – eigener Status. `next_step` ist
+    der Frontend-Pfad, auf den geroutet werden soll."""
+    onboarding_status: OnboardingStatus
+    next_step: Optional[str] = None  # z. B. "/onboarding/company", oder None bei active
+
+
+class OnboardingCompanyIn(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    address_street: Optional[str] = Field(None, max_length=255)
+    address_zip: Optional[str] = Field(None, max_length=10)
+    address_city: Optional[str] = Field(None, max_length=128)
+    address_country: str = Field("DE", max_length=2)
+    vat_id: Optional[str] = Field(None, max_length=32)
+    bundesland: FederalState
+    industry: Optional[str] = Field(None, max_length=128)
+    employee_count_bucket: CompanySizeBucket
+
+
+class OnboardingDefaultsIn(BaseModel):
+    default_weekly_hours: float = Field(ge=0, le=80)
+    default_vacation_days: float = Field(ge=0, le=60)
+    default_bundesland: FederalState
+    default_billing_mode: BillingMode
 
 
 # ---------- Employer-Invites ----------

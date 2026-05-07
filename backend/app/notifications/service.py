@@ -41,6 +41,9 @@ class NotificationKind(str, Enum):
     REMINDER_REMAINING_VACATION = "reminder_remaining_vacation"
     INVITE_EMPLOYEE = "invite_employee"
     PASSWORD_RESET = "password_reset"
+    WELCOME_EMPLOYER = "welcome_employer"
+    ADMIN_EMPLOYER_ONBOARDING_STARTED = "admin_employer_onboarding_started"
+    ADMIN_EMPLOYER_ONBOARDING_COMPLETED = "admin_employer_onboarding_completed"
 
 
 # kind → (settings-Feld am Empfänger, template-Basename, Subject-Template)
@@ -82,6 +85,19 @@ _TEMPLATES: dict[NotificationKind, tuple[str, str, str]] = {
         # Sicherheitsrelevant: nicht abschaltbar.
         "_security_always_on", "password_reset",
         "Neues Passwort für Clok",
+    ),
+    NotificationKind.WELCOME_EMPLOYER: (
+        # Glückwunsch-Mail nach Wizard-Abschluss; nicht abschaltbar.
+        "_invite_always_on", "welcome_employer",
+        "Willkommen bei Clok – euer Onboarding ist durch",
+    ),
+    NotificationKind.ADMIN_EMPLOYER_ONBOARDING_STARTED: (
+        "admin_employer_onboarding_started", "admin_employer_onboarding_started",
+        "Neuer Arbeitgeber im Onboarding: {employer_full_name}",
+    ),
+    NotificationKind.ADMIN_EMPLOYER_ONBOARDING_COMPLETED: (
+        "admin_employer_onboarding_completed", "admin_employer_onboarding_completed",
+        "Arbeitgeber {employer_full_name} ist live",
     ),
 }
 

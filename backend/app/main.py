@@ -29,8 +29,8 @@ from app.config import get_settings
 from app.db_migrate import upgrade_to_head
 from app.routers import (
     absences, admin, admin_invites, audit, auth, balance_adjustments,
-    employees, employer, entries, exports, feedback, holidays, notifications,
-    onboarding, stats, terms,
+    employees, employer, employer_onboarding, entries, exports, feedback,
+    holidays, notifications, onboarding, stats, terms,
 )
 from app.scheduler import start_scheduler, stop_scheduler
 
@@ -96,6 +96,10 @@ app.include_router(holidays.router)
 app.include_router(notifications.router)
 app.include_router(employees.router)
 app.include_router(employer.router)
+# WICHTIG: employer_onboarding VOR onboarding registrieren. Sonst
+# matcht /api/onboarding/{token} aus dem alten Mitarbeiter-Onboarding-
+# Router fälschlich Pfade wie /api/onboarding/status.
+app.include_router(employer_onboarding.router)
 app.include_router(onboarding.router)
 app.include_router(terms.router)
 app.include_router(admin.router)

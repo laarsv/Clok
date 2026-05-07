@@ -1,0 +1,12 @@
+{% extends "_layout.html.j2" %}
+{% block body %}
+<p>Hi {{ admin_first_name }},</p>
+<p>ein eingeladener Arbeitgeber hat den Onboarding-Wizard begonnen:</p>
+<ul style="line-height:1.7;padding-left:20px;">
+  <li><strong>Name:</strong> {{ employer_full_name }}</li>
+  <li><strong>E-Mail:</strong> {{ employer_email }}</li>
+  {% if company_name %}<li><strong>Firma:</strong> {{ company_name }}</li>{% endif %}
+  <li><strong>Eingeladen von:</strong> {{ inviter_full_name }}</li>
+</ul>
+<p style="color:#888;font-size:14px;">Du bekommst eine zweite Mail, wenn der Wizard komplett durchlaufen ist.</p>
+{% endblock %}
