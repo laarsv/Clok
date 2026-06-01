@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Shell from "../../components/Shell";
+import AbsenceCreateForm from "../../components/AbsenceCreateForm";
 import AuditLogViewer from "../../components/AuditLogViewer";
 import BalanceAdjustments from "../../components/BalanceAdjustments";
 import Donut from "../../components/Donut";
@@ -59,6 +60,7 @@ export default function EmployeeDetail() {
   const [edit, setEdit] = useState<EditMode>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [drill, setDrill] = useState<DrillKey>(null);
+  const [absenceOpen, setAbsenceOpen] = useState(false);
 
   // Default-View nach Viewport: ≤ 768px = Liste, sonst Woche. Der
   // initialView-Ref hält fest, dass wir den Default nur EINMAL beim
@@ -109,18 +111,20 @@ export default function EmployeeDetail() {
 
   useEffect(() => { load(); }, [employeeId, anchor.getTime()]);
 
-  // ESC schließt die oberste Ebene zuerst: Bearbeiten-Dialog → Drill-Modal → Drawer.
+  // ESC schließt die oberste Ebene zuerst: Bearbeiten-Dialog → Abwesenheit
+  // → Drill-Modal → Drawer.
   useEffect(() => {
-    if (!edit && !drill && !settingsOpen) return;
+    if (!edit && !absenceOpen && !drill && !settingsOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       if (edit) setEdit(null);
+      else if (absenceOpen) setAbsenceOpen(false);
       else if (drill) setDrill(null);
       else if (settingsOpen) setSettingsOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [edit, drill, settingsOpen]);
+  }, [edit, absenceOpen, drill, settingsOpen]);
 
   if (!employee) return <Shell><div className="placeholder">Lade…</div></Shell>;
 
@@ -329,6 +333,7 @@ export default function EmployeeDetail() {
           <div className="dashboard-toolbar" style={{ marginBottom: "0.8rem" }}>
             <h3 style={{ margin: 0 }}>Einträge &amp; Abwesenheiten</h3>
             <span className="spacer" />
+            <button onClick={() => setAbsenceOpen(true)}>+ Abwesenheit</button>
             <div className="segment-control" role="tablist" aria-label="Ansicht">
               <button role="tab" aria-selected={entryView === "woche"}
                 className={`segment ${entryView === "woche" ? "active" : ""}`}
@@ -387,6 +392,20 @@ export default function EmployeeDetail() {
             </>
           )}
         </section>
+
+        {/* Abwesenheit für den MA eintragen (auch rückwirkend) */}
+        {absenceOpen && (
+          <div className="modal-backdrop" onClick={() => setAbsenceOpen(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ width: 560 }}>
+              <AbsenceCreateForm
+                employeeId={employee.id}
+                employeeName={employee.full_name || employee.username}
+                onSaved={() => { setAbsenceOpen(false); load(); }}
+                onCancel={() => setAbsenceOpen(false)}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Nachvollziehen-Modal */}
         {drill && (

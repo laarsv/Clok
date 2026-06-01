@@ -97,20 +97,19 @@ def create_absence(
         raise HTTPException(status_code=422, detail="Ende vor Start.")
 
     target_user_id = payload.user_id or user.id
-    if target_user_id != user.id:
-        # Nur Arbeitgeber/Admin dürfen für andere – und nur Krankheit.
+    created_for_other = target_user_id != user.id
+    if created_for_other:
+        # Arbeitgeber/Admin dürfen für die von ihnen betreuten Mitarbeiter
+        # JEDE Abwesenheitsart eintragen – auch rückwirkend (Urlaub,
+        # Krankheit, Sonderurlaub …). Sie sind die genehmigende Instanz,
+        # deshalb gilt ein solcher Eintrag sofort als genehmigt.
         target = db.query(User).filter(User.id == target_user_id).first()
         if target is None:
             raise HTTPException(status_code=404, detail="Mitarbeiter nicht gefunden.")
         if not supervises(user, target):
             raise HTTPException(status_code=403, detail="Kein Zugriff.")
-        if payload.type != AbsenceType.SICK:
-            raise HTTPException(
-                status_code=403,
-                detail="Für andere darf nur Krankheit eingetragen werden.",
-            )
 
-    auto_approve = payload.type == AbsenceType.SICK
+    auto_approve = payload.type == AbsenceType.SICK or created_for_other
     absence = Absence(
         user_id=target_user_id,
         type=payload.type,
@@ -140,18 +139,23 @@ def create_absence(
         db.query(User).filter(User.id == requester.supervisor_id).first()
         if requester and requester.supervisor_id else None
     )
-    if absence.type == AbsenceType.SICK and supervisor is not None:
-        ctx = _build_ctx(absence, requester, supervisor)
-        notify(db, kind=NotificationKind.INCOMING_SICK_NOTE,
-               recipient=supervisor, ctx=ctx)
+    # „Eingang"-Mails an den Vorgesetzten nur, wenn er den Eintrag nicht
+    # selbst angelegt hat – sonst würde er sich selbst benachrichtigen.
+    notify_supervisor = supervisor is not None and supervisor.id != user.id
+    if absence.type == AbsenceType.SICK:
+        if notify_supervisor:
+            notify(db, kind=NotificationKind.INCOMING_SICK_NOTE,
+                   recipient=supervisor, ctx=_build_ctx(absence, requester, supervisor))
         if user.id != requester.id:
             # Krankmeldung durch Dritte → Info-Mail an MA
             notify(db, kind=NotificationKind.SICK_NOTE_FOR_YOU,
                    recipient=requester, ctx=_build_ctx(absence, requester, user))
-    elif absence.type == AbsenceType.VACATION and supervisor is not None:
-        ctx = _build_ctx(absence, requester, supervisor)
-        notify(db, kind=NotificationKind.INCOMING_VACATION_REQUEST,
-               recipient=supervisor, ctx=ctx)
+    elif absence.type == AbsenceType.VACATION:
+        # Nur echte, offene Anträge gehen als „Eingang" an den Vorgesetzten.
+        # Trägt der Arbeitgeber Urlaub selbst ein, ist er bereits genehmigt.
+        if notify_supervisor and absence.status == AbsenceStatus.PENDING:
+            notify(db, kind=NotificationKind.INCOMING_VACATION_REQUEST,
+                   recipient=supervisor, ctx=_build_ctx(absence, requester, supervisor))
 
     return _to_out(absence)
 
