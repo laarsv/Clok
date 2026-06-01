@@ -14,6 +14,7 @@ from datetime import date, datetime
 
 from app.balance import saldo_for_user
 from app.models import BillingMode, FederalState, Role, TimeEntry, User
+from app.terms import create_initial_terms
 
 
 def _make_salary_user(db) -> User:
@@ -31,6 +32,12 @@ def _make_salary_user(db) -> User:
     db.add(user)
     db.commit()
     db.refresh(user)
+    # Wie in der Produktion: jeder MA bekommt beim Anlegen einen initialen
+    # Vertrag aus seinen Stammwerten. Das Soll wird ausschließlich daraus
+    # berechnet (target_hours_for_period liest EmploymentTerms, nicht die
+    # User-Spalten).
+    create_initial_terms(db, user, valid_from=user.hire_date)
+    db.commit()
     return user
 
 
