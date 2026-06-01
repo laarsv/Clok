@@ -881,6 +881,7 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
   to { transform: translateX(0); }
 }
 
+@media (max-width: 900px) {
   /* Inline-Tabellen scrollbar machen, statt überlaufen zu lassen.
      Trick: section um die Tabelle bekommt overflow-x:auto über
      :has(table). Fallback: man kann horizontal scrollen. */
@@ -1264,3 +1265,162 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
 }
 .action-cell { white-space: nowrap; }
 .action-cell button { margin-right: 0.4rem; }
+
+/* ==========================================================================
+   Mitarbeiter-Profil (Arbeitgeber-Detailseite)
+   ========================================================================== */
+
+/* Profil-Header */
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+.profile-head .emp-avatar { width: 48px; height: 48px; font-size: 1.05rem; }
+.profile-head-id { display: flex; flex-direction: column; min-width: 0; }
+.profile-head-id h2 { margin: 0; line-height: 1.15; }
+.profile-head .status { align-self: center; }
+
+/* Hinweis-Banner (z. B. ausstehende Einladung) */
+.profile-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.profile-banner span { flex: 1; min-width: 200px; }
+
+/* Klickbare KPI-Kachel – baut auf .summary-tile auf, fügt Affordance hinzu */
+.kpi-tile {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+.kpi-tile:hover { background: var(--surface); border-color: var(--accent); transform: translateY(-1px); }
+.kpi-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.kpi-tile .summary-value { color: var(--text); }
+.kpi-tile .kpi-bar { margin-top: 0.5rem; }
+.kpi-hint {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.kpi-tile:hover .kpi-hint { color: var(--accent); }
+
+/* Rechen-Liste im Nachvollziehen-Modal */
+.calc-list { display: flex; flex-direction: column; margin: 0.4rem 0 0.2rem; }
+.calc-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border);
+}
+.calc-row:first-child { border-top: none; }
+.calc-row .calc-label { color: var(--text-muted); font-size: 0.9rem; }
+.calc-row .calc-op { color: var(--text-muted); margin-right: 0.3rem; }
+.calc-row .calc-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.calc-total {
+  border-top: 2px solid var(--accent);
+  margin-top: 0.2rem;
+  font-weight: 700;
+}
+.calc-total .calc-label { color: var(--text); font-weight: 700; }
+.calc-formula {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.85rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 0.9rem;
+}
+.calc-list-items {
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.calc-list-items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.88rem;
+}
+.calc-list-items li .meta { color: var(--text-muted); font-size: 0.8rem; }
+.drill-section-h {
+  margin: 1.3rem 0 0.5rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+.drill-donut-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+/* Einstellungs-Fenster (Slide-over von rechts).
+   z-index 90 < .modal-backdrop (100), damit Bearbeiten-Dialoge ÜBER dem
+   Drawer erscheinen; < Mobile-Nav-Drawer (200). */
+.settings-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 90;
+  display: flex;
+  justify-content: flex-end;
+  animation: drawer-fade 120ms ease-out;
+}
+.settings-drawer {
+  width: min(560px, 92vw);
+  height: 100%;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 1.5rem 1.25rem 2.5rem;
+  animation: drawer-slide 180ms ease-out;
+  -webkit-overflow-scrolling: touch;
+}
+.settings-drawer-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+}
+.settings-drawer-head h3 { margin: 0; }
+.settings-drawer .card-section { background: var(--surface); }
+.settings-drawer .card-section + .card-section { margin-top: 1rem; }
+.danger-zone {
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+}
+.danger-zone h3 { margin: 0 0 0.3rem; }
+.danger-zone .row-actions { flex-wrap: wrap; }
+
+@media (max-width: 600px) {
+  .settings-drawer { width: 100%; padding: 1.1rem 0.9rem 2rem; }
+}
