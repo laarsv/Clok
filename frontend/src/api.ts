@@ -112,6 +112,21 @@ export const api = {
   deleteEntry: (id: number) =>
     request<void>(`/entries/${id}`, { method: "DELETE" }),
 
+  // Projects
+  listProjects: (includeArchived = false) =>
+    request<Project[]>(`/projects?include_archived=${includeArchived}`),
+  createProject: (payload: ProjectInput) =>
+    request<Project>("/projects", { method: "POST", body: JSON.stringify(payload) }),
+  updateProject: (id: number, payload: Partial<ProjectInput>) =>
+    request<Project>(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  deleteProject: (id: number) =>
+    request<void>(`/projects/${id}`, { method: "DELETE" }),
+  projectReport: (start: string, end: string, userId?: number) => {
+    const q = new URLSearchParams({ start, end });
+    if (userId) q.set("user_id", String(userId));
+    return request<ProjectReport>(`/stats/projects?${q}`);
+  },
+
   // Stats / Exports
   summary: () => request<PeriodSummary[]>("/stats/summary"),
   balance: (userId?: number, asOf?: string) => {
@@ -664,7 +679,8 @@ export interface TimeEntry {
   start_at: string;
   end_at: string | null;
   break_minutes: number;
-  project?: string | null;
+  project_id?: number | null;
+  project?: string | null; // aufgelöster Projektname (Anzeige)
   note?: string | null;
   net_hours: number;
   gross_hours: number;
@@ -674,8 +690,50 @@ export interface TimeEntryInput {
   start_at: string;
   end_at?: string | null;
   break_minutes: number;
-  project?: string | null;
+  project_id?: number | null;
   note?: string | null;
+}
+
+export interface Project {
+  id: number;
+  owner_user_id: number;
+  name: string;
+  client?: string | null;
+  color?: string | null;
+  hours_budget?: number | null;
+  archived: boolean;
+  created_at: string;
+}
+
+export interface ProjectInput {
+  name: string;
+  client?: string | null;
+  color?: string | null;
+  hours_budget?: number | null;
+  archived?: boolean;
+}
+
+export interface ProjectReportEmployee {
+  user_id: number;
+  name: string;
+  hours: number;
+}
+
+export interface ProjectReportRow {
+  project_id: number;
+  name: string;
+  client?: string | null;
+  color?: string | null;
+  hours_budget?: number | null;
+  total_hours: number;
+  by_employee: ProjectReportEmployee[];
+}
+
+export interface ProjectReport {
+  start: string;
+  end: string;
+  rows: ProjectReportRow[];
+  no_project_hours: number;
 }
 
 export interface Issue {

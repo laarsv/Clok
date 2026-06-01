@@ -18,6 +18,7 @@ import EmployerDashboard from "./routes/employer/Dashboard";
 import EmployerEmployeeNew from "./routes/employer/EmployeeNew";
 import EmployerEmployeeDetail from "./routes/employer/EmployeeDetail";
 import EmployerAbsenceInbox from "./routes/employer/AbsenceInbox";
+import EmployerProjects from "./routes/employer/Projects";
 import AdminEmployers from "./routes/admin/Employers";
 import AdminEmployerDetail from "./routes/admin/EmployerDetail";
 import AdminFeedbackInbox from "./routes/admin/FeedbackInbox";
@@ -100,6 +101,9 @@ export default function App() {
           } />
           <Route path="/employer/absences" element={
             <RoleGuard allow={["employer", "admin"]}><EmployerAbsenceInbox /></RoleGuard>
+          } />
+          <Route path="/employer/projects" element={
+            <RoleGuard allow={["employer", "admin"]}><EmployerProjects /></RoleGuard>
           } />
 
           <Route path="/admin" element={

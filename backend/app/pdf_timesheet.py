@@ -173,7 +173,9 @@ def build_monthly_pdf(
             net = max(0.0, gross - e.break_minutes / 60)
             datum_cell = d.strftime("%d.%m.%Y") if idx == 0 else ""
             day_cell = weekday_label if idx == 0 else ""
-            note = " · ".join(filter(None, [e.project, e.note]))
+            note = " · ".join(filter(None, [
+                e.project_ref.name if e.project_ref else None, e.note,
+            ]))
             table_data.append([
                 datum_cell, day_cell,
                 e.start_at.strftime("%H:%M"),

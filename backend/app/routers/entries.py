@@ -9,11 +9,33 @@ from sqlalchemy.orm import Session
 from app.arbzg import gross_hours, validate_entry
 from app.audit import log_change
 from app.database import get_db
-from app.models import AuditAction, Role, TimeEntry, User
+from app.models import AuditAction, Project, Role, TimeEntry, User
 from app.permissions import is_in_editable_window, require_active_user, supervises, visible_user_ids
 from app.schemas import (
     TimeEntryCreateResponse, TimeEntryIn, TimeEntryOut, ValidationIssueOut,
 )
+
+
+def _owner_id_for(user: User) -> Optional[int]:
+    """Besitzer-Kontext: Arbeitgeber → self, Mitarbeiter → Vorgesetzter."""
+    if user.role == Role.EMPLOYER:
+        return user.id
+    if user.role == Role.EMPLOYEE:
+        return user.supervisor_id
+    return None
+
+
+def _validate_project(db: Session, target: User, project_id: Optional[int]) -> None:
+    """Stellt sicher, dass das gewählte Projekt dem Arbeitgeber des
+    Eintrag-Eigentümers gehört. Admin darf jedes Projekt zuordnen."""
+    if project_id is None:
+        return
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if project is None:
+        raise HTTPException(status_code=422, detail="Projekt nicht gefunden.")
+    owner_id = _owner_id_for(target)
+    if owner_id is not None and project.owner_user_id != owner_id:
+        raise HTTPException(status_code=403, detail="Projekt gehört nicht zu diesem Mitarbeiter.")
 
 
 def _check_entry_write(entry: TimeEntry, actor: User, db: Session) -> User:
@@ -50,7 +72,8 @@ def _to_out(entry: TimeEntry) -> TimeEntryOut:
         start_at=entry.start_at,
         end_at=entry.end_at,
         break_minutes=entry.break_minutes,
-        project=entry.project,
+        project_id=entry.project_id,
+        project=entry.project_ref.name if entry.project_ref else None,
         note=entry.note,
         net_hours=round(net, 2),
         gross_hours=round(gross, 2),
@@ -138,6 +161,7 @@ def create_entry(
     if any(i.severity == "error" for i in issues):
         raise HTTPException(status_code=422, detail=[i.model_dump() for i in issues])
 
+    _validate_project(db, user, payload.project_id)
     entry = TimeEntry(user_id=user.id, **payload.model_dump())
     db.add(entry)
     db.flush()
@@ -170,6 +194,8 @@ def update_entry(
     issues = _validate(db, target, payload, exclude_id=entry_id)
     if any(i.severity == "error" for i in issues):
         raise HTTPException(status_code=422, detail=[i.model_dump() for i in issues])
+
+    _validate_project(db, target, payload.project_id)
 
     before_snapshot = {c.name: getattr(entry, c.name) for c in entry.__table__.columns}
     for field, value in payload.model_dump().items():

@@ -1424,3 +1424,41 @@ textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); 
 @media (max-width: 600px) {
   .settings-drawer { width: 100%; padding: 1.1rem 0.9rem 2rem; }
 }
+
+/* ==========================================================================
+   Projekte
+   ========================================================================== */
+.project-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.project-sub-row td { color: var(--text-muted); font-size: 0.85rem; }
+.project-sub-row td:first-child { padding-left: 1.4rem; }
+
+/* Farb-Palette im Projekt-Formular */
+.palette { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.3rem; }
+.palette .swatch {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.palette .swatch.none {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.palette .swatch.active {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}

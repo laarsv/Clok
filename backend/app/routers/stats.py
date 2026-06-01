@@ -8,11 +8,12 @@ from app.absences import remaining_vacation_days
 from app.balance import saldo_for_user, target_hours_for_period
 from app.database import get_db
 from app.models import (
-    Absence, AbsenceStatus, AbsenceType, BillingMode, TimeEntry, User,
+    Absence, AbsenceStatus, AbsenceType, BillingMode, Project, TimeEntry, User,
 )
 from app.permissions import require_active_user, visible_user_ids
 from app.schemas import (
-    BalanceOut, MonthSummary, PeriodKpiOut, PeriodSummary, YearOverview,
+    BalanceOut, MonthSummary, PeriodKpiOut, PeriodSummary,
+    ProjectReportEmployee, ProjectReportOut, ProjectReportRow, YearOverview,
 )
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
@@ -174,6 +175,79 @@ def period_kpis(
         actual_hours=round(actual, 2),
         target_hours=round(tgt, 2),
         vacation_days=vac, sick_days=sick, other_absence_days=other,
+    )
+
+
+@router.get("/projects", response_model=ProjectReportOut)
+def project_report(
+    start: date = Query(...),
+    end: date = Query(..., description="inclusive"),
+    user_id: int | None = Query(None, description="optional: nur ein Mitarbeiter"),
+    actor: User = Depends(require_active_user),
+    db: Session = Depends(get_db),
+):
+    """Stunden je Projekt im Zeitraum, mit Aufschlüsselung je Mitarbeiter.
+    Ohne user_id über alle sichtbaren Mitarbeiter (Team des Arbeitgebers)."""
+    if end < start:
+        raise HTTPException(status_code=422, detail="end < start.")
+    if user_id is not None:
+        if user_id != actor.id and user_id not in visible_user_ids(actor, db):
+            raise HTTPException(status_code=403, detail="Kein Zugriff.")
+        target_ids = {user_id}
+    else:
+        target_ids = visible_user_ids(actor, db)
+
+    s_dt = datetime.combine(start, time.min)
+    e_dt = datetime.combine(end + timedelta(days=1), time.min)
+    entries = db.query(TimeEntry).filter(
+        TimeEntry.user_id.in_(target_ids),
+        TimeEntry.start_at >= s_dt,
+        TimeEntry.start_at < e_dt,
+        TimeEntry.end_at.isnot(None),
+    ).all()
+
+    names = {
+        u.id: (u.full_name or u.username)
+        for u in db.query(User).filter(User.id.in_(target_ids)).all()
+    }
+
+    per_project: dict[int, dict] = {}
+    no_project = 0.0
+    for e in entries:
+        net = max(0.0, (e.end_at - e.start_at).total_seconds() / 3600 - e.break_minutes / 60)
+        if e.project_id is None:
+            no_project += net
+            continue
+        slot = per_project.setdefault(e.project_id, {"hours": 0.0, "by_emp": {}})
+        slot["hours"] += net
+        slot["by_emp"][e.user_id] = slot["by_emp"].get(e.user_id, 0.0) + net
+
+    projects = {}
+    if per_project:
+        projects = {
+            p.id: p for p in
+            db.query(Project).filter(Project.id.in_(list(per_project.keys()))).all()
+        }
+
+    rows: list[ProjectReportRow] = []
+    for pid, slot in per_project.items():
+        p = projects.get(pid)
+        rows.append(ProjectReportRow(
+            project_id=pid,
+            name=p.name if p else "—",
+            client=p.client if p else None,
+            color=p.color if p else None,
+            hours_budget=p.hours_budget if p else None,
+            total_hours=round(slot["hours"], 2),
+            by_employee=[
+                ProjectReportEmployee(user_id=uid, name=names.get(uid, str(uid)), hours=round(h, 2))
+                for uid, h in sorted(slot["by_emp"].items(), key=lambda kv: -kv[1])
+            ],
+        ))
+    rows.sort(key=lambda r: -r.total_hours)
+
+    return ProjectReportOut(
+        start=start, end=end, rows=rows, no_project_hours=round(no_project, 2),
     )
 
 

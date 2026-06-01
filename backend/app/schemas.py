@@ -226,19 +226,64 @@ class TermsOut(BaseModel):
         from_attributes = True
 
 
+# ---------- Projects ----------
+
+class ProjectIn(BaseModel):
+    name: str = Field(..., min_length=1, max_length=128)
+    client: Optional[str] = None
+    color: Optional[str] = None
+    hours_budget: Optional[float] = Field(None, ge=0)
+    archived: Optional[bool] = None
+
+
+class ProjectOut(BaseModel):
+    id: int
+    owner_user_id: int
+    name: str
+    client: Optional[str] = None
+    color: Optional[str] = None
+    hours_budget: Optional[float] = None
+    archived: bool
+    created_at: datetime
+
+
+class ProjectReportEmployee(BaseModel):
+    user_id: int
+    name: str
+    hours: float
+
+
+class ProjectReportRow(BaseModel):
+    project_id: int
+    name: str
+    client: Optional[str] = None
+    color: Optional[str] = None
+    hours_budget: Optional[float] = None
+    total_hours: float
+    by_employee: list[ProjectReportEmployee] = []
+
+
+class ProjectReportOut(BaseModel):
+    start: date
+    end: date
+    rows: list[ProjectReportRow] = []
+    no_project_hours: float = 0.0
+
+
 # ---------- Time entries ----------
 
 class TimeEntryIn(BaseModel):
     start_at: datetime
     end_at: Optional[datetime] = None
     break_minutes: int = Field(0, ge=0, le=480)
-    project: Optional[str] = None
+    project_id: Optional[int] = None
     note: Optional[str] = None
 
 
 class TimeEntryOut(TimeEntryIn):
     id: int
     user_id: int
+    project: Optional[str] = None  # aufgelöster Projektname (für die Anzeige)
     net_hours: float
     gross_hours: float
 

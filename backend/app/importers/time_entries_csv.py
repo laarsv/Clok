@@ -22,7 +22,7 @@ from datetime import datetime, time, timedelta
 from typing import Iterable
 
 from app.arbzg import validate_entry
-from app.models import TimeEntry, User
+from app.models import Project, TimeEntry, User
 from sqlalchemy.orm import Session
 
 
@@ -141,6 +141,26 @@ def import_time_entries(
 ) -> ImportResult:
     parsed, errors = parse_csv(content)
 
+    # Projekte gehören dem Arbeitgeber des importierten Mitarbeiters.
+    owner_id = user.supervisor_id or user.id
+    project_cache: dict[str, int] = {}
+
+    def resolve_project_id(name):
+        if not name:
+            return None
+        if name not in project_cache:
+            proj = (
+                db.query(Project)
+                .filter(Project.owner_user_id == owner_id, Project.name == name)
+                .first()
+            )
+            if proj is None:
+                proj = Project(owner_user_id=owner_id, name=name)
+                db.add(proj)
+                db.flush()
+            project_cache[name] = proj.id
+        return project_cache[name]
+
     imported = 0
     for row in parsed:
         # ArbZG-Validierung pro Zeile (ohne Wochen-/Vortag-Kontext, das wäre
@@ -162,7 +182,7 @@ def import_time_entries(
             start_at=row["start_at"],
             end_at=row["end_at"],
             break_minutes=row["break_minutes"],
-            project=row["project"],
+            project_id=resolve_project_id(row["project"]),
             note=row["note"],
         ))
         imported += 1

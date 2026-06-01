@@ -4,7 +4,7 @@ from enum import Enum
 
 from sqlalchemy import (
     Boolean, Column, Date, DateTime, Enum as SAEnum, Float, ForeignKey,
-    Integer, JSON, String, Text,
+    Integer, JSON, String, Text, UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
@@ -428,6 +428,33 @@ class AuditLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class Project(Base):
+    """Vom Arbeitgeber verwaltetes Projekt. Mitarbeiter buchen Zeiteinträge
+    darauf (Dropdown) und der Arbeitgeber wertet Stunden je Projekt aus.
+
+    Besitz über `owner_user_id` = der Arbeitgeber (Role.EMPLOYER). Die
+    auswählbaren Projekte eines Mitarbeiters sind die seines Vorgesetzten
+    (`User.supervisor_id`). Archivierte Projekte (`archived_at`) fallen aus
+    dem Dropdown, bleiben aber in Auswertungen erhalten."""
+    __tablename__ = "projects"
+
+    id = Column(Integer, primary_key=True)
+    owner_user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True,
+    )
+    name = Column(String(128), nullable=False)
+    client = Column(String(128), nullable=True)        # Kunde / Auftraggeber
+    color = Column(String(16), nullable=True)          # Hex/Token zur Kennzeichnung
+    hours_budget = Column(Float, nullable=True)        # geplantes Stundenkontingent
+    archived_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("owner_user_id", "name", name="uq_project_owner_name"),
+    )
+
+
 class TimeEntry(Base):
     __tablename__ = "time_entries"
 
@@ -438,10 +465,13 @@ class TimeEntry(Base):
     end_at = Column(DateTime, nullable=True)            # NULL = laufend
     break_minutes = Column(Integer, default=0, nullable=False)
 
-    project = Column(String(128))
+    project_id = Column(
+        Integer, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     note = Column(Text)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     user = relationship("User", back_populates="entries")
+    project_ref = relationship("Project")

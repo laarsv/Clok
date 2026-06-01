@@ -78,7 +78,7 @@ def monthly_csv(
             e.break_minutes,
             _fmt_num(gross),
             _fmt_num(net),
-            e.project or "",
+            e.project_ref.name if e.project_ref else "",
             (e.note or "").replace("\n", " "),
         ])
 

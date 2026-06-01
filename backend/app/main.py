@@ -30,7 +30,7 @@ from app.db_migrate import upgrade_to_head
 from app.routers import (
     absences, admin, admin_invites, audit, auth, balance_adjustments,
     employees, employer, employer_onboarding, entries, exports, feedback,
-    holidays, notifications, onboarding, stats, terms,
+    holidays, notifications, onboarding, projects, stats, terms,
 )
 from app.scheduler import start_scheduler, stop_scheduler
 
@@ -89,6 +89,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(entries.router)
+app.include_router(projects.router)
 app.include_router(absences.router)
 app.include_router(stats.router)
 app.include_router(exports.router)
