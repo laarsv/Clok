@@ -29,6 +29,13 @@ const ABS_ACCENT: Record<string, string> = {
   unpaid: "border-l-2 border-ink/30",
 };
 
+const WEEKDAYS = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+// Kurzer Wochentag aus "YYYY-MM-DD" – lokale Konstruktion vermeidet TZ-Versatz.
+function weekdayShort(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  return WEEKDAYS[new Date(y, m - 1, d).getDay()];
+}
+
 export default function EntriesLog({ employeeId, canEditAll }: Props) {
   const [anchor, setAnchor] = useState<Date>(new Date());
   const [entries, setEntries] = useState<TimeEntry[]>([]);
@@ -130,7 +137,7 @@ export default function EntriesLog({ employeeId, canEditAll }: Props) {
                 const e = it.entry;
                 return (
                   <tr key={`e-${e.id}`} className="border-b border-ink/5 last:border-b-0">
-                    <td className="px-4 py-3 whitespace-nowrap tabular-nums">{e.start_at.slice(8, 10)}.{e.start_at.slice(5, 7)}.{e.start_at.slice(0, 4)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap"><span className="text-ink/50">{weekdayShort(e.start_at)}</span> <span className="tabular-nums">{e.start_at.slice(8, 10)}.{e.start_at.slice(5, 7)}.{e.start_at.slice(0, 4)}</span></td>
                     <td className="px-4 py-3">Arbeitszeit</td>
                     <td className="px-4 py-3">
                       {e.start_at.slice(11, 16)}–{e.end_at?.slice(11, 16) ?? "—"}
@@ -151,7 +158,7 @@ export default function EntriesLog({ employeeId, canEditAll }: Props) {
               const a = it.absence;
               return (
                 <tr key={`a-${a.id}`} className={`border-b border-ink/5 last:border-b-0 ${ABS_ACCENT[a.type] ?? ""}`}>
-                  <td className="px-4 py-3 whitespace-nowrap tabular-nums">{a.start_date}{a.end_date !== a.start_date ? ` – ${a.end_date}` : ""}</td>
+                  <td className="px-4 py-3 whitespace-nowrap"><span className="text-ink/50">{weekdayShort(a.start_date)}</span> <span className="tabular-nums">{a.start_date}{a.end_date !== a.start_date ? ` – ${a.end_date}` : ""}</span></td>
                   <td className="px-4 py-3">{TYPE_LABEL[a.type]}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
