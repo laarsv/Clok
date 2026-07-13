@@ -120,6 +120,42 @@ PAID_ABSENCE_TYPES = (
     AbsenceType.VACATION, AbsenceType.SICK, AbsenceType.SPECIAL, AbsenceType.TRAINING,
 )
 
+# Entgeltfortzahlung bei Krankheit: 6 Wochen = 42 Kalendertage pro durchgehender
+# Arbeitsunfähigkeit. Danach zahlt die Krankenkasse (Krankengeld), keine
+# Arbeitgeber-Lohnfortzahlung mehr → ab Tag 43 keine Stunden-Gutschrift.
+SICK_LOHNFORTZAHLUNG_DAYS = 42
+
+
+def _continuous_sick_start(db: Session, user: User, absence: Absence) -> date:
+    """Startdatum der durchgehenden Krankheits-Periode, zu der `absence` gehört.
+    Angrenzende (Lücke 0 Kalendertage) oder überlappende genehmigte Krank-
+    Abwesenheiten werden zusammengefasst; ein freier Tag dazwischen bricht die
+    Periode (Genesung → neue Frist)."""
+    rows = (
+        db.query(Absence)
+        .filter(
+            Absence.user_id == user.id,
+            Absence.status == AbsenceStatus.APPROVED,
+            Absence.type == AbsenceType.SICK,
+        )
+        .all()
+    )
+    cur_start = absence.start_date
+    cur_end = absence.end_date
+    changed = True
+    while changed:
+        changed = False
+        for a in rows:
+            if (a.start_date <= cur_end + timedelta(days=1)
+                    and a.end_date >= cur_start - timedelta(days=1)):
+                if a.start_date < cur_start:
+                    cur_start = a.start_date
+                    changed = True
+                if a.end_date > cur_end:
+                    cur_end = a.end_date
+                    changed = True
+    return cur_start
+
 
 def hours_for_absence(
     db: Session, user: User, absence: Absence,
@@ -136,11 +172,18 @@ def hours_for_absence(
         return 0.0
     state = user.federal_state.value if user.federal_state else None
     lookup = _terms_lookup(db, user)
+    # Bei Krankheit: erster Kalendertag OHNE Lohnfortzahlung (Tag 43 der Periode).
+    sick_cutoff = None
+    if absence.type == AbsenceType.SICK:
+        sick_cutoff = _continuous_sick_start(db, user, absence) + timedelta(days=SICK_LOHNFORTZAHLUNG_DAYS)
     total = 0.0
     lo = max(absence.start_date, start) if start else absence.start_date
     hi = min(absence.end_date, end) if end else absence.end_date
     cur = lo
     while cur <= hi:
+        if sick_cutoff is not None and cur >= sick_cutoff:
+            cur += timedelta(days=1)
+            continue
         terms = lookup(cur)
         if terms and terms.billing_mode == BillingMode.SALARY:
             wd = normalize_work_days(terms.work_days)
@@ -155,13 +198,12 @@ def paid_absence_credit_hours(
     db: Session, user: User, start: date, end_inclusive: date,
 ) -> float:
     """Summe der Lohnfortzahlungs-Stunden aller genehmigten bezahlten
-    Abwesenheiten im Zeitraum (Werktage × Tages-Soll). Algebraisch genau der
-    Betrag, um den `target_hours_for_period` das Soll wegen bezahlter
-    Abwesenheiten kürzt – für die transparente Anzeige (Soll voller Monat,
-    Urlaub/Krankheit als Ist-Gutschrift)."""
+    Abwesenheiten im Zeitraum (Werktage × Tages-Soll), inkl. 6-Wochen-Deckel bei
+    Krankheit – für die transparente Anzeige (Soll voller Monat, Urlaub/Krankheit
+    als Ist-Gutschrift). Summiert `hours_for_absence` je Abwesenheit, damit die
+    Krankheits-Grenze konsistent greift."""
     if end_inclusive < start or user.billing_mode != BillingMode.SALARY:
         return 0.0
-    state = user.federal_state.value if user.federal_state else None
     rows = (
         db.query(Absence)
         .filter(
@@ -173,24 +215,7 @@ def paid_absence_credit_hours(
         )
         .all()
     )
-    paid: set[date] = set()
-    for a in rows:
-        cur = max(a.start_date, start)
-        stop = min(a.end_date, end_inclusive)
-        while cur <= stop:
-            paid.add(cur)
-            cur += timedelta(days=1)
-    if not paid:
-        return 0.0
-    lookup = _terms_lookup(db, user)
-    total = 0.0
-    for cur in paid:
-        terms = lookup(cur)
-        if terms and terms.billing_mode == BillingMode.SALARY:
-            wd = normalize_work_days(terms.work_days)
-            wh = terms.weekly_hours or 0
-            if wd and wh > 0 and is_work_day(wd, cur) and not is_holiday(cur, state):
-                total += wh / len(wd)
+    total = sum(hours_for_absence(db, user, a, start, end_inclusive) for a in rows)
     return round(total, 2)
 
 

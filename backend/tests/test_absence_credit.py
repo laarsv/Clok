@@ -81,3 +81,29 @@ def test_saldo_unchanged_urlaub_gleich_gearbeitet(db_session):
     s_worked = saldo_for_user(db_session, w, date(2026, 7, 13))
 
     assert abs(s_vac - s_worked) < 0.01
+
+
+def test_sick_capped_at_6_weeks(db_session):
+    """Entgeltfortzahlung bei Krankheit endet nach 42 Kalendertagen: eine über
+    das Fenster hinaus verlängerte Krankheit schreibt keine Mehr-Stunden gut."""
+    u = _user(db_session)
+    a = _abs(u.id, AbsenceType.SICK, date(2026, 4, 1), date(2026, 5, 12))  # exakt 42 Kalendertage
+    db_session.add(a); db_session.commit()
+    h42 = hours_for_absence(db_session, u, a)
+    assert h42 > 0
+    a.end_date = date(2026, 6, 30)   # auf ~90 Tage verlängern
+    db_session.commit()
+    assert hours_for_absence(db_session, u, a) == h42  # Deckel: ab Tag 43 keine Gutschrift
+
+
+def test_continuous_sick_periods_merge(db_session):
+    """Angrenzende Krank-Abwesenheiten bilden EINE Periode (Frist zählt ab dem
+    frühesten Start); eine Lücke bricht sie und startet eine neue Frist."""
+    from app.balance import _continuous_sick_start
+    u = _user(db_session)
+    a1 = _abs(u.id, AbsenceType.SICK, date(2026, 4, 1), date(2026, 4, 30))
+    a2 = _abs(u.id, AbsenceType.SICK, date(2026, 5, 1), date(2026, 5, 20))  # grenzt an a1
+    a3 = _abs(u.id, AbsenceType.SICK, date(2026, 7, 1), date(2026, 7, 10))  # Lücke → eigene Periode
+    db_session.add_all([a1, a2, a3]); db_session.commit()
+    assert _continuous_sick_start(db_session, u, a2) == date(2026, 4, 1)
+    assert _continuous_sick_start(db_session, u, a3) == date(2026, 7, 1)
