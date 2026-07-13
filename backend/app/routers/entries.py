@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.arbzg import gross_hours, validate_entry
 from app.audit import log_change
+from app.closures import assert_month_editable
 from app.database import get_db
 from app.models import AuditAction, Project, Role, TimeEntry, User
 from app.permissions import is_in_editable_window, require_active_user, supervises, visible_user_ids
@@ -162,6 +163,7 @@ def create_entry(
         raise HTTPException(status_code=422, detail=[i.model_dump() for i in issues])
 
     _validate_project(db, user, payload.project_id)
+    assert_month_editable(db, user.id, payload.start_at.date(), user)
     entry = TimeEntry(user_id=user.id, **payload.model_dump())
     db.add(entry)
     db.flush()
@@ -189,6 +191,10 @@ def update_entry(
     if not entry:
         raise HTTPException(status_code=404, detail="Eintrag nicht gefunden")
     target = _check_entry_write(entry, user, db)
+    # Alter UND neuer Monat müssen editierbar sein (Verschieben in gesperrten
+    # Monat ebenso blockieren wie Ändern eines Eintrags im gesperrten Monat).
+    assert_month_editable(db, entry.user_id, entry.start_at.date(), user)
+    assert_month_editable(db, entry.user_id, payload.start_at.date(), user)
 
     # ArbZG gegen Daten des Eintrag-Eigentümers prüfen, nicht gegen actor.
     issues = _validate(db, target, payload, exclude_id=entry_id)
@@ -225,6 +231,7 @@ def delete_entry(
     if not entry:
         raise HTTPException(status_code=404, detail="Eintrag nicht gefunden")
     _check_entry_write(entry, user, db)
+    assert_month_editable(db, entry.user_id, entry.start_at.date(), user)
     before_snapshot = {c.name: getattr(entry, c.name) for c in entry.__table__.columns}
     log_change(
         db,

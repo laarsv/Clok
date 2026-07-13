@@ -127,6 +127,25 @@ export const api = {
     return request<ProjectReport>(`/stats/projects?${q}`);
   },
 
+  // Month closures (Monatsabschluss)
+  listClosures: (userId?: number, year?: number, status?: string) => {
+    const q = new URLSearchParams();
+    if (userId) q.set("user_id", String(userId));
+    if (year) q.set("year", String(year));
+    if (status) q.set("status", status);
+    return request<MonthClosure[]>(`/closures?${q}`);
+  },
+  submitClosure: (year: number, month: number, userId?: number) =>
+    request<MonthClosure>("/closures/submit", { method: "POST", body: JSON.stringify({ year, month, user_id: userId }) }),
+  approveClosure: (year: number, month: number, userId: number) =>
+    request<MonthClosure>("/closures/approve", { method: "POST", body: JSON.stringify({ year, month, user_id: userId }) }),
+  rejectClosure: (year: number, month: number, userId: number) =>
+    request<void>("/closures/reject", { method: "POST", body: JSON.stringify({ year, month, user_id: userId }) }),
+  reopenClosure: (year: number, month: number, userId: number) =>
+    request<void>("/closures/reopen", { method: "POST", body: JSON.stringify({ year, month, user_id: userId }) }),
+  withdrawClosure: (year: number, month: number, userId?: number) =>
+    request<void>("/closures/withdraw", { method: "POST", body: JSON.stringify({ year, month, user_id: userId }) }),
+
   // Stats / Exports
   summary: () => request<PeriodSummary[]>("/stats/summary"),
   balance: (userId?: number, asOf?: string) => {
@@ -737,6 +756,18 @@ export interface ProjectReport {
   end: string;
   rows: ProjectReportRow[];
   no_project_hours: number;
+}
+
+export type ClosureStatus = "open" | "submitted" | "approved";
+export interface MonthClosure {
+  user_id: number;
+  year: number;
+  month: number;
+  status: ClosureStatus;
+  submitted_at?: string | null;
+  decided_at?: string | null;
+  full_name?: string | null;
+  username?: string | null;
 }
 
 export interface Issue {

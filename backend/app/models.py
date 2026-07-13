@@ -455,6 +455,36 @@ class Project(Base):
     )
 
 
+class MonthClosureStatus(str, Enum):
+    SUBMITTED = "submitted"   # vom MA eingereicht
+    APPROVED = "approved"     # vom AG freigegeben/gesperrt
+
+
+class MonthClosure(Base):
+    """Monatsabschluss pro (User, Jahr, Monat). Kein Datensatz = offen.
+    `submitted` = vom MA eingereicht (für ihn selbst gesperrt), `approved` =
+    vom AG freigegeben (für alle gesperrt, bis wieder geöffnet)."""
+    __tablename__ = "month_closures"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    status = Column(
+        SAEnum(MonthClosureStatus, name="month_closure_status", values_callable=_enum_values),
+        nullable=False,
+    )
+    submitted_at = Column(DateTime, nullable=True)
+    submitted_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    decided_at = Column(DateTime, nullable=True)
+    decided_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "year", "month", name="uq_month_closure"),
+    )
+
+
 class TimeEntry(Base):
     __tablename__ = "time_entries"
 

@@ -3,7 +3,7 @@ import EntryForm from "../../components/EntryForm";
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
 import { IconPlus, IconX } from "../../components/ui/Icons";
-import { api, type Absence, type TimeEntry } from "../../api";
+import { api, type Absence, type ClosureStatus, type TimeEntry } from "../../api";
 import { useCurrentUser } from "../../auth/CurrentUser";
 import {
   deWeekday, endOfMonth, fmtDe, fmtHours, isoDate, startOfMonth,
@@ -22,6 +22,7 @@ export default function Month() {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [absences, setAbsences] = useState<Absence[]>([]);
   const [holidays, setHolidays] = useState<Record<string, string>>({});
+  const [closureStatus, setClosureStatus] = useState<ClosureStatus>("open");
 
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
@@ -42,6 +43,9 @@ export default function Month() {
       const list = await api.holidays(user.federal_state, anchor.getFullYear());
       setHolidays(Object.fromEntries(list.map((h) => [h.date, h.name])));
     }
+    const closures = await api.listClosures(user.id, anchor.getFullYear());
+    const m = anchor.getMonth() + 1;
+    setClosureStatus(closures.find((c) => c.month === m)?.status ?? "open");
   };
 
   useEffect(() => { load(); }, [user?.id, anchor.getTime()]);
@@ -79,6 +83,12 @@ export default function Month() {
   const total = Object.values(sumByDay).reduce((s, v) => s + v, 0);
   const monthCredit = cells.reduce(
     (s, d) => (d ? s + absenceDayCredit(d, absenceForDay(isoDate(d)), user, holidays) : s), 0);
+
+  const closureYear = anchor.getFullYear();
+  const closureMonth = anchor.getMonth() + 1;
+  const locked = closureStatus !== "open";
+  const submitMonth = async () => { await api.submitClosure(closureYear, closureMonth); load(); };
+  const withdrawMonth = async () => { await api.withdrawClosure(closureYear, closureMonth); load(); };
 
   const closeDialog = () => {
     setSelectedDay(null);
@@ -126,6 +136,27 @@ export default function Month() {
         <button className="btn-ghost btn-sm" onClick={() => setAnchor(new Date())}>Heute</button>
         <span className="flex-1" />
         <span className="text-sm text-ink/60">Summe: <strong className="text-ink tabular-nums">{fmtHours(total + monthCredit)}</strong></span>
+      </div>
+
+      <div className="card flex flex-wrap items-center gap-3 p-3">
+        <span className="text-sm font-bold">Monatsabschluss</span>
+        {closureStatus === "open" && (
+          <>
+            <span className="text-sm text-ink/50">offen</span>
+            <span className="flex-1" />
+            <Button size="sm" onClick={submitMonth}>Monat einreichen</Button>
+          </>
+        )}
+        {closureStatus === "submitted" && (
+          <>
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800">eingereicht – wartet auf Freigabe</span>
+            <span className="flex-1" />
+            <Button size="sm" variant="outline" onClick={withdrawMonth}>Zurückziehen</Button>
+          </>
+        )}
+        {closureStatus === "approved" && (
+          <span className="inline-flex items-center rounded-full bg-royal/10 px-2.5 py-0.5 text-xs font-bold text-royal">freigegeben · Monat gesperrt</span>
+        )}
       </div>
 
       <div className="grid grid-cols-7 gap-1 sm:gap-2">
@@ -204,7 +235,7 @@ export default function Month() {
                   <ul className="mt-4 space-y-1">
                     {selectedDayInfo.entries.map((e) => (
                       <li key={e.id}>
-                        <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink hover:bg-ink/5" onClick={() => setEditingEntry(e)}>
+                        <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink hover:bg-ink/5 disabled:hover:bg-transparent" disabled={locked} onClick={() => setEditingEntry(e)}>
                           <span className="tabular-nums">
                             {e.start_at.slice(11, 16)}–{e.end_at?.slice(11, 16) ?? "—"}
                           </span>
@@ -220,9 +251,13 @@ export default function Month() {
                   </p>
                 )}
 
-                <Button className="mt-3 w-full" onClick={() => setShowAddForm(true)}>
-                  <IconPlus size={18} /> Zeit erfassen
-                </Button>
+                {locked ? (
+                  <p className="mt-3 text-sm text-ink/60">Monat gesperrt – keine Änderungen möglich.</p>
+                ) : (
+                  <Button className="mt-3 w-full" onClick={() => setShowAddForm(true)}>
+                    <IconPlus size={18} /> Zeit erfassen
+                  </Button>
+                )}
               </>
             )}
 

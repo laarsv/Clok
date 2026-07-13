@@ -547,3 +547,22 @@ class YearOverview(BaseModel):
     vacation_used: int
     vacation_remaining: float
     sick_total: int
+
+
+# ---------- Month closures ----------
+
+class MonthClosureOut(BaseModel):
+    user_id: int
+    year: int
+    month: int
+    status: str  # open | submitted | approved
+    submitted_at: Optional[datetime] = None
+    decided_at: Optional[datetime] = None
+    full_name: Optional[str] = None   # für die AG-Inbox
+    username: Optional[str] = None
+
+
+class ClosureAction(BaseModel):
+    year: int = Field(..., ge=2000, le=2100)
+    month: int = Field(..., ge=1, le=12)
+    user_id: Optional[int] = None

@@ -6,8 +6,11 @@ import HoursBar from "../../components/HoursBar";
 import Button from "../../components/ui/Button";
 import Select from "../../components/ui/Select";
 import { IconPlus } from "../../components/ui/Icons";
-import { api, type EmployerDashboardData, type EmployerDashboardRow } from "../../api";
+import { api, type EmployerDashboardData, type EmployerDashboardRow, type MonthClosure } from "../../api";
 import { fmtHours } from "../../lib/datetime";
+
+const monthLabel = (year: number, month: number) =>
+  new Date(year, month - 1, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
 
 type SortKey = "name" | "balance-asc" | "vacation-low" | "last-activity";
 
@@ -28,8 +31,17 @@ export default function Dashboard() {
   const [data, setData] = useState<EmployerDashboardData | null>(null);
   const [showOff, setShowOff] = useState(false);
   const [sort, setSort] = useState<SortKey>("name");
+  const [pending, setPending] = useState<MonthClosure[]>([]);
 
   useEffect(() => { api.employerDashboard().then(setData); }, []);
+  const loadPending = () =>
+    api.listClosures(undefined, undefined, "submitted").then(setPending).catch(() => setPending([]));
+  useEffect(() => { loadPending(); }, []);
+  const decidePending = async (c: MonthClosure, approve: boolean) => {
+    if (approve) await api.approveClosure(c.year, c.month, c.user_id);
+    else await api.rejectClosure(c.year, c.month, c.user_id);
+    loadPending();
+  };
 
   const aggregate = useMemo(() => {
     if (!data) return null;
@@ -98,6 +110,29 @@ export default function Dashboard() {
             </Button>
           </div>
         </div>
+
+        {pending.length > 0 && (
+          <div className="card p-4 sm:p-5">
+            <h2 className="text-base font-black sm:text-lg">
+              Offene Monatsabschlüsse
+              <span className="ml-2 inline-flex items-center justify-center rounded-full bg-royal px-2 py-0.5 text-xs font-black text-paper tabular-nums">{pending.length}</span>
+            </h2>
+            <div className="mt-2 divide-y divide-ink/10">
+              {pending.map((c) => (
+                <div key={`${c.user_id}-${c.year}-${c.month}`} className="flex flex-wrap items-center gap-3 py-2">
+                  <button className="text-sm font-bold text-royal hover:underline"
+                    onClick={() => navigate(`/employer/employees/${c.user_id}`)}>
+                    {c.full_name || c.username || `#${c.user_id}`}
+                  </button>
+                  <span className="text-sm capitalize text-ink/60">{monthLabel(c.year, c.month)}</span>
+                  <span className="flex-1" />
+                  <button className="btn-primary btn-sm" onClick={() => decidePending(c, true)}>Freigeben</button>
+                  <button className="btn-ghost btn-sm" onClick={() => decidePending(c, false)}>Ablehnen</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <SummaryTile label="Aktive Mitarbeiter" value={String(aggregate.activeCount)}

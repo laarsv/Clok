@@ -19,7 +19,7 @@ import { useCurrentUser } from "../../auth/CurrentUser";
 import {
   api, WEEKDAY_LABELS,
   type Absence, type AbsenceStatus, type BalanceAdjustment, type BalanceOut,
-  type EmploymentTerms, type TermsPayload, type TimeEntry, type User, type YearOverview,
+  type EmploymentTerms, type MonthClosure, type TermsPayload, type TimeEntry, type User, type YearOverview,
 } from "../../api";
 import {
   addDays, deWeekday, fmtDe, fmtHours, isoDate, startOfWeek,
@@ -57,6 +57,7 @@ export default function EmployeeDetail() {
   const [balance, setBalance] = useState<BalanceOut | null>(null);
   const [year, setYear] = useState<YearOverview | null>(null);
   const [adjustments, setAdjustments] = useState<BalanceAdjustment[]>([]);
+  const [closures, setClosures] = useState<MonthClosure[]>([]);
   const [anchor, setAnchor] = useState<Date>(new Date());
   const [busy, setBusy] = useState(false);
   const [edit, setEdit] = useState<EditMode>(null);
@@ -75,18 +76,20 @@ export default function EmployeeDetail() {
   const load = async () => {
     if (!employeeId) return;
     const yr = new Date().getFullYear();
-    const [emp, t, bal, yov, adj] = await Promise.all([
+    const [emp, t, bal, yov, adj, clo] = await Promise.all([
       api.getEmployee(employeeId),
       api.listTerms(employeeId),
       api.balance(employeeId),
       api.yearOverview(yr, employeeId),
       api.listBalanceAdjustments(employeeId),
+      api.listClosures(employeeId),
     ]);
     setEmployee(emp);
     setTerms(t);
     setBalance(bal);
     setYear(yov);
     setAdjustments(adj);
+    setClosures(clo);
     const start = days[0];
     const end = addDays(days[6], 1);
     const [es, abs] = await Promise.all([
@@ -234,6 +237,20 @@ export default function EmployeeDetail() {
     return dailyRate;
   };
   const weekCredit = days.reduce((s, d) => s + dayCredit(d, absenceFor(d)), 0);
+
+  // Monatsabschluss: Status + Aktionen für die letzten 3 Monate.
+  const closureStatusOf = (y: number, m: number) =>
+    closures.find((c) => c.year === y && c.month === m)?.status ?? "open";
+  const lastMonths = Array.from({ length: 3 }, (_, i) => {
+    const dt = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
+    return {
+      year: dt.getFullYear(), month: dt.getMonth() + 1,
+      label: dt.toLocaleDateString("de-DE", { month: "long", year: "numeric" }),
+    };
+  });
+  const doApprove = async (y: number, m: number) => { await api.approveClosure(y, m, employee.id); await load(); };
+  const doReject = async (y: number, m: number) => { await api.rejectClosure(y, m, employee.id); await load(); };
+  const doReopen = async (y: number, m: number) => { await api.reopenClosure(y, m, employee.id); await load(); };
   const initialOt = employee.initial_overtime_hours ?? 0;
   const adjToDate = adjustments.filter((a) => a.effective_date <= today);
   const adjTotal = adjToDate.reduce((s, a) => s + a.hours, 0);
@@ -341,6 +358,40 @@ export default function EmployeeDetail() {
           <KpiTile label="Krankheit (Jahr)" value={`${dayNum(sickTotal)} Tage`}
             meta={sickMonth > 0 ? `${dayNum(sickMonth)} im laufenden Monat` : "keine im laufenden Monat"}
             onClick={() => setDrill("sick")} />
+        </div>
+
+        {/* Monatsabschluss */}
+        <div className="card p-4 sm:p-5">
+          <h2 className="text-base font-black sm:text-lg">Monatsabschluss</h2>
+          <div className="mt-2 divide-y divide-ink/10">
+            {lastMonths.map(({ year, month, label }) => {
+              const st = closureStatusOf(year, month);
+              return (
+                <div key={`${year}-${month}`} className="flex flex-wrap items-center gap-3 py-2">
+                  <span className="min-w-[9rem] text-sm font-bold capitalize">{label}</span>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                    st === "approved" ? "bg-royal/10 text-royal"
+                      : st === "submitted" ? "bg-amber-100 text-amber-800" : "bg-ink/10 text-ink/60"
+                  }`}>
+                    {st === "approved" ? "freigegeben" : st === "submitted" ? "eingereicht" : "offen"}
+                  </span>
+                  <span className="flex-1" />
+                  {st === "open" && (
+                    <button className="btn-outline btn-sm" onClick={() => doApprove(year, month)}>Sperren</button>
+                  )}
+                  {st === "submitted" && (
+                    <>
+                      <button className="btn-primary btn-sm" onClick={() => doApprove(year, month)}>Freigeben</button>
+                      <button className="btn-ghost btn-sm" onClick={() => doReject(year, month)}>Ablehnen</button>
+                    </>
+                  )}
+                  {st === "approved" && (
+                    <button className="btn-outline btn-sm" onClick={() => doReopen(year, month)}>Wieder öffnen</button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Einträge & Abwesenheiten */}

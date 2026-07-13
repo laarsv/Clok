@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.audit import log_change
 from app.balance import hours_for_absence
+from app.closures import assert_month_editable
 from app.config import get_settings
 from app.database import get_db
 from app.models import Absence, AbsenceStatus, AbsenceType, AuditAction, Role, User
@@ -119,6 +120,7 @@ def create_absence(
         if not supervises(user, target):
             raise HTTPException(status_code=403, detail="Kein Zugriff.")
 
+    assert_month_editable(db, target_user_id, payload.start_date, user)
     auto_approve = payload.type == AbsenceType.SICK or created_for_other
     absence = Absence(
         user_id=target_user_id,
@@ -185,6 +187,7 @@ def _decide(
         raise HTTPException(status_code=403, detail="Kein Zugriff.")
     if absence.status != AbsenceStatus.PENDING:
         raise HTTPException(status_code=409, detail="Antrag ist nicht mehr offen.")
+    assert_month_editable(db, absence.user_id, absence.start_date, user)
     before_snapshot = {c.name: getattr(absence, c.name) for c in absence.__table__.columns}
     absence.status = new_status
     absence.decided_at = datetime.utcnow()
@@ -243,6 +246,7 @@ def update_absence(
     if absence is None:
         raise HTTPException(status_code=404, detail="Antrag nicht gefunden.")
     _check_absence_write(absence, user, db)
+    assert_month_editable(db, absence.user_id, absence.start_date, user)
 
     updates = payload.model_dump(exclude_unset=True)
     if "start_date" in updates and "end_date" in updates:
@@ -307,6 +311,7 @@ def delete_absence(
     if absence is None:
         raise HTTPException(status_code=404, detail="Antrag nicht gefunden.")
     _check_absence_write(absence, user, db)
+    assert_month_editable(db, absence.user_id, absence.start_date, user)
     before_snapshot = {c.name: getattr(absence, c.name) for c in absence.__table__.columns}
     log_change(
         db,
