@@ -111,6 +111,7 @@ export const api = {
     }),
   deleteEntry: (id: number) =>
     request<void>(`/entries/${id}`, { method: "DELETE" }),
+  runningEntry: () => request<TimeEntry | null>("/entries/running"),
 
   // Projects
   listProjects: (includeArchived = false) =>

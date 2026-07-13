@@ -32,6 +32,14 @@ export function fmtHours(h: number): string {
   return h.toFixed(2).replace(".", ",") + " h";
 }
 
+/** Aktuelle lokale Zeit als "YYYY-MM-DDTHH:MM:SS" (ohne TZ) – passend zum
+ *  Rest der App, der Wanduhrzeit ohne Zeitzone speichert. Für den Timer. */
+export function nowLocalIso(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
 export function fmtDe(d: Date): string {
   return d.toLocaleDateString("de-DE");
 }

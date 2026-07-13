@@ -152,12 +152,37 @@ def list_entries(
     return [_to_out(e) for e in q.order_by(TimeEntry.start_at.desc()).all()]
 
 
+@router.get("/running", response_model=Optional[TimeEntryOut])
+def running_entry(
+    user: User = Depends(require_active_user),
+    db: Session = Depends(get_db),
+):
+    """Der aktuell laufende Eintrag des Users (end_at IS NULL) oder null."""
+    e = (
+        db.query(TimeEntry)
+        .filter(TimeEntry.user_id == user.id, TimeEntry.end_at.is_(None))
+        .order_by(TimeEntry.start_at.desc())
+        .first()
+    )
+    return _to_out(e) if e else None
+
+
 @router.post("", response_model=TimeEntryCreateResponse, status_code=status.HTTP_201_CREATED)
 def create_entry(
     payload: TimeEntryIn,
     user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
+    # Timer-Start (end_at leer): nur ein laufender Eintrag gleichzeitig.
+    if payload.end_at is None:
+        running = (
+            db.query(TimeEntry)
+            .filter(TimeEntry.user_id == user.id, TimeEntry.end_at.is_(None))
+            .first()
+        )
+        if running is not None:
+            raise HTTPException(status_code=409, detail="Es läuft bereits ein Timer. Bitte zuerst stoppen.")
+
     issues = _validate(db, user, payload)
     if any(i.severity == "error" for i in issues):
         raise HTTPException(status_code=422, detail=[i.model_dump() for i in issues])

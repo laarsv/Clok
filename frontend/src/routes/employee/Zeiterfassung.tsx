@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Shell from "../../components/Shell";
 import EntryForm from "../../components/EntryForm";
+import Timer from "../../components/Timer";
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
 import { IconPlus } from "../../components/ui/Icons";
@@ -61,6 +62,8 @@ export default function Zeiterfassung() {
   return (
     <Shell>
       <div className="space-y-6">
+        <Timer onChange={() => setRefreshTick((t) => t + 1)} />
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex rounded-lg border border-ink/15 bg-paper p-1" role="tablist" aria-label="Ansicht">
             {VIEWS.map((v) => (
