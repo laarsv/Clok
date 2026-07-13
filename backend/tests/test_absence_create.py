@@ -11,8 +11,8 @@ from datetime import date
 import pytest
 from fastapi import HTTPException
 
-from app.models import AbsenceStatus, AbsenceType, Role, User
-from app.routers.absences import create_absence
+from app.models import Absence, AbsenceStatus, AbsenceType, Role, User
+from app.routers.absences import create_absence, team_absences
 from app.schemas import AbsenceIn
 
 
@@ -92,3 +92,20 @@ def test_ende_vor_start_wird_abgelehnt(db_session):
     with pytest.raises(HTTPException) as exc:
         create_absence(payload, user=boss, db=db_session)
     assert exc.value.status_code == 422
+
+
+def test_team_absences_lists_employees_and_absences(db_session):
+    boss = _user(db_session, username="boss", email="boss@x.de", role=Role.EMPLOYER)
+    emp = _user(db_session, username="anna", email="anna@x.de", supervisor_id=boss.id)
+    db_session.add(Absence(user_id=emp.id, type=AbsenceType.VACATION,
+                           start_date=date(2026, 7, 6), end_date=date(2026, 7, 10),
+                           status=AbsenceStatus.APPROVED))
+    db_session.commit()
+
+    out = team_absences(from_=date(2026, 7, 1), to=date(2026, 7, 31), actor=boss, db=db_session)
+    assert [e.name for e in out.employees] == ["anna"]
+    assert len(out.absences) == 1
+
+    with pytest.raises(HTTPException) as exc:
+        team_absences(from_=date(2026, 7, 1), to=date(2026, 7, 31), actor=emp, db=db_session)
+    assert exc.value.status_code == 403

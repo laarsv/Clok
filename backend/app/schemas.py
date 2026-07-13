@@ -566,3 +566,15 @@ class ClosureAction(BaseModel):
     year: int = Field(..., ge=2000, le=2100)
     month: int = Field(..., ge=1, le=12)
     user_id: Optional[int] = None
+
+
+# ---------- Team-Abwesenheitskalender ----------
+
+class TeamAbsenceRow(BaseModel):
+    user_id: int
+    name: str
+
+
+class TeamAbsencesOut(BaseModel):
+    employees: list[TeamAbsenceRow]   # sichtbare aktive MA (Zeilen, auch ohne Abwesenheit)
+    absences: list[AbsenceOut]

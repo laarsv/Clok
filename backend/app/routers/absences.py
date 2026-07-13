@@ -13,7 +13,10 @@ from app.database import get_db
 from app.models import Absence, AbsenceStatus, AbsenceType, AuditAction, Role, User
 from app.notifications.service import NotificationKind, notify
 from app.permissions import is_in_editable_window, require_active_user, supervises, visible_user_ids
-from app.schemas import AbsenceDecision, AbsenceIn, AbsenceOut, AbsenceUpdate
+from app.schemas import (
+    AbsenceDecision, AbsenceIn, AbsenceOut, AbsenceUpdate,
+    TeamAbsenceRow, TeamAbsencesOut,
+)
 
 router = APIRouter(prefix="/api/absences", tags=["absences"])
 
@@ -96,6 +99,43 @@ def list_absences(
         q = q.filter(Absence.start_date <= to, Absence.end_date >= from_)
     rows = q.order_by(Absence.start_date.desc()).all()
     return [_to_out(db, a, from_, to) for a in rows]
+
+
+@router.get("/team", response_model=TeamAbsencesOut)
+def team_absences(
+    from_: date = Query(..., alias="from"),
+    to: date = Query(...),
+    actor: User = Depends(require_active_user),
+    db: Session = Depends(get_db),
+):
+    """Alle sichtbaren aktiven Mitarbeiter + ihre Abwesenheiten (approved+pending)
+    im Zeitraum – für den Team-Abwesenheitskalender. Nur AG/Admin."""
+    if actor.role == Role.EMPLOYEE:
+        raise HTTPException(status_code=403, detail="Kein Zugriff.")
+    ids = visible_user_ids(actor, db)
+    emps = (
+        db.query(User)
+        .filter(User.id.in_(ids), User.role == Role.EMPLOYEE, User.offboarded_at.is_(None))
+        .order_by(User.full_name, User.username)
+        .all()
+    )
+    emp_ids = [e.id for e in emps]
+    abs_rows = []
+    if emp_ids:
+        abs_rows = (
+            db.query(Absence)
+            .filter(
+                Absence.user_id.in_(emp_ids),
+                Absence.status.in_((AbsenceStatus.PENDING, AbsenceStatus.APPROVED)),
+                Absence.start_date <= to,
+                Absence.end_date >= from_,
+            )
+            .all()
+        )
+    return TeamAbsencesOut(
+        employees=[TeamAbsenceRow(user_id=e.id, name=(e.full_name or e.username)) for e in emps],
+        absences=[AbsenceOut.model_validate(a) for a in abs_rows],
+    )
 
 
 @router.post("", response_model=AbsenceOut, status_code=status.HTTP_201_CREATED)

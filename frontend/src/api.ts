@@ -175,6 +175,8 @@ export const api = {
   },
 
   // Absences
+  teamAbsences: (from: string, to: string) =>
+    request<TeamAbsences>(`/absences/team?from=${from}&to=${to}`),
   listAbsences: (userId?: number, from?: string, to?: string) => {
     const q = new URLSearchParams();
     if (userId) q.set("user_id", String(userId));
@@ -756,6 +758,12 @@ export interface ProjectReport {
   end: string;
   rows: ProjectReportRow[];
   no_project_hours: number;
+}
+
+export interface TeamAbsenceRow { user_id: number; name: string; }
+export interface TeamAbsences {
+  employees: TeamAbsenceRow[];
+  absences: Absence[];
 }
 
 export type ClosureStatus = "open" | "submitted" | "approved";
