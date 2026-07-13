@@ -32,6 +32,16 @@ def test_paid_absence_credits_daily_target(db_session):
     assert hours_for_absence(db_session, u, a) == 6.0  # 3 × (10h/5) = 6h
 
 
+def test_hours_for_absence_clipped_to_window(db_session):
+    u = _user(db_session)
+    a = _abs(u.id, AbsenceType.VACATION, date(2026, 6, 29), date(2026, 7, 1))  # Mo/Di/Mi
+    db_session.add(a); db_session.commit()
+    assert hours_for_absence(db_session, u, a) == 6.0  # gesamt: 3 × 2h
+    # nur Juli-Fenster → nur 01.07. = 2h; nur Juni → 29.+30.06. = 4h
+    assert hours_for_absence(db_session, u, a, date(2026, 7, 1), date(2026, 7, 31)) == 2.0
+    assert hours_for_absence(db_session, u, a, date(2026, 6, 1), date(2026, 6, 30)) == 4.0
+
+
 def test_unpaid_absence_credits_zero(db_session):
     u = _user(db_session)
     a = _abs(u.id, AbsenceType.UNPAID, date(2026, 6, 29), date(2026, 7, 1))

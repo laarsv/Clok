@@ -47,15 +47,12 @@ export default function EntriesLog({ employeeId, canEditAll }: Props) {
     try {
       const [es, abs] = await Promise.all([
         api.listEntries(fromIso, toIso, employeeId),
-        api.listAbsences(employeeId),
+        // from/to: Backend liefert nur überlappende Abwesenheiten und beschneidet
+        // paid_hours auf den Monat (korrekt bei monatsübergreifendem Urlaub).
+        api.listAbsences(employeeId, isoDate(monthStart), isoDate(monthEnd)),
       ]);
       setEntries(es);
-      // Absences im Monat (Überlappung)
-      const monthIsoStart = isoDate(monthStart);
-      const monthIsoEnd = isoDate(monthEnd);
-      setAbsences(abs.filter(
-        (a) => a.start_date <= monthIsoEnd && a.end_date >= monthIsoStart,
-      ));
+      setAbsences(abs);
     } catch (e: any) {
       setError(e.message);
     }
@@ -79,6 +76,8 @@ export default function EntriesLog({ employeeId, canEditAll }: Props) {
     canEditAll || isInEditableWindow(date);
 
   const totalHours = entries.reduce((s, e) => s + (e.net_hours || 0), 0);
+  const creditHours = absences.reduce((s, a) => s + (a.paid_hours || 0), 0);
+  const monthTotal = totalHours + creditHours;
 
   const remove = async (it: Item) => {
     if (!confirm("Wirklich löschen?")) return;
@@ -97,7 +96,10 @@ export default function EntriesLog({ employeeId, canEditAll }: Props) {
         <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>Monat →</Button>
         <Button variant="outline" size="sm" onClick={() => setAnchor(new Date())}>Heute</Button>
         <span className="flex-1" />
-        <span className="text-sm text-ink/70">Summe: <strong className="font-bold text-ink tabular-nums">{fmtHours(totalHours)}</strong></span>
+        <span className="text-sm text-ink/70">
+          Summe: <strong className="font-bold text-ink tabular-nums">{fmtHours(monthTotal)}</strong>
+          {creditHours > 0 && <span className="text-ink/50"> (inkl. {fmtHours(creditHours)} Lohnfortz.)</span>}
+        </span>
       </div>
 
       {!canEditAll && (

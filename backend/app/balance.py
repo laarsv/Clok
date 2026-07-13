@@ -19,6 +19,7 @@ Saldo = initial_overtime
         - Σ(target_per_day für jeden „echten" Arbeitstag ab hire_date)
 """
 from datetime import date, datetime, timedelta
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -120,11 +121,15 @@ PAID_ABSENCE_TYPES = (
 )
 
 
-def hours_for_absence(db: Session, user: User, absence: Absence) -> float:
+def hours_for_absence(
+    db: Session, user: User, absence: Absence,
+    start: Optional[date] = None, end: Optional[date] = None,
+) -> float:
     """Gutgeschriebene Stunden (Lohnfortzahlung) für EINE genehmigte, bezahlte
     Abwesenheit: Summe der Tages-Soll-Stunden über ihre Werktage (ohne
     Feiertage/arbeitsfreie Tage). 0 bei unbezahlten Typen, nicht genehmigt,
-    oder Nicht-Salary."""
+    oder Nicht-Salary. Mit start/end wird auf dieses Fenster beschnitten
+    (z. B. Monats-Anteil einer monatsübergreifenden Abwesenheit)."""
     if user.billing_mode != BillingMode.SALARY:
         return 0.0
     if absence.status != AbsenceStatus.APPROVED or absence.type not in PAID_ABSENCE_TYPES:
@@ -132,8 +137,10 @@ def hours_for_absence(db: Session, user: User, absence: Absence) -> float:
     state = user.federal_state.value if user.federal_state else None
     lookup = _terms_lookup(db, user)
     total = 0.0
-    cur = absence.start_date
-    while cur <= absence.end_date:
+    lo = max(absence.start_date, start) if start else absence.start_date
+    hi = min(absence.end_date, end) if end else absence.end_date
+    cur = lo
+    while cur <= hi:
         terms = lookup(cur)
         if terms and terms.billing_mode == BillingMode.SALARY:
             wd = normalize_work_days(terms.work_days)

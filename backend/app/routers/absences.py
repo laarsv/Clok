@@ -1,5 +1,5 @@
 """Abwesenheiten: Urlaubsanträge, Krankmeldungen, unbezahlt."""
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -17,11 +17,14 @@ from app.schemas import AbsenceDecision, AbsenceIn, AbsenceOut, AbsenceUpdate
 router = APIRouter(prefix="/api/absences", tags=["absences"])
 
 
-def _to_out(db: Session, a: Absence) -> AbsenceOut:
+def _to_out(
+    db: Session, a: Absence,
+    clip_start: Optional[date] = None, clip_end: Optional[date] = None,
+) -> AbsenceOut:
     out = AbsenceOut.model_validate(a)
     user = db.query(User).filter(User.id == a.user_id).first()
     if user is not None:
-        out.paid_hours = hours_for_absence(db, user, a)
+        out.paid_hours = hours_for_absence(db, user, a, clip_start, clip_end)
     return out
 
 
@@ -72,6 +75,8 @@ def _build_ctx(absence: Absence, requester: User, approver: User | None) -> dict
 @router.get("", response_model=list[AbsenceOut])
 def list_absences(
     user_id: Optional[int] = Query(None),
+    from_: Optional[date] = Query(None, alias="from"),
+    to: Optional[date] = Query(None),
     user: User = Depends(require_active_user),
     db: Session = Depends(get_db),
 ):
@@ -83,13 +88,13 @@ def list_absences(
             raise HTTPException(status_code=403, detail="Kein Zugriff.")
         target_ids = {user_id}
 
-    rows = (
-        db.query(Absence)
-        .filter(Absence.user_id.in_(target_ids))
-        .order_by(Absence.start_date.desc())
-        .all()
-    )
-    return [_to_out(db, a) for a in rows]
+    q = db.query(Absence).filter(Absence.user_id.in_(target_ids))
+    if from_ and to:
+        # Nur im Fenster überlappende Abwesenheiten; paid_hours wird auf das
+        # Fenster beschnitten (Monats-Anteil bei monatsübergreifendem Urlaub).
+        q = q.filter(Absence.start_date <= to, Absence.end_date >= from_)
+    rows = q.order_by(Absence.start_date.desc()).all()
+    return [_to_out(db, a, from_, to) for a in rows]
 
 
 @router.post("", response_model=AbsenceOut, status_code=status.HTTP_201_CREATED)

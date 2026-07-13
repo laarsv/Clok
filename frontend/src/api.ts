@@ -156,9 +156,12 @@ export const api = {
   },
 
   // Absences
-  listAbsences: (userId?: number) => {
+  listAbsences: (userId?: number, from?: string, to?: string) => {
     const q = new URLSearchParams();
     if (userId) q.set("user_id", String(userId));
+    // from/to (YYYY-MM-DD): filtert auf Überlappung und beschneidet paid_hours
+    // auf das Fenster (Monats-Anteil bei monatsübergreifenden Abwesenheiten).
+    if (from && to) { q.set("from", from); q.set("to", to); }
     return request<Absence[]>(`/absences?${q}`);
   },
   createAbsence: (payload: AbsenceInput) =>
