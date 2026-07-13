@@ -17,9 +17,9 @@ class Settings(BaseSettings):
 
     # Resend / Mailing
     resend_api_key: str = ""
-    resend_from_email: str = "clok@send.f-lv.de"
+    resend_from_email: str = "clok@mail.example.com"
     resend_reply_to: str = ""
-    app_base_url: str = "https://clok.home.f-lv.de"
+    app_base_url: str = "https://clok.example.com"
 
     # Onboarding
     employer_invite_ttl_days: int = 14

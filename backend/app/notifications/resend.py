@@ -38,9 +38,9 @@ class SendResult:
 
 def _normalize_from(addr: str) -> str:
     """Akzeptiert in der Konfiguration drei Schreibweisen:
-      - "clok@send.f-lv.de"           (reine Adresse)
-      - "Clok <clok@send.f-lv.de>"    (RFC 5322-konform)
-      - "Clok clok@send.f-lv.de"      (Excel-/Copy-Paste-Variante)
+      - "clok@mail.example.com"           (reine Adresse)
+      - "Clok <clok@mail.example.com>"    (RFC 5322-konform)
+      - "Clok clok@mail.example.com"      (Excel-/Copy-Paste-Variante)
     und wandelt die letzte in das mittlere Format um, weil Resend
     nur die ersten beiden akzeptiert.
     """

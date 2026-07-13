@@ -297,7 +297,7 @@ weiter.
 **Dev-Modus:** Wenn `RESEND_API_KEY` leer oder ungesetzt ist, wird die
 Mail nicht versendet, sondern strukturiert geloggt (Empfänger, Subject,
 Text-Body). Damit lokale Entwicklung und CI funktionieren, ohne Resend
-zu treffen, und das Verifizieren der Domain `send.f-lv.de` (DKIM/SPF
+zu treffen, und das Verifizieren der Domain `mail.example.com` (DKIM/SPF
 bei All-Inkl) parallel laufen kann, ohne den Refactor zu blockieren.
 
 ### 5.2 Service-Layer

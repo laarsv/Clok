@@ -78,10 +78,10 @@ Frontend: http://localhost:8080 · API-Docs: http://localhost:8000/docs
 
 1. Repo auf den LXC ziehen (`/opt/appdata/clok` ist die übliche Stelle).
 2. `.env` mit produktiven Werten anlegen (starkes `SECRET_KEY`,
-   Resend-Daten, `APP_BASE_URL=https://clok.home.f-lv.de`).
+   Resend-Daten, `APP_BASE_URL=https://clok.example.com`).
 3. `docker compose up -d --build`.
 4. Erstmaligen Admin via `bootstrap-admin` anlegen (siehe oben).
-5. In Nginx Proxy Manager: `clok.home.f-lv.de` → `http://clok-frontend-1:80`
+5. In Nginx Proxy Manager: `clok.example.com` → `http://clok-frontend-1:80`
    (gemeinsames `proxy-net`, SSL via Let's Encrypt DNS-01).
 
 ## E-Mail-Setup (Resend)
@@ -90,9 +90,9 @@ Mail-Versand läuft über [Resend](https://resend.com). Solange
 `RESEND_API_KEY` leer ist, läuft das Backend im **Dev-Modus**: Mails
 werden strukturiert geloggt, **nicht** versendet.
 
-In diesem Setup ist die Subdomain `send.f-lv.de` als Absender-Domain
+In diesem Setup ist die Subdomain `mail.example.com` als Absender-Domain
 bei Resend verifiziert (DKIM/SPF/Return-Path bei All-Inkl gesetzt),
-Default-Absender ist `clok@send.f-lv.de`.
+Default-Absender ist `clok@mail.example.com`.
 
 ### Schritte für die produktive Aktivierung (für eine andere Domain)
 
@@ -109,7 +109,7 @@ Default-Absender ist `clok@send.f-lv.de`.
 | Variable             | Bedeutung                                  |
 | -------------------- | ------------------------------------------ |
 | `RESEND_API_KEY`     | Resend-Schlüssel; leer = Dev-Modus         |
-| `RESEND_FROM_EMAIL`  | Absender, default `clok@send.f-lv.de`      |
+| `RESEND_FROM_EMAIL`  | Absender, default `clok@mail.example.com`      |
 | `RESEND_REPLY_TO`    | Optional: Reply-To-Adresse                 |
 | `APP_BASE_URL`       | Basis-URL für Mail-Links                   |
 
@@ -133,11 +133,11 @@ Mögliche Ausgaben:
 **2. Admin-Endpoint** `POST /api/admin/test-email` (Rolle Admin):
 
 ```bash
-TOKEN=$(curl -s -X POST https://clok.home.f-lv.de/api/auth/login \
+TOKEN=$(curl -s -X POST https://clok.example.com/api/auth/login \
   -d "username=lars&password=…" \
   -H "Content-Type: application/x-www-form-urlencoded" | jq -r .access_token)
 
-curl -s -X POST https://clok.home.f-lv.de/api/admin/test-email \
+curl -s -X POST https://clok.example.com/api/admin/test-email \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"to": "lars@example.com"}' | jq

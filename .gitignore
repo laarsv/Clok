@@ -27,3 +27,4 @@ db_data/
 # IDE
 .vscode/
 .idea/
+.claude/

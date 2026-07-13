@@ -86,4 +86,4 @@ echo
 echo "Erstdeploy? Einmalig den ersten Admin anlegen:"
 echo "  ${DC[*]} exec backend python -m app.cli bootstrap-admin \\"
 echo "    --username <name> --email <mail> --password '<pw>'"
-echo "NPM: clok.home.f-lv.de -> http://clok-frontend-1:80 (proxy-net)"
+echo "NPM: clok.example.com -> http://clok-frontend-1:80 (proxy-net)"
