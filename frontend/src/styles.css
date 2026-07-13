@@ -1,16 +1,19 @@
 /* Fin.Co-inspired colors. Roboto via system fallback for now;
    bei Bedarf später Google-Fonts-Embed im index.html ergänzen. */
 
+/* Palette auf „Sync" (Royal-Blau, hell) geflippt. Die Altscreens sind
+   variablen-getrieben und werden dadurch sofort hell + royal, während sie
+   Screen für Screen auf Tailwind umgebaut werden. */
 :root {
-  --bg: #1d1d1b;
-  --surface: #2a2a28;
-  --accent: #00a984;
-  --accent-hover: #00c599;
-  --text: #f5f5f3;
-  --text-muted: #a8a8a3;
-  --error: #ff6b6b;
-  --warning: #ffcc4d;
-  --border: #3a3a37;
+  --bg: #f6f7fb;        /* Seite (near-paper) */
+  --surface: #ffffff;   /* Cards */
+  --accent: #2947c9;    /* royal */
+  --accent-hover: #1f38a8;
+  --text: #161a24;      /* ink */
+  --text-muted: #5b6172;
+  --error: #dc2626;
+  --warning: #b45309;
+  --border: #e6e8f0;    /* ink/10 */
   --radius: 8px;
 }
 

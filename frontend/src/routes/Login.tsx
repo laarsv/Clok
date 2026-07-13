@@ -27,34 +27,57 @@ export default function Login() {
     }
   };
 
+  const onEnter = (e: React.KeyboardEvent) => {
+    // Enter loggt ein, sobald beide Felder gefüllt sind – kein versehentlicher
+    // Submit mit leerem Passwort.
+    if (e.key === "Enter" && username && password) submit();
+  };
+
   return (
-    <div className="center">
-      <div className="card">
-        <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
-        <label>Benutzername
-          <input value={username} autoFocus
-            onChange={(e) => setUsername(e.target.value)}
-            onKeyDown={(e) => {
-              // Enter im Username-Feld: einloggen, falls Passwort schon
-              // gesetzt ist – sonst stillschweigend ignorieren (kein
-              // Standard-Form-Submit, damit der User nicht versehentlich
-              // mit leerem Passwort abschickt).
-              if (e.key !== "Enter") return;
-              if (username && password) submit();
-            }} />
-        </label>
-        <label>Passwort
-          <input type="password" value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key !== "Enter") return;
-              if (username && password) submit();
-            }} />
-        </label>
-        {error && <div className="error">{error}</div>}
-        <button onClick={submit} disabled={busy}>{busy ? "Anmelden…" : "Anmelden"}</button>
-        <p className="muted small" style={{ marginTop: "1rem", textAlign: "center" }}>
-          <Link to="/forgot-password">Passwort vergessen?</Link>
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+      <div className="card w-full max-w-sm p-6 sm:p-8">
+        <div className="mb-6 text-center">
+          <div className="eyebrow">Arbeitszeiterfassung</div>
+          <h1 className="mt-1 text-4xl font-black tracking-tight text-royal">Clok</h1>
+        </div>
+
+        <div className="space-y-4">
+          <label className="block">
+            <span className="field-label">Benutzername</span>
+            <input
+              className="input"
+              value={username}
+              autoFocus
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={onEnter}
+            />
+          </label>
+          <label className="block">
+            <span className="field-label">Passwort</span>
+            <input
+              className="input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={onEnter}
+            />
+          </label>
+
+          {error && (
+            <div className="rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">
+              {error}
+            </div>
+          )}
+
+          <button onClick={submit} disabled={busy} className="btn-primary w-full">
+            {busy ? "Anmelden…" : "Anmelden"}
+          </button>
+        </div>
+
+        <p className="mt-6 text-center text-sm">
+          <Link to="/forgot-password" className="font-bold text-royal hover:underline">
+            Passwort vergessen?
+          </Link>
         </p>
       </div>
     </div>

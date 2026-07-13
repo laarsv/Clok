@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Preflight ist aus – wir übernehmen nur den Teil, den Tailwind-Utilities
+     brauchen: border-style/-width-Default, damit `border ...` sichtbar wird.
+     box-sizing setzt die alte styles.css bereits global. */
+  *, ::before, ::after {
+    border-width: 0;
+    border-style: solid;
+    border-color: rgb(22 26 36 / 0.10);
+  }
+  html {
+    font-family: 'Roboto', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4 {
+    @apply font-black tracking-tight;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold
+           transition focus:outline-none focus:ring-2 focus:ring-royal/40
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary { @apply btn bg-royal text-paper hover:bg-royal/90 shadow-sm; }
+  .btn-outline { @apply btn border border-ink/20 bg-paper text-ink hover:bg-ink/5; }
+  .btn-danger  { @apply btn bg-red-600 text-paper hover:bg-red-700 shadow-sm; }
+  .btn-ghost   { @apply btn text-ink hover:bg-ink/5; }
+  .btn-sm      { @apply px-3 py-1.5 text-sm; }
+
+  .card {
+    @apply rounded-2xl border border-ink/10 bg-paper shadow-sm;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-ink/20 bg-paper px-3 py-2.5 text-base text-ink
+           placeholder:text-ink/40
+           focus:border-royal focus:ring-2 focus:ring-royal/30 focus:outline-none;
+  }
+  .field-label {
+    @apply block text-xs font-medium text-ink/60 mb-1;
+  }
+  .eyebrow {
+    @apply text-xs font-bold uppercase tracking-wider text-royal;
+  }
+}
