@@ -155,7 +155,7 @@ function EmployeeCard({ row, onOpen }: { row: EmployerDashboardRow; onOpen: () =
   return (
     <button
       onClick={onOpen}
-      className={`card group w-full p-4 text-left transition hover:border-royal/40 hover:shadow-md ${offboarded ? "opacity-60" : ""}`}
+      className={`card group w-full p-4 text-left text-ink transition hover:border-royal/40 hover:shadow-md ${offboarded ? "opacity-60" : ""}`}
     >
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-royal text-sm font-bold text-paper">
