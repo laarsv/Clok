@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Shell from "../../components/Shell";
 import AbsenceCreateForm from "../../components/AbsenceCreateForm";
@@ -24,7 +24,6 @@ import {
 import {
   addDays, deWeekday, fmtDe, fmtHours, isoDate, startOfWeek,
 } from "../../lib/datetime";
-import { useMediaQuery } from "../../lib/useMediaQuery";
 
 type EditMode = null | "master" | "new-terms" | { kind: "edit-terms"; id: number };
 type EntryView = "woche" | "liste";
@@ -65,18 +64,8 @@ export default function EmployeeDetail() {
   const [drill, setDrill] = useState<DrillKey>(null);
   const [absenceOpen, setAbsenceOpen] = useState(false);
 
-  // Default-View nach Viewport: ≤ 768px = Liste, sonst Woche. Der
-  // initialView-Ref hält fest, dass wir den Default nur EINMAL beim
-  // ersten Match übernehmen – sonst würde ein Resize während der Sitzung
-  // den manuell gewählten View überschreiben.
-  const isMobile = useMediaQuery("(max-width: 768px)");
-  const [entryView, setEntryView] = useState<EntryView>("woche");
-  const initialViewSet = useRef(false);
-  useEffect(() => {
-    if (initialViewSet.current) return;
-    initialViewSet.current = true;
-    setEntryView(isMobile ? "liste" : "woche");
-  }, [isMobile]);
+  // Standard-Ansicht: Liste (Woche per Umschalter wählbar).
+  const [entryView, setEntryView] = useState<EntryView>("liste");
 
   const days = useMemo(() => {
     const start = startOfWeek(anchor);
