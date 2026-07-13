@@ -1,0 +1,11 @@
+{% extends "_layout.html.j2" %}
+{% block body %}
+<p>Hi {{ requester.first_name }},</p>
+<p>dein Monat <strong>{{ month_label }}</strong> wurde von {{ approver.first_name }} <strong>{{ decision_headline }}</strong>.</p>
+{% if approved %}
+<p>Der Monat ist damit abgeschlossen und für Änderungen gesperrt.</p>
+{% else %}
+<p>Du kannst den Monat wieder bearbeiten und ihn danach erneut einreichen.</p>
+{% endif %}
+<p><a href="{{ link }}" style="display:inline-block;padding:10px 18px;background:#1c1c1c;color:#fff;text-decoration:none;border-radius:8px;">Monat öffnen →</a></p>
+{% endblock %}

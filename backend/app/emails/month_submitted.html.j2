@@ -1,0 +1,7 @@
+{% extends "_layout.html.j2" %}
+{% block body %}
+<p>Hi {{ approver.first_name }},</p>
+<p><strong>{{ requester.full_name }}</strong> hat den Monat <strong>{{ month_label }}</strong> zur Freigabe eingereicht.</p>
+<p>Prüf die erfassten Zeiten und gib den Monat frei – oder gib ihn zur Korrektur zurück.</p>
+<p><a href="{{ link }}" style="display:inline-block;padding:10px 18px;background:#1c1c1c;color:#fff;text-decoration:none;border-radius:8px;">Monat prüfen →</a></p>
+{% endblock %}

@@ -11,12 +11,53 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.audit import log_change
+from app.config import get_settings
 from app.database import get_db
 from app.models import AuditAction, MonthClosure, MonthClosureStatus, Role, User
+from app.notifications.service import NotificationKind, notify
 from app.permissions import require_active_user, supervises, visible_user_ids
 from app.schemas import ClosureAction, MonthClosureOut
 
 router = APIRouter(prefix="/api/closures", tags=["closures"])
+
+_MONTH_NAMES = (
+    "", "Januar", "Februar", "März", "April", "Mai", "Juni",
+    "Juli", "August", "September", "Oktober", "November", "Dezember",
+)
+
+
+def _month_label(year: int, month: int) -> str:
+    return f"{_MONTH_NAMES[month]} {year}"
+
+
+def _person_ctx(u: Optional[User]) -> dict:
+    if u is None:
+        return {"first_name": "", "full_name": ""}
+    name = u.full_name or u.username
+    return {"id": u.id, "first_name": name.split()[0], "full_name": name, "email": u.email}
+
+
+def _link(path: str) -> str:
+    return f"{get_settings().app_base_url.rstrip('/')}{path}"
+
+
+def _notify_decision(
+    db: Session, actor: User, target_id: int, year: int, month: int,
+    headline: str, approved: bool,
+) -> None:
+    """Mail an den MA, wenn sein Monat entschieden wurde (freigeben/ablehnen/
+    wieder öffnen). Kein Selbstversand, wenn der AG denselben Datensatz betrifft."""
+    target = db.query(User).filter(User.id == target_id).first()
+    if target is None or target.id == actor.id:
+        return
+    notify(db, kind=NotificationKind.MONTH_CLOSURE_DECIDED, recipient=target, ctx={
+        "requester": _person_ctx(target),
+        "approver": _person_ctx(actor),
+        "month_label": _month_label(year, month),
+        "decision_headline": headline,
+        "approved": approved,
+        "link": _link("/zeit/monat"),
+    })
 
 
 def _out(c: MonthClosure, user: Optional[User] = None) -> MonthClosureOut:
@@ -101,6 +142,19 @@ def submit(payload: ClosureAction, actor: User = Depends(require_active_user),
     log_change(db, actor_user_id=actor.id, action=AuditAction.UPDATE,
                entity_type="month_closure", entity_id=row.id, subject_user_id=target_id)
     db.commit(); db.refresh(row)
+
+    target = db.query(User).filter(User.id == target_id).first()
+    supervisor = (
+        db.query(User).filter(User.id == target.supervisor_id).first()
+        if target and target.supervisor_id else None
+    )
+    if supervisor and supervisor.id != actor.id:
+        notify(db, kind=NotificationKind.MONTH_SUBMITTED, recipient=supervisor, ctx={
+            "requester": _person_ctx(target),
+            "approver": _person_ctx(supervisor),
+            "month_label": _month_label(payload.year, payload.month),
+            "link": _link(f"/employer/employees/{target_id}"),
+        })
     return _out(row)
 
 
@@ -123,16 +177,22 @@ def approve(payload: ClosureAction, actor: User = Depends(require_active_user),
     log_change(db, actor_user_id=actor.id, action=AuditAction.UPDATE,
                entity_type="month_closure", entity_id=row.id, subject_user_id=payload.user_id)
     db.commit(); db.refresh(row)
+    _notify_decision(db, actor, payload.user_id, payload.year, payload.month,
+                     headline="freigegeben", approved=True)
     return _out(row)
 
 
-def _delete_to_open(db: Session, actor: User, target_id: int, year: int, month: int) -> None:
+def _delete_to_open(db: Session, actor: User, target_id: int, year: int, month: int) -> bool:
+    """Löscht den Abschluss-Datensatz (→ offen). Gibt True zurück, wenn etwas
+    gelöscht wurde – nur dann ist eine Info-Mail an den MA sinnvoll."""
     row = _row(db, target_id, year, month)
-    if row is not None:
-        log_change(db, actor_user_id=actor.id, action=AuditAction.DELETE,
-                   entity_type="month_closure", entity_id=row.id, subject_user_id=target_id)
-        db.delete(row)
-        db.commit()
+    if row is None:
+        return False
+    log_change(db, actor_user_id=actor.id, action=AuditAction.DELETE,
+               entity_type="month_closure", entity_id=row.id, subject_user_id=target_id)
+    db.delete(row)
+    db.commit()
+    return True
 
 
 @router.post("/reject", status_code=204)
@@ -142,7 +202,9 @@ def reject(payload: ClosureAction, actor: User = Depends(require_active_user),
     if payload.user_id is None:
         raise HTTPException(status_code=422, detail="user_id erforderlich.")
     _supervise_or_403(actor, payload.user_id, db)
-    _delete_to_open(db, actor, payload.user_id, payload.year, payload.month)
+    if _delete_to_open(db, actor, payload.user_id, payload.year, payload.month):
+        _notify_decision(db, actor, payload.user_id, payload.year, payload.month,
+                         headline="zur Korrektur zurückgegeben", approved=False)
 
 
 @router.post("/reopen", status_code=204)
@@ -152,7 +214,9 @@ def reopen(payload: ClosureAction, actor: User = Depends(require_active_user),
     if payload.user_id is None:
         raise HTTPException(status_code=422, detail="user_id erforderlich.")
     _supervise_or_403(actor, payload.user_id, db)
-    _delete_to_open(db, actor, payload.user_id, payload.year, payload.month)
+    if _delete_to_open(db, actor, payload.user_id, payload.year, payload.month):
+        _notify_decision(db, actor, payload.user_id, payload.year, payload.month,
+                         headline="wieder geöffnet", approved=False)
 
 
 @router.post("/withdraw", status_code=204)

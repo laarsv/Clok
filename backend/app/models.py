@@ -392,6 +392,9 @@ class NotificationSettings(Base):
     incoming_vacation_request = Column(Boolean, default=True, nullable=False)
     incoming_sick_note = Column(Boolean, default=True, nullable=False)
     month_complete = Column(Boolean, default=True, nullable=False)
+    # Monatsabschluss-Workflow: AG bekommt Mail bei Einreichung, MA bei Entscheidung.
+    month_submitted = Column(Boolean, default=True, nullable=False)
+    month_closure_decided = Column(Boolean, default=True, nullable=False)
     # Admin-Mails rund ums Arbeitgeber-Onboarding (Toggles für jeden User
     # vorhanden, sinnvoll genutzt nur bei Admin-Rolle).
     admin_employer_onboarding_started = Column(Boolean, default=True, nullable=False)

@@ -874,6 +874,8 @@ export interface NotificationSettings {
   incoming_vacation_request: boolean;
   incoming_sick_note: boolean;
   month_complete: boolean;
+  month_submitted: boolean;
+  month_closure_decided: boolean;
 }
 
 export interface EmployerDashboardRow {

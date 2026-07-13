@@ -1,0 +1,8 @@
+Hi {{ requester.first_name }},
+
+dein Monat {{ month_label }} wurde von {{ approver.first_name }} {{ decision_headline }}.
+{% if approved %}Der Monat ist damit abgeschlossen und für Änderungen gesperrt.{% else %}Du kannst den Monat wieder bearbeiten und ihn danach erneut einreichen.{% endif %}
+
+Monat öffnen: {{ link }}
+
+– Clok

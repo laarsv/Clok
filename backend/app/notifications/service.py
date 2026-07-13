@@ -37,6 +37,8 @@ class NotificationKind(str, Enum):
     INCOMING_SICK_NOTE = "incoming_sick_note"
     SICK_NOTE_FOR_YOU = "sick_note_for_you"
     MONTH_COMPLETE = "month_complete"
+    MONTH_SUBMITTED = "month_submitted"
+    MONTH_CLOSURE_DECIDED = "month_closure_decided"
     REMINDER_NO_ENTRY = "reminder_no_entry"
     REMINDER_REMAINING_VACATION = "reminder_remaining_vacation"
     INVITE_EMPLOYEE = "invite_employee"
@@ -68,6 +70,14 @@ _TEMPLATES: dict[NotificationKind, tuple[str, str, str]] = {
     NotificationKind.MONTH_COMPLETE: (
         "month_complete", "month_complete",
         "{requester_full_name}: Monat {month} ist komplett",
+    ),
+    NotificationKind.MONTH_SUBMITTED: (
+        "month_submitted", "month_submitted",
+        "{requester_full_name}: Monat {month_label} eingereicht",
+    ),
+    NotificationKind.MONTH_CLOSURE_DECIDED: (
+        "month_closure_decided", "month_closure_decided",
+        "Monat {month_label}: {decision_headline}",
     ),
     NotificationKind.REMINDER_NO_ENTRY: (
         "reminder_no_entry", "reminder_no_entry",

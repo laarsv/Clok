@@ -127,12 +127,14 @@ const NOTIF_LABEL: Record<keyof NotificationSettings, string> = {
   incoming_vacation_request: "Wenn ein Mitarbeiter Urlaub beantragt",
   incoming_sick_note: "Wenn ein Mitarbeiter sich krank meldet",
   month_complete: "Wenn ein Mitarbeiter den letzten Werktag getrackt hat",
+  month_submitted: "Wenn ein Mitarbeiter einen Monat zur Freigabe einreicht",
+  month_closure_decided: "Wenn mein Monat freigegeben oder zurückgegeben wurde",
 };
 
 const TOGGLES_FOR_ROLE: Record<Role, (keyof NotificationSettings)[]> = {
   admin: [],
-  employer: ["incoming_vacation_request", "incoming_sick_note", "month_complete"],
-  employee: ["reminder_no_entry", "reminder_remaining_vacation", "vacation_decided"],
+  employer: ["incoming_vacation_request", "incoming_sick_note", "month_submitted", "month_complete"],
+  employee: ["reminder_no_entry", "reminder_remaining_vacation", "vacation_decided", "month_closure_decided"],
 };
 
 export default function Profile() {

@@ -17,6 +17,8 @@ class NotificationSettingsOut(BaseModel):
     incoming_vacation_request: bool
     incoming_sick_note: bool
     month_complete: bool
+    month_submitted: bool
+    month_closure_decided: bool
 
     class Config:
         from_attributes = True
@@ -29,6 +31,8 @@ class NotificationSettingsUpdate(BaseModel):
     incoming_vacation_request: bool | None = None
     incoming_sick_note: bool | None = None
     month_complete: bool | None = None
+    month_submitted: bool | None = None
+    month_closure_decided: bool | None = None
 
 
 def _ensure(db: Session, user_id: int) -> NotificationSettings:

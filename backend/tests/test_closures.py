@@ -9,9 +9,16 @@ from fastapi import HTTPException
 
 from app.closures import assert_month_editable, closure_status
 from app.models import Role, User
+from app.notifications.service import NotificationKind
 from app.routers import closures as cl
 from app.routers import entries as entries_router
 from app.schemas import ClosureAction, TimeEntryIn
+
+
+def _capture_notify(monkeypatch):
+    calls: list[dict] = []
+    monkeypatch.setattr(cl, "notify", lambda db, **kw: calls.append(kw) or True)
+    return calls
 
 
 def _user(db, uname, role=Role.EMPLOYEE, supervisor_id=None):
@@ -78,3 +85,49 @@ def test_entry_create_blocked_in_approved_month(db_session):
     with pytest.raises(HTTPException) as e:
         entries_router.create_entry(payload, user=emp, db=db_session)
     assert e.value.status_code == 409
+
+
+def test_submit_notifies_supervisor(db_session, monkeypatch):
+    calls = _capture_notify(monkeypatch)
+    boss = _user(db_session, "boss", Role.EMPLOYER)
+    emp = _user(db_session, "anna", supervisor_id=boss.id)
+    cl.submit(ClosureAction(year=2026, month=5), actor=emp, db=db_session)
+    assert len(calls) == 1
+    assert calls[0]["kind"] == NotificationKind.MONTH_SUBMITTED
+    assert calls[0]["recipient"].id == boss.id
+
+
+def test_submit_by_employer_does_not_self_notify(db_session, monkeypatch):
+    calls = _capture_notify(monkeypatch)
+    boss = _user(db_session, "boss", Role.EMPLOYER)
+    emp = _user(db_session, "anna", supervisor_id=boss.id)
+    # AG reicht für den MA ein → keine Mail an sich selbst
+    cl.submit(ClosureAction(year=2026, month=5, user_id=emp.id), actor=boss, db=db_session)
+    assert calls == []
+
+
+def test_approve_notifies_employee(db_session, monkeypatch):
+    calls = _capture_notify(monkeypatch)
+    boss = _user(db_session, "boss", Role.EMPLOYER)
+    emp = _user(db_session, "anna", supervisor_id=boss.id)
+    cl.approve(ClosureAction(year=2026, month=5, user_id=emp.id), actor=boss, db=db_session)
+    assert len(calls) == 1
+    assert calls[0]["kind"] == NotificationKind.MONTH_CLOSURE_DECIDED
+    assert calls[0]["recipient"].id == emp.id
+    assert calls[0]["ctx"]["approved"] is True
+
+
+def test_reject_notifies_employee_only_if_something_deleted(db_session, monkeypatch):
+    calls = _capture_notify(monkeypatch)
+    boss = _user(db_session, "boss", Role.EMPLOYER)
+    emp = _user(db_session, "anna", supervisor_id=boss.id)
+    # reject auf einen offenen Monat → nichts gelöscht, keine Mail
+    cl.reject(ClosureAction(year=2026, month=5, user_id=emp.id), actor=boss, db=db_session)
+    assert calls == []
+    # nach Einreichung → reject schickt „zur Korrektur zurückgegeben"
+    cl.submit(ClosureAction(year=2026, month=5, user_id=emp.id), actor=emp, db=db_session)
+    calls.clear()
+    cl.reject(ClosureAction(year=2026, month=5, user_id=emp.id), actor=boss, db=db_session)
+    assert len(calls) == 1
+    assert calls[0]["kind"] == NotificationKind.MONTH_CLOSURE_DECIDED
+    assert calls[0]["ctx"]["approved"] is False
