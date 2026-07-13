@@ -69,7 +69,10 @@ export default function EntryForm({ initial, defaultDate, onSaved, onCancel }: P
     } catch (e: any) {
       try {
         const parsed = JSON.parse(e.message);
-        setIssues(parsed.detail ?? []);
+        // Validierungsfehler liefern detail als Array von Issues; HTTP-Fehler
+        // (z. B. 409 gesperrter Monat) als String – den zeigen wir als Text.
+        if (Array.isArray(parsed.detail)) setIssues(parsed.detail);
+        else setError(typeof parsed.detail === "string" ? parsed.detail : e.message);
       } catch {
         setError(e.message);
       }

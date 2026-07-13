@@ -9,6 +9,7 @@ import {
 import {
   endOfMonth, fmtHours, isInEditableWindow, isoDate, startOfMonth,
 } from "../lib/datetime";
+import { useClosures } from "../lib/useClosures";
 
 interface Props {
   /** Wessen Daten anzeigen. Wenn === current user: eigene Sicht. */
@@ -46,6 +47,8 @@ export default function EntriesLog({ employeeId, canEditAll }: Props) {
 
   const monthStart = useMemo(() => startOfMonth(anchor), [anchor]);
   const monthEnd = useMemo(() => endOfMonth(anchor), [anchor]);
+  const { statusOf, isLocked } = useClosures(employeeId, [anchor.getFullYear()]);
+  const monthStatus = statusOf(isoDate(monthStart));
 
   const load = async () => {
     setError(null);
@@ -80,7 +83,7 @@ export default function EntriesLog({ employeeId, canEditAll }: Props) {
   }, [entries, absences]);
 
   const canEdit = (date: string): boolean =>
-    canEditAll || isInEditableWindow(date);
+    (canEditAll || isInEditableWindow(date)) && !isLocked(date, canEditAll);
 
   const totalHours = entries.reduce((s, e) => s + (e.net_hours || 0), 0);
   const creditHours = absences.reduce((s, a) => s + (a.paid_hours || 0), 0);
@@ -109,7 +112,20 @@ export default function EntriesLog({ employeeId, canEditAll }: Props) {
         </span>
       </div>
 
-      {!canEditAll && (
+      {monthStatus !== "open" && (
+        <div>
+          {monthStatus === "submitted" ? (
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800">
+              eingereicht{canEditAll ? "" : " – wartet auf Freigabe, keine Änderungen"}
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded-full bg-royal/10 px-2.5 py-0.5 text-xs font-bold text-royal">
+              freigegeben · Monat gesperrt
+            </span>
+          )}
+        </div>
+      )}
+      {!canEditAll && monthStatus === "open" && (
         <p className="text-sm text-ink/60">
           Du kannst nur Daten aus dem aktuellen und vorherigen Monat ändern
           oder löschen. Ältere Einträge gelten als abgeschlossen – wende dich

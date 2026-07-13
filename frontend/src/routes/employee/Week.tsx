@@ -7,6 +7,7 @@ import { useCurrentUser } from "../../auth/CurrentUser";
 import { addDays, deWeekday, fmtDe, fmtHours, isoDate, startOfWeek } from "../../lib/datetime";
 import { absenceDayCredit } from "../../lib/absenceCredit";
 import { isMissingDay } from "../../lib/missingDays";
+import { useClosures } from "../../lib/useClosures";
 
 export default function Week() {
   const { user } = useCurrentUser();
@@ -21,6 +22,8 @@ export default function Week() {
     const start = startOfWeek(anchor);
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
   }, [anchor]);
+
+  const { isLocked } = useClosures(user?.id, [days[0].getFullYear(), days[6].getFullYear()]);
 
   const load = async () => {
     if (!user) return;
@@ -85,6 +88,7 @@ export default function Week() {
             date: d, user, hasEntry: dayEntries.length > 0,
             absences, holidays,
           });
+          const locked = isLocked(k);
           const tint = missing ? "border-amber-300 bg-amber-50"
             : absence ? (absence.type === "sick" ? "bg-red-50" : "bg-royal/5")
             : holiday ? "bg-ink/5" : "";
@@ -104,9 +108,14 @@ export default function Week() {
                 {missing && (
                   <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">fehlt</span>
                 )}
+                {locked && (
+                  <span className="inline-flex items-center rounded-full bg-ink/10 px-2 py-0.5 text-[11px] font-bold text-ink/50">gesperrt</span>
+                )}
               </div>
               {dayEntries.map((e) => (
-                <div key={e.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm text-ink hover:bg-ink/5" onClick={() => setEditing(e)}>
+                <div key={e.id}
+                  className={`flex items-center gap-2 rounded-md px-2 py-1 text-sm text-ink ${locked ? "opacity-70" : "cursor-pointer hover:bg-ink/5"}`}
+                  onClick={() => { if (!locked) setEditing(e); }}>
                   <span className="tabular-nums">{e.start_at.slice(11, 16)}–{e.end_at?.slice(11, 16) ?? "—"}</span>
                   {e.project && <span className="truncate text-ink/60">{e.project}</span>}
                   <span className="ml-auto font-medium tabular-nums">{fmtHours(e.net_hours)}</span>
@@ -114,7 +123,7 @@ export default function Week() {
               ))}
               <div className="mt-auto flex items-center justify-between border-t border-ink/10 pt-2">
                 <span className="text-sm font-bold tabular-nums">{fmtHours(dayTotal)}</span>
-                <button className="btn-ghost btn-sm" aria-label="Zeit erfassen" onClick={() => setAdding(k)}>+</button>
+                <button className="btn-ghost btn-sm" aria-label="Zeit erfassen" disabled={locked} onClick={() => setAdding(k)}>+</button>
               </div>
             </div>
           );
