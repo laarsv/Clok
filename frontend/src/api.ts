@@ -746,6 +746,7 @@ export interface MonthSummary {
   month: number; // 1..12
   actual_hours: number;
   target_hours: number;
+  absence_credit_hours: number; // Lohnfortzahlung Urlaub/Krankheit im Monat
   balance_at_end: number | null;
   vacation_days: number;
   sick_days: number;
@@ -770,6 +771,7 @@ export interface BalanceOut {
   as_of: string;
   actual_hours_to_date: number;
   target_hours_to_date: number;
+  absence_credit_hours: number; // Lohnfortzahlung Urlaub/Krankheit bis Stichtag
 }
 
 export interface PeriodKpiOut {
@@ -803,6 +805,7 @@ export interface Absence {
   decided_at?: string | null;
   decided_by?: number | null;
   note?: string | null;
+  paid_hours: number; // Lohnfortzahlungs-Stunden (0 bei unbezahlt/pending)
 }
 
 export interface AbsenceInput {

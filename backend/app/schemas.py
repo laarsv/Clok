@@ -336,6 +336,9 @@ class AbsenceOut(BaseModel):
     decided_at: Optional[datetime] = None
     decided_by: Optional[int] = None
     note: Optional[str] = None
+    # Gutgeschriebene Stunden (Lohnfortzahlung) bei genehmigtem bezahltem
+    # Urlaub/Krankheit; 0 bei unbezahlt/pending/Nicht-Salary.
+    paid_hours: float = 0.0
 
     class Config:
         from_attributes = True
@@ -493,6 +496,9 @@ class BalanceOut(BaseModel):
     as_of: date
     actual_hours_to_date: float
     target_hours_to_date: float
+    # Lohnfortzahlungs-Stunden aus genehmigtem bezahltem Urlaub/Krankheit bis
+    # Stichtag – zählen wie gearbeitet, für die transparente Aufschlüsselung.
+    absence_credit_hours: float = 0.0
 
 
 class PeriodKpiOut(BaseModel):
@@ -517,6 +523,7 @@ class MonthSummary(BaseModel):
     # nicht am Monatsende, eine Hochrechnung wäre genauso irreführend
     # wie das frühere balance_at_year_end.
     balance_at_end: Optional[float] = None
+    absence_credit_hours: float = 0.0  # Lohnfortzahlung (Urlaub/Krankheit) im Monat
     vacation_days: int
     sick_days: int
     other_absence_days: int      # unpaid + special + parental + training

@@ -113,6 +113,80 @@ def target_hours_for_period(
     return round(total, 2)
 
 
+# Bezahlte Abwesenheiten (Lohnfortzahlung): zählen wie gearbeitete Stunden.
+# Unbezahlte (Unpaid, Parental) tragen keine Stunden bei.
+PAID_ABSENCE_TYPES = (
+    AbsenceType.VACATION, AbsenceType.SICK, AbsenceType.SPECIAL, AbsenceType.TRAINING,
+)
+
+
+def hours_for_absence(db: Session, user: User, absence: Absence) -> float:
+    """Gutgeschriebene Stunden (Lohnfortzahlung) für EINE genehmigte, bezahlte
+    Abwesenheit: Summe der Tages-Soll-Stunden über ihre Werktage (ohne
+    Feiertage/arbeitsfreie Tage). 0 bei unbezahlten Typen, nicht genehmigt,
+    oder Nicht-Salary."""
+    if user.billing_mode != BillingMode.SALARY:
+        return 0.0
+    if absence.status != AbsenceStatus.APPROVED or absence.type not in PAID_ABSENCE_TYPES:
+        return 0.0
+    state = user.federal_state.value if user.federal_state else None
+    lookup = _terms_lookup(db, user)
+    total = 0.0
+    cur = absence.start_date
+    while cur <= absence.end_date:
+        terms = lookup(cur)
+        if terms and terms.billing_mode == BillingMode.SALARY:
+            wd = normalize_work_days(terms.work_days)
+            wh = terms.weekly_hours or 0
+            if wd and wh > 0 and is_work_day(wd, cur) and not is_holiday(cur, state):
+                total += wh / len(wd)
+        cur += timedelta(days=1)
+    return round(total, 2)
+
+
+def paid_absence_credit_hours(
+    db: Session, user: User, start: date, end_inclusive: date,
+) -> float:
+    """Summe der Lohnfortzahlungs-Stunden aller genehmigten bezahlten
+    Abwesenheiten im Zeitraum (Werktage × Tages-Soll). Algebraisch genau der
+    Betrag, um den `target_hours_for_period` das Soll wegen bezahlter
+    Abwesenheiten kürzt – für die transparente Anzeige (Soll voller Monat,
+    Urlaub/Krankheit als Ist-Gutschrift)."""
+    if end_inclusive < start or user.billing_mode != BillingMode.SALARY:
+        return 0.0
+    state = user.federal_state.value if user.federal_state else None
+    rows = (
+        db.query(Absence)
+        .filter(
+            Absence.user_id == user.id,
+            Absence.status == AbsenceStatus.APPROVED,
+            Absence.type.in_(PAID_ABSENCE_TYPES),
+            Absence.start_date <= end_inclusive,
+            Absence.end_date >= start,
+        )
+        .all()
+    )
+    paid: set[date] = set()
+    for a in rows:
+        cur = max(a.start_date, start)
+        stop = min(a.end_date, end_inclusive)
+        while cur <= stop:
+            paid.add(cur)
+            cur += timedelta(days=1)
+    if not paid:
+        return 0.0
+    lookup = _terms_lookup(db, user)
+    total = 0.0
+    for cur in paid:
+        terms = lookup(cur)
+        if terms and terms.billing_mode == BillingMode.SALARY:
+            wd = normalize_work_days(terms.work_days)
+            wh = terms.weekly_hours or 0
+            if wd and wh > 0 and is_work_day(wd, cur) and not is_holiday(cur, state):
+                total += wh / len(wd)
+    return round(total, 2)
+
+
 def saldo_for_user(db: Session, user: User, until: date) -> float:
     """Saldo (Über-/Minusstunden) bis einschließlich `until`. Nur Salary."""
     if user.billing_mode != BillingMode.SALARY:

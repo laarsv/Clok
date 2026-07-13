@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.absences import remaining_vacation_days
-from app.balance import saldo_for_user, target_hours_for_period
+from app.balance import paid_absence_credit_hours, saldo_for_user, target_hours_for_period
 from app.database import get_db
 from app.models import (
     Absence, AbsenceStatus, AbsenceType, BillingMode, Project, TimeEntry, User,
@@ -123,14 +123,17 @@ def balance(
 
     if target.billing_mode == BillingMode.SALARY and target.hire_date:
         target_hours = target_hours_for_period(db, target, target.hire_date, as_of)
+        credit = paid_absence_credit_hours(db, target, target.hire_date, as_of)
     else:
         target_hours = 0.0
+        credit = 0.0
 
     return BalanceOut(
         balance_hours=round(saldo, 2),
         as_of=as_of,
         actual_hours_to_date=round(actual, 2),
         target_hours_to_date=round(target_hours, 2),
+        absence_credit_hours=round(credit, 2),
     )
 
 
@@ -324,8 +327,10 @@ def year_overview(
         # Saldo-Hochrechnung.
         if target.billing_mode == BillingMode.SALARY:
             tgt = target_hours_for_period(db, target, m_start, m_end_inclusive)
+            credit = paid_absence_credit_hours(db, target, m_start, m_end_inclusive)
         else:
             tgt = 0.0
+            credit = 0.0
 
         # balance_at_end: nur für abgeschlossene Monate. Für den
         # laufenden Monat None – wir sind nicht am Monatsende.
@@ -348,6 +353,7 @@ def year_overview(
             month=m,
             actual_hours=round(actual, 2),
             target_hours=round(tgt, 2),
+            absence_credit_hours=round(credit, 2),
             balance_at_end=bal,
             vacation_days=vac,
             sick_days=sick,

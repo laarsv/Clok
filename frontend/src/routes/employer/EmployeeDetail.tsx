@@ -219,10 +219,32 @@ export default function EmployeeDetail() {
   const isSalary = employee.billing_mode === "salary";
   const monthActual = curMonth?.actual_hours ?? 0;
   const monthTarget = curMonth?.target_hours ?? 0;
+  // Lohnfortzahlung: genehmigter Urlaub/Krankheit zählt wie gearbeitet →
+  // Ist inkl. Gutschrift, Soll als voller Monat (Urlaubstage nicht rausgerechnet).
+  const monthCredit = curMonth?.absence_credit_hours ?? 0;
+  const monthIstFull = monthActual + monthCredit;
+  const monthSollFull = monthTarget + monthCredit;
 
   const saldoHours = balance?.balance_hours ?? 0;
   const istToDate = balance?.actual_hours_to_date ?? 0;
   const sollToDate = balance?.target_hours_to_date ?? 0;
+  const balanceCredit = balance?.absence_credit_hours ?? 0;
+  const sollFull = sollToDate + balanceCredit;
+
+  // Tages-Lohnfortzahlung (für Wochengrid): Tagessatz an genehmigten bezahlten
+  // Abwesenheitstagen, sofern Arbeitstag & kein Feiertag.
+  const dailyRate = isSalary && currentTerms?.weekly_hours && currentTerms?.work_days?.length
+    ? currentTerms.weekly_hours / currentTerms.work_days.length : 0;
+  const workDaySet = new Set<string>(currentTerms?.work_days ?? []);
+  const PAID_ABSENCE = new Set(["vacation", "sick", "special", "training"]);
+  const DOW = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  const dayCredit = (d: Date, a?: Absence): number => {
+    if (!dailyRate || !a || a.status !== "approved" || !PAID_ABSENCE.has(a.type)) return 0;
+    if (!workDaySet.has(DOW[d.getDay()])) return 0;
+    if (holidays[isoDate(d)]) return 0;
+    return dailyRate;
+  };
+  const weekCredit = days.reduce((s, d) => s + dayCredit(d, absenceFor(d)), 0);
   const initialOt = employee.initial_overtime_hours ?? 0;
   const adjToDate = adjustments.filter((a) => a.effective_date <= today);
   const adjTotal = adjToDate.reduce((s, a) => s + a.hours, 0);
@@ -310,10 +332,10 @@ export default function EmployeeDetail() {
 
         {/* KPI-Übersicht */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <KpiTile label="Stunden im Monat" value={fmtHours(monthActual)}
-            meta={isSalary ? `von ${fmtHours(monthTarget)} Soll` : "Stundenbasis"}
+          <KpiTile label="Stunden im Monat" value={fmtHours(monthIstFull)}
+            meta={isSalary ? `von ${fmtHours(monthSollFull)} Soll` : "Stundenbasis"}
             onClick={() => setDrill("hours")}>
-            {isSalary && <div className="mt-2"><HoursBar actual={monthActual} target={monthTarget} /></div>}
+            {isSalary && <div className="mt-2"><HoursBar actual={monthIstFull} target={monthSollFull} /></div>}
           </KpiTile>
 
           <KpiTile label="Saldo / Überstunden"
@@ -360,7 +382,7 @@ export default function EmployeeDetail() {
                 <strong className="text-sm">{fmtDe(days[0])} – {fmtDe(days[6])}</strong>
                 <Button size="sm" variant="outline" onClick={() => setAnchor(addDays(anchor, 7))}>Woche →</Button>
                 <Button size="sm" variant="ghost" onClick={() => setAnchor(new Date())}>Heute</Button>
-                <span className="ml-auto text-sm">Summe: <strong className="tabular-nums">{fmtHours(total)}</strong></span>
+                <span className="ml-auto text-sm">Summe: <strong className="tabular-nums">{fmtHours(total + weekCredit)}</strong></span>
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-7">
@@ -370,6 +392,8 @@ export default function EmployeeDetail() {
                   const sum = dayEntries.reduce((s, e) => s + (e.net_hours || 0), 0);
                   const holiday = holidays[k];
                   const absence = absenceFor(d);
+                  const credit = dayCredit(d, absence);
+                  const dayTotal = sum + credit;
                   const dayBorder = holiday
                     ? "border-amber-300"
                     : absence
@@ -383,6 +407,7 @@ export default function EmployeeDetail() {
                         {absence && (
                           <span className="w-fit rounded bg-ink/10 px-1.5 py-0.5 text-[10px] font-bold text-ink/70">
                             {absence.type === "vacation" ? "Urlaub" : absence.type === "sick" ? "Krank" : "Unbezahlt"}
+                            {credit > 0 ? ` · ${fmtHours(credit)}` : ""}
                           </span>
                         )}
                       </div>
@@ -393,7 +418,7 @@ export default function EmployeeDetail() {
                           {e.project && <span className="text-ink/50">{e.project}</span>}
                         </div>
                       ))}
-                      <div className="mt-auto border-t border-ink/10 pt-2 text-right text-xs font-bold tabular-nums">{fmtHours(sum)}</div>
+                      <div className="mt-auto border-t border-ink/10 pt-2 text-right text-xs font-bold tabular-nums">{fmtHours(dayTotal)}</div>
                     </div>
                   );
                 })}
@@ -426,14 +451,18 @@ export default function EmployeeDetail() {
               {drill === "hours" && (
                 <>
                   <p className="text-sm text-ink/60">
-                    Soll pro Arbeitstag = Wochenstunden ÷ Arbeitstage. Feiertage
-                    (Bundesland) und genehmigte Abwesenheiten zählen nicht zum Soll.
-                    Ist = Summe der Netto-Stunden (brutto minus Pausen).
+                    Soll pro Arbeitstag = Wochenstunden ÷ Arbeitstage (ohne
+                    Bundesland-Feiertage). Genehmigter Urlaub/Krankheit zählt als
+                    geleistete Zeit (Lohnfortzahlung) – als Ist-Gutschrift und im
+                    vollen Monats-Soll enthalten. Ist erfasst = Netto-Stunden.
                   </p>
                   <div className="mt-2">
-                    <CalcRow label="Ist-Stunden" value={fmtHours(monthActual)} />
-                    <CalcRow label="Soll-Stunden" value={isSalary ? fmtHours(monthTarget) : "—"} />
-                    <CalcRow total label="Differenz" value={isSalary ? signedH(monthActual - monthTarget) : "Stundenbasis"} />
+                    <CalcRow label="Ist-Stunden (erfasst)" value={fmtHours(monthActual)} />
+                    {monthCredit > 0 && (
+                      <CalcRow op="+" label="Urlaub/Krankheit (Lohnfortzahlung)" value={fmtHours(monthCredit)} />
+                    )}
+                    <CalcRow op="−" label="Soll-Stunden (voller Monat)" value={isSalary ? fmtHours(monthSollFull) : "—"} />
+                    <CalcRow total label="Differenz" value={isSalary ? signedH(monthIstFull - monthSollFull) : "Stundenbasis"} />
                   </div>
 
                   <h4 className="mt-4 mb-1 text-xs font-bold uppercase tracking-wider text-ink/50">Aktueller Vertrag</h4>
@@ -460,8 +489,8 @@ export default function EmployeeDetail() {
                             {year.months.map((m) => (
                               <tr key={m.month} className="border-b border-ink/5 last:border-b-0">
                                 <td className="px-3 py-2">{monthShort(m.month)}</td>
-                                <td className="px-3 py-2 text-right tabular-nums">{m.actual_hours.toFixed(1)}</td>
-                                <td className="px-3 py-2 text-right tabular-nums">{isSalary ? m.target_hours.toFixed(1) : "—"}</td>
+                                <td className="px-3 py-2 text-right tabular-nums">{(m.actual_hours + m.absence_credit_hours).toFixed(1)}</td>
+                                <td className="px-3 py-2 text-right tabular-nums">{isSalary ? (m.target_hours + m.absence_credit_hours).toFixed(1) : "—"}</td>
                                 <td className="px-3 py-2 text-right tabular-nums">
                                   {m.balance_at_end == null ? "—" : signedH(m.balance_at_end, 1)}
                                 </td>
@@ -479,14 +508,18 @@ export default function EmployeeDetail() {
                 isSalary ? (
                   <>
                     <p className="text-sm text-ink/60">
-                      Saldo = Startwert + alle erfassten Ist-Stunden + manuelle
-                      Korrekturen − das aufgelaufene Soll (ab Eintritt bis {balance?.as_of ?? today}).
+                      Saldo = Startwert + erfasste Ist-Stunden + Lohnfortzahlung
+                      (Urlaub/Krankheit) + manuelle Korrekturen − das aufgelaufene
+                      Soll (voller Monat, ab Eintritt bis {balance?.as_of ?? today}).
                     </p>
                     <div className="mt-2">
                       <CalcRow label="Startwert (Anfangs-Überstunden)" value={signedH(initialOt)} />
-                      <CalcRow op="+" label="Ist-Stunden gesamt" value={fmtHours(istToDate)} />
+                      <CalcRow op="+" label="Ist-Stunden (erfasst)" value={fmtHours(istToDate)} />
+                      {balanceCredit > 0 && (
+                        <CalcRow op="+" label="Urlaub/Krankheit (Lohnfortzahlung)" value={fmtHours(balanceCredit)} />
+                      )}
                       <CalcRow op="+" label="Saldo-Korrekturen" value={signedH(adjTotal)} />
-                      <CalcRow op="−" label="Soll-Stunden gesamt" value={fmtHours(sollToDate)} />
+                      <CalcRow op="−" label="Soll-Stunden (voller Monat)" value={fmtHours(sollFull)} />
                       <CalcRow total label="= Saldo" value={signedH(saldoHours)} valueClass={balCls} />
                     </div>
 

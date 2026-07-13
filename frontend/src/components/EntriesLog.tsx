@@ -160,7 +160,11 @@ export default function EntriesLog({ employeeId, canEditAll }: Props) {
                       {a.status === "pending" ? "offen" : a.status === "approved" ? "genehmigt" : "abgelehnt"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right text-ink/40">—</td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {a.paid_hours > 0
+                      ? <span title="Lohnfortzahlung – zählt wie gearbeitet">{fmtHours(a.paid_hours)}</span>
+                      : <span className="text-ink/40">—</span>}
+                  </td>
                   <td className="px-4 py-3 text-ink/60">{a.note ?? ""}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">

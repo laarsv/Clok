@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.audit import log_change
+from app.balance import hours_for_absence
 from app.config import get_settings
 from app.database import get_db
 from app.models import Absence, AbsenceStatus, AbsenceType, AuditAction, Role, User
@@ -16,8 +17,12 @@ from app.schemas import AbsenceDecision, AbsenceIn, AbsenceOut, AbsenceUpdate
 router = APIRouter(prefix="/api/absences", tags=["absences"])
 
 
-def _to_out(a: Absence) -> AbsenceOut:
-    return AbsenceOut.model_validate(a)
+def _to_out(db: Session, a: Absence) -> AbsenceOut:
+    out = AbsenceOut.model_validate(a)
+    user = db.query(User).filter(User.id == a.user_id).first()
+    if user is not None:
+        out.paid_hours = hours_for_absence(db, user, a)
+    return out
 
 
 def _absence_link(absence_id: int) -> str:
@@ -84,7 +89,7 @@ def list_absences(
         .order_by(Absence.start_date.desc())
         .all()
     )
-    return [_to_out(a) for a in rows]
+    return [_to_out(db, a) for a in rows]
 
 
 @router.post("", response_model=AbsenceOut, status_code=status.HTTP_201_CREATED)
@@ -157,7 +162,7 @@ def create_absence(
             notify(db, kind=NotificationKind.INCOMING_VACATION_REQUEST,
                    recipient=supervisor, ctx=_build_ctx(absence, requester, supervisor))
 
-    return _to_out(absence)
+    return _to_out(db, absence)
 
 
 def _decide(
@@ -260,7 +265,7 @@ def update_absence(
     )
     db.commit()
     db.refresh(absence)
-    return _to_out(absence)
+    return _to_out(db, absence)
 
 
 @router.patch("/{absence_id}/approve", response_model=AbsenceOut)
@@ -272,7 +277,7 @@ def approve_absence(
 ):
     absence = _decide(absence_id, AbsenceStatus.APPROVED, payload, user, db)
     _notify_decision(db, absence, user)
-    return _to_out(absence)
+    return _to_out(db, absence)
 
 
 @router.patch("/{absence_id}/reject", response_model=AbsenceOut)
@@ -284,7 +289,7 @@ def reject_absence(
 ):
     absence = _decide(absence_id, AbsenceStatus.REJECTED, payload, user, db)
     _notify_decision(db, absence, user)
-    return _to_out(absence)
+    return _to_out(db, absence)
 
 
 @router.delete("/{absence_id}", status_code=status.HTTP_204_NO_CONTENT)
