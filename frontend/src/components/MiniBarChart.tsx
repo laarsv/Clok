@@ -29,7 +29,7 @@ export default function MiniBarChart({ series, labels, height = 160 }: Props) {
   const barWidth = (groupWidth * 0.7) / seriesCount;
 
   return (
-    <div className="mini-bar-chart">
+    <div className="flex flex-col gap-2">
       <svg viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none"
         style={{ width: "100%", height, display: "block" }}>
         <text x={4} y={padY + 4} fill="var(--text-muted)" fontSize="11">{max.toFixed(0)}</text>
@@ -58,10 +58,10 @@ export default function MiniBarChart({ series, labels, height = 160 }: Props) {
           })
         )}
       </svg>
-      <div className="mini-bar-legend">
+      <div className="flex flex-wrap gap-4 text-sm text-ink/60">
         {series.map((s) => (
-          <span key={s.name} className="mini-bar-legend-item">
-            <span className="dot" style={{ background: s.color }} />
+          <span key={s.name} className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: s.color }} />
             {s.name}
           </span>
         ))}

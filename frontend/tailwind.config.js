@@ -1,8 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
-  // Preflight aus, solange die alte styles.css noch mitläuft (Phase 3 an).
-  corePlugins: { preflight: false },
   theme: {
     extend: {
       colors: {

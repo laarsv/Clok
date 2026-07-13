@@ -24,7 +24,7 @@ export default function Donut({
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   const offset = circumference * (1 - pct / 100);
   return (
-    <div className="donut" style={{ width: size, height: size }}>
+    <div className="relative flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <circle cx={size / 2} cy={size / 2} r={radius}
           fill="none" stroke={trackColor} strokeWidth={stroke} />
@@ -37,9 +37,9 @@ export default function Donut({
           style={{ transition: "stroke-dashoffset 240ms ease" }} />
       </svg>
       {(centerLabel || centerSub) && (
-        <div className="donut-center">
-          {centerLabel && <strong>{centerLabel}</strong>}
-          {centerSub && <span className="muted small">{centerSub}</span>}
+        <div className="pointer-events-none absolute flex flex-col items-center text-center">
+          {centerLabel && <strong className="text-xl font-black leading-none text-ink">{centerLabel}</strong>}
+          {centerSub && <span className="text-xs text-ink/60">{centerSub}</span>}
         </div>
       )}
     </div>

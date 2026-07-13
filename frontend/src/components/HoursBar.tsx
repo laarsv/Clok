@@ -6,8 +6,8 @@ interface Props {
 export default function HoursBar({ actual, target }: Props) {
   if (target <= 0) {
     return (
-      <div className="hours-bar">
-        <span className="muted small">{actual.toFixed(1)} h (kein Soll)</span>
+      <div className="flex flex-col gap-1">
+        <span className="text-xs text-ink/60">{actual.toFixed(1)} h (kein Soll)</span>
       </div>
     );
   }
@@ -16,16 +16,16 @@ export default function HoursBar({ actual, target }: Props) {
   // Überstunden-Anteil: bis zu zusätzliche 50% vom Soll als Overflow
   const overPct = Math.max(0, Math.min(50, pct - 100));
   return (
-    <div className="hours-bar">
-      <div className="hours-bar-track">
-        <div className="hours-bar-fill" style={{ width: `${fillPct}%` }} />
+    <div className="flex flex-col gap-1">
+      <div className="relative flex h-2.5 overflow-hidden rounded-full bg-ink/10">
+        <div className="h-full bg-royal transition-all" style={{ width: `${fillPct}%` }} />
         {overPct > 0 && (
-          <div className="hours-bar-over" style={{ width: `${overPct}%` }} />
+          <div className="h-full bg-amber-500 transition-all" style={{ width: `${overPct}%` }} />
         )}
       </div>
-      <div className="hours-bar-labels">
+      <div className="flex justify-between gap-2 text-sm">
         <span>{actual.toFixed(1)} / {target.toFixed(0)} h</span>
-        <span className={pct > 100 ? "positive" : pct < 80 ? "negative" : ""}>
+        <span className={pct > 100 ? "text-royal" : pct < 80 ? "text-red-600" : ""}>
           {Math.round(pct)} %
         </span>
       </div>

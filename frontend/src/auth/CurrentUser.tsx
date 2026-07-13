@@ -37,7 +37,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { refresh(); }, []);
 
-  if (!loaded) return <div className="center">Lade…</div>;
+  if (!loaded) return <div className="flex min-h-screen items-center justify-center text-ink/50">Lade…</div>;
 
   return (
     <CurrentUserCtx.Provider value={{ user, setUser, refresh }}>

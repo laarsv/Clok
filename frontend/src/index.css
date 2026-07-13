@@ -3,20 +3,38 @@
 @tailwind utilities;
 
 @layer base {
-  /* Preflight ist aus – wir übernehmen nur den Teil, den Tailwind-Utilities
-     brauchen: border-style/-width-Default, damit `border ...` sichtbar wird.
-     box-sizing setzt die alte styles.css bereits global. */
-  *, ::before, ::after {
-    border-width: 0;
-    border-style: solid;
-    border-color: rgb(22 26 36 / 0.10);
+  /* Palette auch als CSS-Variablen – die Chart-Komponenten (Donut/HoursBar/
+     Mini*) und einzelne Aufrufer geben Farben als var(--…) durch. */
+  :root {
+    --royal: #2947c9;
+    --accent: #2947c9;
+    --accent-hover: #1f38a8;
+    --surface: #ffffff;
+    --bg: #ffffff;
+    --border: #e6e8f0;
+    --text: #161a24;
+    --text-muted: #5b6172;
+    --error: #dc2626;
+    --warning: #b45309;
+    --radius: 8px;
   }
+
   html {
     font-family: 'Roboto', system-ui, sans-serif;
+    color: theme('colors.ink');
   }
-  h1, h2, h3, h4 {
-    @apply font-black tracking-tight;
+  html, body, #root { height: 100%; }
+  body {
+    @apply text-ink antialiased;
+    background: #f6f7fb; /* zarter Canvas, damit weiße Cards abheben */
   }
+
+  h1, h2, h3, h4 { @apply font-black tracking-tight; }
+  /* Größen-Sicherheitsnetz (explizite text-*-Klassen überschreiben das). */
+  h1 { @apply text-2xl; }
+  h2 { @apply text-xl; }
+  h3 { @apply text-lg; }
+  h4 { @apply text-base; }
 }
 
 @layer components {

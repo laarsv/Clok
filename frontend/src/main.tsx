@@ -7,7 +7,6 @@ import "@fontsource/roboto/latin-500.css";
 import "@fontsource/roboto/latin-700.css";
 import "@fontsource/roboto/latin-900.css";
 import "./index.css";
-import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
