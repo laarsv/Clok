@@ -27,22 +27,23 @@ export default function OnboardingFirstEmployee() {
   };
 
   return (
-    <div className="onboarding-shell">
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
       <OnboardingStepper active={4} />
-      <div className="card onboarding-card">
-        <h2>Erster Mitarbeiter</h2>
-        <p className="muted">
+      <div className="card p-6 sm:p-8">
+        <h1 className="text-2xl font-black tracking-tight">Erster Mitarbeiter</h1>
+        <p className="mt-2 text-sm text-ink/60">
           Magst du gleich deinen ersten Mitarbeiter anlegen? Er bekommt
           direkt einen Onboarding-Link per Mail. Du kannst das auch später
           aus dem Team-Dashboard tun – dann springst du jetzt direkt zum
           Abschluss.
         </p>
 
-        <div className="onboarding-actions">
-          <button className="primary" onClick={completeAndAdd} disabled={busy}>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button className="btn-primary flex-1" onClick={completeAndAdd} disabled={busy}>
             {busy ? "Schließe ab…" : "Mitarbeiter jetzt anlegen"}
           </button>
           <button
+            className="btn-outline flex-1"
             onClick={() => navigate("/onboarding/done", { replace: true })}
             disabled={busy}
           >
@@ -50,7 +51,9 @@ export default function OnboardingFirstEmployee() {
           </button>
         </div>
 
-        {error && <div className="error" style={{ marginTop: "0.8rem" }}>{error}</div>}
+        {error && (
+          <div className="mt-4 rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">{error}</div>
+        )}
       </div>
     </div>
   );

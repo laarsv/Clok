@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import EntryForm from "../../components/EntryForm";
+import Button from "../../components/ui/Button";
+import Modal from "../../components/ui/Modal";
+import { IconPlus, IconX } from "../../components/ui/Icons";
 import { api, type Absence, type TimeEntry } from "../../api";
 import { useCurrentUser } from "../../auth/CurrentUser";
 import {
   deWeekday, endOfMonth, fmtDe, fmtHours, isoDate, startOfMonth,
 } from "../../lib/datetime";
 import { isMissingDay } from "../../lib/missingDays";
-import { useMediaQuery } from "../../lib/useMediaQuery";
 
 const ABSENCE_LABELS: Record<string, string> = {
   vacation: "Urlaub", sick: "Krank", unpaid: "Unbezahlt",
@@ -20,7 +22,6 @@ export default function Month() {
   const [absences, setAbsences] = useState<Absence[]>([]);
   const [holidays, setHolidays] = useState<Record<string, string>>({});
 
-  const isMobile = useMediaQuery("(max-width: 768px)");
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -109,144 +110,139 @@ export default function Month() {
     };
   }, [selectedDay, entriesByDay, holidays, absences, user]);
 
-  const backdropClass = `modal-backdrop ${isMobile ? "as-bottom-sheet" : ""}`;
-  const modalClass = `modal ${isMobile ? "as-bottom-sheet-modal" : ""}`;
-
   return (
-    <div className="month">
-        <div className="month-toolbar">
-          <button className="nav-arrow" aria-label="Vorheriger Monat"
-            onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1))}>←</button>
-          <strong className="period-range">
-            {anchor.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}
-          </strong>
-          <button className="nav-arrow" aria-label="Nächster Monat"
-            onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>→</button>
-          <button onClick={() => setAnchor(new Date())}>Heute</button>
-          <span className="spacer" />
-          <span className="period-sum">Summe: <strong>{fmtHours(total)}</strong></span>
-        </div>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <button className="btn-outline btn-sm" aria-label="Vorheriger Monat"
+          onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1))}>←</button>
+        <strong className="text-sm font-bold">
+          {anchor.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}
+        </strong>
+        <button className="btn-outline btn-sm" aria-label="Nächster Monat"
+          onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>→</button>
+        <button className="btn-ghost btn-sm" onClick={() => setAnchor(new Date())}>Heute</button>
+        <span className="flex-1" />
+        <span className="text-sm text-ink/60">Summe: <strong className="text-ink tabular-nums">{fmtHours(total)}</strong></span>
+      </div>
 
-        <div className="month-grid">
-          {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((w) => (
-            <div key={w} className="month-head">{w}</div>
-          ))}
-          {cells.map((d, i) => {
-            if (!d) return <div key={i} className="month-cell empty" />;
-            const k = isoDate(d);
-            const sum = sumByDay[k] ?? 0;
-            const holiday = holidays[k];
-            const absence = absenceForDay(k);
-            const missing = !!user && isMissingDay({
-              date: d, user, hasEntry: sum > 0,
-              absences, holidays,
-            });
-            const cls = [
-              "month-cell",
-              holiday ? "holiday" : "",
-              absence ? `abs-${absence.type}` : "",
-              missing ? "missing" : "",
-            ].filter(Boolean).join(" ");
-            return (
-              <button
-                key={i}
-                type="button"
-                className={cls}
-                onClick={() => setSelectedDay(d)}
-                aria-label={`${deWeekday(d)} ${fmtDe(d)}`}
-              >
-                <div className="month-cell-day">{d.getDate()}</div>
-                {holiday && <div className="badge small">{holiday}</div>}
-                {absence && (
-                  <div className="badge small">
-                    {ABSENCE_LABELS[absence.type] ?? absence.type}
-                  </div>
-                )}
-                {missing && <div className="badge small badge-missing">fehlt</div>}
-                {sum > 0 && <div className="month-sum">{fmtHours(sum)}</div>}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="month-legend" aria-label="Legende der Tagesfärbungen">
-          <span className="legend-item"><span className="legend-swatch sw-vacation" /> Urlaub</span>
-          <span className="legend-item"><span className="legend-swatch sw-sick" /> Krank</span>
-          <span className="legend-item"><span className="legend-swatch sw-holiday" /> Feiertag</span>
-          <span className="legend-item"><span className="legend-swatch sw-missing" /> fehlt</span>
-        </div>
-
-        {selectedDay && selectedDayInfo && (
-          <div className={backdropClass} onClick={closeDialog}>
-            <div className={modalClass} onClick={(e) => e.stopPropagation()}>
-              <div className="day-detail-head">
-                <div>
-                  <h3 style={{ margin: 0 }}>{deWeekday(selectedDay)}, {fmtDe(selectedDay)}</h3>
-                  <div className="muted small">
-                    {selectedDayInfo.holiday && `Feiertag: ${selectedDayInfo.holiday}`}
-                    {selectedDayInfo.absence && (
-                      <>{ABSENCE_LABELS[selectedDayInfo.absence.type] ?? selectedDayInfo.absence.type}
-                        {selectedDayInfo.absence.status === "pending" ? " (offen)" : ""}</>
-                    )}
-                    {!selectedDayInfo.holiday && !selectedDayInfo.absence && selectedDayInfo.missing && "Tag ohne Eintrag"}
-                    {!selectedDayInfo.holiday && !selectedDayInfo.absence && !selectedDayInfo.missing && (
-                      selectedDayInfo.sum > 0 ? `${fmtHours(selectedDayInfo.sum)} erfasst` : "regulärer Tag"
-                    )}
-                  </div>
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
+        {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((w) => (
+          <div key={w} className="pb-1 text-center text-xs font-bold uppercase tracking-wide text-ink/50">{w}</div>
+        ))}
+        {cells.map((d, i) => {
+          if (!d) return <div key={i} />;
+          const k = isoDate(d);
+          const sum = sumByDay[k] ?? 0;
+          const holiday = holidays[k];
+          const absence = absenceForDay(k);
+          const missing = !!user && isMissingDay({
+            date: d, user, hasEntry: sum > 0,
+            absences, holidays,
+          });
+          const tint = missing ? "border-amber-300 bg-amber-50"
+            : absence ? (absence.type === "sick" ? "bg-red-50" : "bg-royal/5")
+            : holiday ? "bg-ink/5" : "bg-paper";
+          return (
+            <button
+              key={i}
+              type="button"
+              className={`flex min-h-[68px] flex-col gap-0.5 rounded-lg border border-ink/10 p-1.5 text-left text-ink transition hover:border-royal/40 sm:min-h-[92px] ${tint}`}
+              onClick={() => setSelectedDay(d)}
+              aria-label={`${deWeekday(d)} ${fmtDe(d)}`}
+            >
+              <div className="text-sm font-bold">{d.getDate()}</div>
+              {holiday && <div className="truncate rounded bg-ink/10 px-1 py-0.5 text-[10px] font-bold text-ink/60">{holiday}</div>}
+              {absence && (
+                <div className="truncate rounded bg-royal/10 px-1 py-0.5 text-[10px] font-bold text-royal">
+                  {ABSENCE_LABELS[absence.type] ?? absence.type}
                 </div>
-                <button className="modal-close-btn" onClick={closeDialog} aria-label="Schließen">×</button>
+              )}
+              {missing && <div className="rounded bg-amber-100 px-1 py-0.5 text-[10px] font-bold text-amber-800">fehlt</div>}
+              {sum > 0 && <div className="mt-auto text-right text-xs font-bold tabular-nums">{fmtHours(sum)}</div>}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-wrap gap-4 text-xs text-ink/60" aria-label="Legende der Tagesfärbungen">
+        <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-royal/20" /> Urlaub</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-red-200" /> Krank</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-ink/15" /> Feiertag</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-amber-200" /> fehlt</span>
+      </div>
+
+      <Modal open={!!(selectedDay && selectedDayInfo)} onClose={closeDialog}>
+        {selectedDayInfo && (
+          <>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-black sm:text-lg">{deWeekday(selectedDayInfo.date)}, {fmtDe(selectedDayInfo.date)}</h3>
+                <div className="mt-0.5 text-xs text-ink/60">
+                  {selectedDayInfo.holiday && `Feiertag: ${selectedDayInfo.holiday}`}
+                  {selectedDayInfo.absence && (
+                    <>{ABSENCE_LABELS[selectedDayInfo.absence.type] ?? selectedDayInfo.absence.type}
+                      {selectedDayInfo.absence.status === "pending" ? " (offen)" : ""}</>
+                  )}
+                  {!selectedDayInfo.holiday && !selectedDayInfo.absence && selectedDayInfo.missing && "Tag ohne Eintrag"}
+                  {!selectedDayInfo.holiday && !selectedDayInfo.absence && !selectedDayInfo.missing && (
+                    selectedDayInfo.sum > 0 ? `${fmtHours(selectedDayInfo.sum)} erfasst` : "regulärer Tag"
+                  )}
+                </div>
               </div>
-
-              {!showAddForm && !editingEntry && (
-                <>
-                  {selectedDayInfo.entries.length > 0 ? (
-                    <ul className="day-entry-list">
-                      {selectedDayInfo.entries.map((e) => (
-                        <li key={e.id}>
-                          <button className="day-entry-row" onClick={() => setEditingEntry(e)}>
-                            <span className="time">
-                              {e.start_at.slice(11, 16)}–{e.end_at?.slice(11, 16) ?? "—"}
-                            </span>
-                            <span className="hours">{fmtHours(e.net_hours)}</span>
-                            {e.project && <span className="muted">{e.project}</span>}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="muted small" style={{ margin: "0.6rem 0" }}>
-                      Noch keine Einträge an diesem Tag.
-                    </p>
-                  )}
-
-                  <button className="primary" onClick={() => setShowAddForm(true)}
-                    style={{ width: "100%", marginTop: "0.4rem" }}>
-                    + Zeit erfassen
-                  </button>
-                </>
-              )}
-
-              {(showAddForm || editingEntry) && (
-                <div className="day-detail-form">
-                  <EntryForm
-                    initial={editingEntry}
-                    defaultDate={selectedDayInfo.iso}
-                    onSaved={onDaySaved}
-                    onCancel={() => { setEditingEntry(null); setShowAddForm(false); }}
-                  />
-                  {editingEntry && (
-                    <button className="danger" style={{ marginTop: "0.6rem" }} onClick={async () => {
-                      if (!confirm("Eintrag löschen?")) return;
-                      await api.deleteEntry(editingEntry.id);
-                      await load();
-                      setEditingEntry(null);
-                    }}>Löschen</button>
-                  )}
-                </div>
-              )}
+              <button className="btn-ghost btn-sm -mr-2 px-2" onClick={closeDialog} aria-label="Schließen">
+                <IconX size={20} />
+              </button>
             </div>
-          </div>
+
+            {!showAddForm && !editingEntry && (
+              <>
+                {selectedDayInfo.entries.length > 0 ? (
+                  <ul className="mt-4 space-y-1">
+                    {selectedDayInfo.entries.map((e) => (
+                      <li key={e.id}>
+                        <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink hover:bg-ink/5" onClick={() => setEditingEntry(e)}>
+                          <span className="tabular-nums">
+                            {e.start_at.slice(11, 16)}–{e.end_at?.slice(11, 16) ?? "—"}
+                          </span>
+                          {e.project && <span className="truncate text-ink/60">{e.project}</span>}
+                          <span className="ml-auto font-medium tabular-nums">{fmtHours(e.net_hours)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="my-3 text-sm text-ink/60">
+                    Noch keine Einträge an diesem Tag.
+                  </p>
+                )}
+
+                <Button className="mt-3 w-full" onClick={() => setShowAddForm(true)}>
+                  <IconPlus size={18} /> Zeit erfassen
+                </Button>
+              </>
+            )}
+
+            {(showAddForm || editingEntry) && (
+              <div className="mt-4">
+                <EntryForm
+                  initial={editingEntry}
+                  defaultDate={selectedDayInfo.iso}
+                  onSaved={onDaySaved}
+                  onCancel={() => { setEditingEntry(null); setShowAddForm(false); }}
+                />
+                {editingEntry && (
+                  <Button variant="danger" className="mt-3" onClick={async () => {
+                    if (!confirm("Eintrag löschen?")) return;
+                    await api.deleteEntry(editingEntry.id);
+                    await load();
+                    setEditingEntry(null);
+                  }}>Löschen</Button>
+                )}
+              </div>
+            )}
+          </>
         )}
+      </Modal>
     </div>
   );
 }

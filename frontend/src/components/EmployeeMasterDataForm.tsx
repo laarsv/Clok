@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import Button from "./ui/Button";
+import Select from "./ui/Select";
 import { api, type FederalState, type User } from "../api";
 import { useCurrentUser } from "../auth/CurrentUser";
 
@@ -117,64 +119,71 @@ export default function EmployeeMasterDataForm({ user, onSaved, onCancel, selfEd
 
   return (
     <div>
-      <h3>Stammdaten bearbeiten</h3>
+      <h3 className="text-lg font-black">Stammdaten bearbeiten</h3>
       {isEmployee && selfEdit && (
-        <p className="muted small">
+        <p className="mt-2 text-sm text-ink/60">
           Identität, Anschrift, Lohn-Stammdaten und Notfallkontakt darfst
           du selbst pflegen. Eintrittsdatum, Bundesland und Vertragsdaten
           (Stunden, Urlaub, Gehalt) ändert dein Arbeitgeber.
         </p>
       )}
       {isEmployee && !selfEdit && (
-        <p className="muted small">
+        <p className="mt-2 text-sm text-ink/60">
           Vertragliche Daten (Gehalt, Stunden, Urlaub) liegen im
           Vertragsverlauf, damit historische Berechnungen stabil bleiben.
         </p>
       )}
 
-      <h4 className="form-section-h">Identität &amp; Kontakt</h4>
-      <div className="manual-grid">
-        <label>Voller Name<input value={data.full_name} onChange={(e) => set("full_name", e.target.value)} /></label>
-        <label>E-Mail<input type="email" value={data.email} onChange={(e) => set("email", e.target.value)} /></label>
-        <label>Telefon<input value={data.phone} onChange={(e) => set("phone", e.target.value)} /></label>
-        <label>Geburtsdatum<input type="date" value={data.date_of_birth} onChange={(e) => set("date_of_birth", e.target.value)} /></label>
+      <h4 className="mt-6 mb-2 text-xs font-bold uppercase tracking-wider text-ink/50">Identität &amp; Kontakt</h4>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className="block"><span className="field-label">Voller Name</span><input className="input" value={data.full_name} onChange={(e) => set("full_name", e.target.value)} /></label>
+        <label className="block"><span className="field-label">E-Mail</span><input className="input" type="email" value={data.email} onChange={(e) => set("email", e.target.value)} /></label>
+        <label className="block"><span className="field-label">Telefon</span><input className="input" value={data.phone} onChange={(e) => set("phone", e.target.value)} /></label>
+        <label className="block"><span className="field-label">Geburtsdatum</span><input className="input" type="date" value={data.date_of_birth} onChange={(e) => set("date_of_birth", e.target.value)} /></label>
       </div>
 
       {isEmployee && (
         <>
-          <h4 className="form-section-h">Anschrift</h4>
-          <div className="manual-grid">
-            <label className="full">Straße<input value={data.address_line1} onChange={(e) => set("address_line1", e.target.value)} /></label>
-            <label className="full">Adresszusatz<input value={data.address_line2} onChange={(e) => set("address_line2", e.target.value)} /></label>
-            <label>PLZ<input value={data.postal_code} onChange={(e) => set("postal_code", e.target.value)} /></label>
-            <label>Ort<input value={data.city} onChange={(e) => set("city", e.target.value)} /></label>
-            <label>Land<input value={data.country} onChange={(e) => set("country", e.target.value)} /></label>
+          <h4 className="mt-6 mb-2 text-xs font-bold uppercase tracking-wider text-ink/50">Anschrift</h4>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="block sm:col-span-2"><span className="field-label">Straße</span><input className="input" value={data.address_line1} onChange={(e) => set("address_line1", e.target.value)} /></label>
+            <label className="block sm:col-span-2"><span className="field-label">Adresszusatz</span><input className="input" value={data.address_line2} onChange={(e) => set("address_line2", e.target.value)} /></label>
+            <label className="block"><span className="field-label">PLZ</span><input className="input" value={data.postal_code} onChange={(e) => set("postal_code", e.target.value)} /></label>
+            <label className="block"><span className="field-label">Ort</span><input className="input" value={data.city} onChange={(e) => set("city", e.target.value)} /></label>
+            <label className="block"><span className="field-label">Land</span><input className="input" value={data.country} onChange={(e) => set("country", e.target.value)} /></label>
           </div>
 
-          <h4 className="form-section-h">Lohn &amp; Notfall</h4>
-          <div className="manual-grid">
-            <label>SV-Nummer<input value={data.social_security_number} onChange={(e) => set("social_security_number", e.target.value)} /></label>
-            <label>IBAN<input value={data.iban} onChange={(e) => set("iban", e.target.value)} /></label>
-            <label>Notfallkontakt Name<input value={data.emergency_contact_name} onChange={(e) => set("emergency_contact_name", e.target.value)} /></label>
-            <label>Notfallkontakt Telefon<input value={data.emergency_contact_phone} onChange={(e) => set("emergency_contact_phone", e.target.value)} /></label>
+          <h4 className="mt-6 mb-2 text-xs font-bold uppercase tracking-wider text-ink/50">Lohn &amp; Notfall</h4>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="block"><span className="field-label">SV-Nummer</span><input className="input" value={data.social_security_number} onChange={(e) => set("social_security_number", e.target.value)} /></label>
+            <label className="block"><span className="field-label">IBAN</span><input className="input" value={data.iban} onChange={(e) => set("iban", e.target.value)} /></label>
+            <label className="block"><span className="field-label">Notfallkontakt Name</span><input className="input" value={data.emergency_contact_name} onChange={(e) => set("emergency_contact_name", e.target.value)} /></label>
+            <label className="block"><span className="field-label">Notfallkontakt Telefon</span><input className="input" value={data.emergency_contact_phone} onChange={(e) => set("emergency_contact_phone", e.target.value)} /></label>
           </div>
 
           {!selfEdit && (
             <>
-              <h4 className="form-section-h">Beschäftigung</h4>
-              <p className="muted small" style={{ marginTop: 0 }}>
+              <h4 className="mt-6 mb-2 text-xs font-bold uppercase tracking-wider text-ink/50">Beschäftigung</h4>
+              <p className="mb-2 text-sm text-ink/60">
                 Diese Felder darf nur der Arbeitgeber pflegen. Sie wirken
                 auf Feiertags-/Soll-Berechnung – wer sie ändert, muss die
                 Auswirkung auf den Vertragsverlauf bedenken.
               </p>
-              <div className="manual-grid">
-                <label>Eintrittsdatum<input type="date" value={data.hire_date} onChange={(e) => set("hire_date", e.target.value)} /></label>
-                <label>Bundesland
-                  <select value={data.federal_state} onChange={(e) => set("federal_state", e.target.value)}>
-                    <option value="">– bitte wählen –</option>
-                    {FEDERAL_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </label>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="block"><span className="field-label">Eintrittsdatum</span><input className="input" type="date" value={data.hire_date} onChange={(e) => set("hire_date", e.target.value)} /></label>
+                <div>
+                  <span className="field-label">Bundesland</span>
+                  <Select
+                    value={data.federal_state}
+                    onChange={(v) => set("federal_state", v)}
+                    placeholder="– bitte wählen –"
+                    options={[
+                      { value: "", label: "– bitte wählen –" },
+                      ...FEDERAL_STATES.map((s) => ({ value: s, label: s })),
+                    ]}
+                    aria-label="Bundesland"
+                  />
+                </div>
               </div>
             </>
           )}
@@ -183,46 +192,50 @@ export default function EmployeeMasterDataForm({ user, onSaved, onCancel, selfEd
 
       {isEmployer && (
         <>
-          <h4 className="form-section-h">Firma</h4>
-          <div className="manual-grid">
-            <label className="full">Firmenname<input value={data.company_name} onChange={(e) => set("company_name", e.target.value)} /></label>
-            <label className="full">Straße<input value={data.company_address_line1} onChange={(e) => set("company_address_line1", e.target.value)} /></label>
-            <label className="full">Adresszusatz<input value={data.company_address_line2} onChange={(e) => set("company_address_line2", e.target.value)} /></label>
-            <label>PLZ<input value={data.company_postal_code} onChange={(e) => set("company_postal_code", e.target.value)} /></label>
-            <label>Ort<input value={data.company_city} onChange={(e) => set("company_city", e.target.value)} /></label>
-            <label>Land<input value={data.company_country} onChange={(e) => set("company_country", e.target.value)} /></label>
+          <h4 className="mt-6 mb-2 text-xs font-bold uppercase tracking-wider text-ink/50">Firma</h4>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="block sm:col-span-2"><span className="field-label">Firmenname</span><input className="input" value={data.company_name} onChange={(e) => set("company_name", e.target.value)} /></label>
+            <label className="block sm:col-span-2"><span className="field-label">Straße</span><input className="input" value={data.company_address_line1} onChange={(e) => set("company_address_line1", e.target.value)} /></label>
+            <label className="block sm:col-span-2"><span className="field-label">Adresszusatz</span><input className="input" value={data.company_address_line2} onChange={(e) => set("company_address_line2", e.target.value)} /></label>
+            <label className="block"><span className="field-label">PLZ</span><input className="input" value={data.company_postal_code} onChange={(e) => set("company_postal_code", e.target.value)} /></label>
+            <label className="block"><span className="field-label">Ort</span><input className="input" value={data.company_city} onChange={(e) => set("company_city", e.target.value)} /></label>
+            <label className="block"><span className="field-label">Land</span><input className="input" value={data.company_country} onChange={(e) => set("company_country", e.target.value)} /></label>
           </div>
 
-          <h4 className="form-section-h">Personalabteilung / Ansprechpartner</h4>
-          <div className="manual-grid">
-            <label>Name<input value={data.hr_contact_name} onChange={(e) => set("hr_contact_name", e.target.value)} /></label>
-            <label>E-Mail<input type="email" value={data.hr_contact_email} onChange={(e) => set("hr_contact_email", e.target.value)} /></label>
-            <label>Telefon<input value={data.hr_contact_phone} onChange={(e) => set("hr_contact_phone", e.target.value)} /></label>
+          <h4 className="mt-6 mb-2 text-xs font-bold uppercase tracking-wider text-ink/50">Personalabteilung / Ansprechpartner</h4>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="block"><span className="field-label">Name</span><input className="input" value={data.hr_contact_name} onChange={(e) => set("hr_contact_name", e.target.value)} /></label>
+            <label className="block"><span className="field-label">E-Mail</span><input className="input" type="email" value={data.hr_contact_email} onChange={(e) => set("hr_contact_email", e.target.value)} /></label>
+            <label className="block"><span className="field-label">Telefon</span><input className="input" value={data.hr_contact_phone} onChange={(e) => set("hr_contact_phone", e.target.value)} /></label>
           </div>
         </>
       )}
 
       {isAdmin && isEmployee && (
         <>
-          <h4 className="form-section-h">Zuordnung</h4>
-          <div className="manual-grid">
-            <label className="full">Arbeitgeber
-              <select value={supervisorId ?? ""}
-                onChange={(e) => setSupervisorId(e.target.value ? parseInt(e.target.value, 10) : null)}>
-                <option value="">– bitte wählen –</option>
-                {employers.map((em) => (
-                  <option key={em.id} value={em.id}>{em.full_name || em.username}</option>
-                ))}
-              </select>
-            </label>
+          <h4 className="mt-6 mb-2 text-xs font-bold uppercase tracking-wider text-ink/50">Zuordnung</h4>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <span className="field-label">Arbeitgeber</span>
+              <Select
+                value={String(supervisorId ?? "")}
+                onChange={(v) => setSupervisorId(v ? parseInt(v, 10) : null)}
+                placeholder="– bitte wählen –"
+                options={[
+                  { value: "", label: "– bitte wählen –" },
+                  ...employers.map((em) => ({ value: String(em.id), label: em.full_name || em.username })),
+                ]}
+                aria-label="Arbeitgeber"
+              />
+            </div>
           </div>
         </>
       )}
 
-      {error && <div className="error">{error}</div>}
-      <div className="row-actions">
-        <button onClick={submit} disabled={busy}>{busy ? "Speichere…" : "Speichern"}</button>
-        <button onClick={onCancel}>Abbrechen</button>
+      {error && <div className="mt-3 text-sm text-red-600">{error}</div>}
+      <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="ghost" onClick={onCancel}>Abbrechen</Button>
+        <Button onClick={submit} disabled={busy}>{busy ? "Speichere…" : "Speichern"}</Button>
       </div>
     </div>
   );

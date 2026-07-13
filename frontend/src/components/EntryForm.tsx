@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import Button from "./ui/Button";
+import Select from "./ui/Select";
 import { api, type Issue, type Project, type TimeEntry } from "../api";
 
 interface Props {
@@ -75,37 +77,63 @@ export default function EntryForm({ initial, defaultDate, onSaved, onCancel }: P
   };
 
   return (
-    <section className="manual">
-      <h3>{initial ? "Eintrag bearbeiten" : "Neuer Eintrag"}</h3>
-      <div className="manual-grid">
-        <label>Datum<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-        <label>Start<input type="time" value={start} onChange={(e) => setStart(e.target.value)} /></label>
-        <label>Ende<input type="time" value={end} onChange={(e) => setEnd(e.target.value)} /></label>
-        <label>Pause (min)<input type="number" min={0} value={breakMin}
-          onChange={(e) => setBreakMin(parseInt(e.target.value || "0", 10))} /></label>
-        <label>Projekt
-          <select value={projectId === "" ? "" : String(projectId)}
-            onChange={(e) => setProjectId(e.target.value === "" ? "" : Number(e.target.value))}>
-            <option value="">— kein Projekt —</option>
-            {options.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}{p.archived ? " (archiviert)" : ""}
-              </option>
-            ))}
-          </select>
+    <div>
+      <h3 className="text-lg font-black">{initial ? "Eintrag bearbeiten" : "Neuer Eintrag"}</h3>
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="field-label">Datum</span>
+          <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
-        <label className="full">Notiz<input value={note} onChange={(e) => setNote(e.target.value)} /></label>
+        <label className="block">
+          <span className="field-label">Start</span>
+          <input className="input" type="time" value={start} onChange={(e) => setStart(e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="field-label">Ende</span>
+          <input className="input" type="time" value={end} onChange={(e) => setEnd(e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="field-label">Pause (min)</span>
+          <input className="input" type="number" min={0} value={breakMin}
+            onChange={(e) => setBreakMin(parseInt(e.target.value || "0", 10))} />
+        </label>
+        <div>
+          <span className="field-label">Projekt</span>
+          <Select
+            value={projectId === "" ? "" : String(projectId)}
+            onChange={(v) => setProjectId(v === "" ? "" : Number(v))}
+            options={[
+              { value: "", label: "— kein Projekt —" },
+              ...options.map((p) => ({
+                value: String(p.id),
+                label: `${p.name}${p.archived ? " (archiviert)" : ""}`,
+              })),
+            ]}
+            aria-label="Projekt"
+          />
+        </div>
+        <label className="block sm:col-span-2">
+          <span className="field-label">Notiz</span>
+          <input className="input" value={note} onChange={(e) => setNote(e.target.value)} />
+        </label>
       </div>
-      <div className="row-actions">
-        <button onClick={submit}>Speichern</button>
-        {onCancel && <button onClick={onCancel}>Abbrechen</button>}
+      <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        {onCancel && <Button variant="ghost" onClick={onCancel}>Abbrechen</Button>}
+        <Button onClick={submit}>Speichern</Button>
       </div>
-      {error && <div className="error">{error}</div>}
+      {error && <div className="mt-3 text-sm text-red-600">{error}</div>}
       {issues.map((i, idx) => (
-        <div key={idx} className={`issue ${i.severity}`}>
+        <div
+          key={idx}
+          className={`mt-2 rounded-lg border-l-4 p-3 text-sm ${
+            i.severity === "error"
+              ? "border-red-500 bg-red-50 text-red-900"
+              : "border-amber-500 bg-amber-50 text-amber-900"
+          }`}
+        >
           <strong>[{i.code}]</strong> {i.message}
         </div>
       ))}
-    </section>
+    </div>
   );
 }

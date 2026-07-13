@@ -6,6 +6,7 @@ import {
 } from "../../api";
 import { useCurrentUser } from "../../auth/CurrentUser";
 import OnboardingStepper from "../../components/OnboardingStepper";
+import Select from "../../components/ui/Select";
 
 const STATES: FederalState[] = [
   "BW","BY","BE","BB","HB","HH","HE","MV",
@@ -57,54 +58,73 @@ export default function OnboardingCompany() {
   };
 
   return (
-    <div className="onboarding-shell">
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
       <OnboardingStepper active={2} />
-      <div className="card onboarding-card">
-        <h2>Firmendaten</h2>
-        <p className="muted">
+      <div className="card p-6 sm:p-8">
+        <h1 className="text-2xl font-black tracking-tight">Firmendaten</h1>
+        <p className="mt-2 text-sm text-ink/60">
           Stammdaten deiner Firma. Sie tauchen später in PDF-Stundenzetteln
           und in Mitarbeiter-Anlegen-Formularen auf.
         </p>
 
-        <label>Firmenname *
-          <input value={name} onChange={(e) => setName(e.target.value)}
-            placeholder="Muster GmbH" />
-        </label>
-        <div className="manual-grid">
-          <label className="full">Straße
-            <input value={street} onChange={(e) => setStreet(e.target.value)} />
+        <div className="mt-6 space-y-4">
+          <label className="block">
+            <span className="field-label">Firmenname *</span>
+            <input className="input" value={name} onChange={(e) => setName(e.target.value)}
+              placeholder="Muster GmbH" />
           </label>
-          <label>PLZ
-            <input value={zip} onChange={(e) => setZip(e.target.value)} />
-          </label>
-          <label>Ort
-            <input value={city} onChange={(e) => setCity(e.target.value)} />
-          </label>
-          <label>USt-ID (optional)
-            <input value={vat} onChange={(e) => setVat(e.target.value)} />
-          </label>
-          <label>Bundesland *
-            <select value={bundesland} onChange={(e) => setBundesland(e.target.value as FederalState)}>
-              <option value="">– bitte wählen –</option>
-              {STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </label>
-          <label className="full">Branche (optional)
-            <input value={industry} onChange={(e) => setIndustry(e.target.value)}
-              placeholder="z. B. IT-Dienstleistungen, Handwerk, …" />
-          </label>
-          <label className="full">Geplante Mitarbeiter *
-            <select value={bucket} onChange={(e) => setBucket(e.target.value as CompanySizeBucket)}>
-              <option value="">– bitte wählen –</option>
-              {(Object.keys(COMPANY_SIZE_BUCKET_LABELS) as CompanySizeBucket[]).map((b) => (
-                <option key={b} value={b}>{COMPANY_SIZE_BUCKET_LABELS[b]}</option>
-              ))}
-            </select>
-          </label>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="block sm:col-span-2">
+              <span className="field-label">Straße</span>
+              <input className="input" value={street} onChange={(e) => setStreet(e.target.value)} />
+            </label>
+            <label className="block">
+              <span className="field-label">PLZ</span>
+              <input className="input" value={zip} onChange={(e) => setZip(e.target.value)} />
+            </label>
+            <label className="block">
+              <span className="field-label">Ort</span>
+              <input className="input" value={city} onChange={(e) => setCity(e.target.value)} />
+            </label>
+            <label className="block">
+              <span className="field-label">USt-ID (optional)</span>
+              <input className="input" value={vat} onChange={(e) => setVat(e.target.value)} />
+            </label>
+            <div>
+              <span className="field-label">Bundesland *</span>
+              <Select
+                value={bundesland}
+                onChange={(v) => setBundesland(v as FederalState)}
+                options={STATES.map((s) => ({ value: s, label: s }))}
+                placeholder="– bitte wählen –"
+                aria-label="Bundesland"
+              />
+            </div>
+            <label className="block sm:col-span-2">
+              <span className="field-label">Branche (optional)</span>
+              <input className="input" value={industry} onChange={(e) => setIndustry(e.target.value)}
+                placeholder="z. B. IT-Dienstleistungen, Handwerk, …" />
+            </label>
+            <div className="sm:col-span-2">
+              <span className="field-label">Geplante Mitarbeiter *</span>
+              <Select
+                value={bucket}
+                onChange={(v) => setBucket(v as CompanySizeBucket)}
+                options={(Object.keys(COMPANY_SIZE_BUCKET_LABELS) as CompanySizeBucket[]).map((b) => ({
+                  value: b,
+                  label: COMPANY_SIZE_BUCKET_LABELS[b],
+                }))}
+                placeholder="– bitte wählen –"
+                aria-label="Geplante Mitarbeiter"
+              />
+            </div>
+          </div>
         </div>
 
-        {error && <div className="error">{error}</div>}
-        <button onClick={submit} disabled={busy} style={{ marginTop: "0.8rem" }}>
+        {error && (
+          <div className="mt-4 rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">{error}</div>
+        )}
+        <button onClick={submit} disabled={busy} className="btn-primary mt-6 w-full">
           {busy ? "Speichere…" : "Weiter"}
         </button>
       </div>

@@ -14,17 +14,25 @@ export default function WorkDaysPicker({ value, onChange }: Props) {
     onChange(WEEKDAY_ORDER.filter((x) => set.has(x)));
   };
   return (
-    <div className="workdays">
-      {WEEKDAY_ORDER.map((d) => (
-        <label key={d} className={`workday ${value.includes(d) ? "active" : ""}`}>
-          <input
-            type="checkbox"
-            checked={value.includes(d)}
-            onChange={() => toggle(d)}
-          />
-          <span>{WEEKDAY_LABELS[d]}</span>
-        </label>
-      ))}
+    <div className="flex flex-wrap gap-2">
+      {WEEKDAY_ORDER.map((d) => {
+        const active = value.includes(d);
+        return (
+          <button
+            key={d}
+            type="button"
+            aria-pressed={active}
+            onClick={() => toggle(d)}
+            className={`rounded-md border px-3 py-2 text-sm font-bold ${
+              active
+                ? "border-royal bg-royal/10 text-royal"
+                : "border-ink/15 text-ink/70 hover:border-royal/50"
+            }`}
+          >
+            {WEEKDAY_LABELS[d]}
+          </button>
+        );
+      })}
     </div>
   );
 }

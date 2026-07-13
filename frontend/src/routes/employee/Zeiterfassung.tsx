@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Shell from "../../components/Shell";
 import EntryForm from "../../components/EntryForm";
+import Button from "../../components/ui/Button";
+import Modal from "../../components/ui/Modal";
+import { IconPlus } from "../../components/ui/Icons";
 import { useMediaQuery } from "../../lib/useMediaQuery";
 import Week from "./Week";
 import Month from "./Month";
@@ -55,42 +58,37 @@ export default function Zeiterfassung() {
     setRefreshTick((t) => t + 1);
   };
 
-  const backdropClass = `modal-backdrop ${isMobile ? "as-bottom-sheet" : ""}`;
-  const modalClass = `modal ${isMobile ? "as-bottom-sheet-modal" : ""}`;
-
   return (
     <Shell>
-      <div className="zeit">
-        <div className="zeit-header">
-          <div className="segment-control" role="tablist" aria-label="Ansicht">
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex rounded-lg border border-ink/15 bg-paper p-1" role="tablist" aria-label="Ansicht">
             {VIEWS.map((v) => (
               <button
                 key={v}
                 role="tab"
                 aria-selected={view === v}
-                className={`segment ${view === v ? "active" : ""}`}
+                className={`rounded-md px-3 py-1.5 text-sm font-bold transition ${
+                  view === v ? "bg-royal text-paper" : "text-ink/60 hover:text-ink"
+                }`}
                 onClick={() => navigate(`/zeit/${v}`)}
               >
                 {VIEW_LABELS[v]}
               </button>
             ))}
           </div>
-          <button className="primary add-entry-btn" onClick={() => setShowAdd(true)}>
-            + Zeit erfassen
-          </button>
+          <Button onClick={() => setShowAdd(true)}>
+            <IconPlus size={18} /> Zeit erfassen
+          </Button>
         </div>
 
         {view === "woche" && <Week key={`woche-${refreshTick}`} />}
         {view === "monat" && <Month key={`monat-${refreshTick}`} />}
         {view === "liste" && <Log key={`liste-${refreshTick}`} />}
 
-        {showAdd && (
-          <div className={backdropClass} onClick={() => setShowAdd(false)}>
-            <div className={modalClass} onClick={(e) => e.stopPropagation()}>
-              <EntryForm onSaved={onSaved} onCancel={() => setShowAdd(false)} />
-            </div>
-          </div>
-        )}
+        <Modal open={showAdd} onClose={() => setShowAdd(false)}>
+          <EntryForm onSaved={onSaved} onCancel={() => setShowAdd(false)} />
+        </Modal>
       </div>
     </Shell>
   );

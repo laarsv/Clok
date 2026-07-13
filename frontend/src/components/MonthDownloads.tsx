@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { api } from "../api";
+import Button from "./ui/Button";
+import Select from "./ui/Select";
+import { IconDownload } from "./ui/Icons";
 
 interface Props {
   /** wenn unset: aktueller User (eigener Stundenzettel) */
@@ -51,32 +54,35 @@ export default function MonthDownloads({ employeeId }: Props) {
   };
 
   return (
-    <div>
-      <p className="muted small">
+    <div className="space-y-4">
+      <p className="text-sm text-ink/60">
         Stundenzettel als PDF (mit Unterschriftsfeld für die Lohnbuchhaltung)
         oder als CSV (für eigene Auswertung) herunterladen.
       </p>
-      <div className="manual-grid">
-        <label>Jahr
-          <input type="number" value={year}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="field-label">Jahr</span>
+          <input type="number" className="input" value={year}
             onChange={(e) => setYear(parseInt(e.target.value || "0", 10))} />
         </label>
-        <label>Monat
-          <select value={month} onChange={(e) => setMonth(parseInt(e.target.value, 10))}>
-            {MONTHS.map((name, idx) => (
-              <option key={idx} value={idx + 1}>{name}</option>
-            ))}
-          </select>
-        </label>
+        <div className="block">
+          <span className="field-label">Monat</span>
+          <Select
+            value={String(month)}
+            onChange={(v) => setMonth(parseInt(v, 10))}
+            options={MONTHS.map((name, idx) => ({ value: String(idx + 1), label: name }))}
+            aria-label="Monat"
+          />
+        </div>
       </div>
-      {error && <div className="error">{error}</div>}
-      <div className="row-actions">
-        <button onClick={() => dl("pdf")} disabled={busy !== null}>
-          {busy === "pdf" ? "Lade…" : "PDF herunterladen"}
-        </button>
-        <button onClick={() => dl("csv")} disabled={busy !== null}>
-          {busy === "csv" ? "Lade…" : "CSV herunterladen"}
-        </button>
+      {error && <div className="text-sm text-red-600">{error}</div>}
+      <div className="flex flex-wrap gap-3">
+        <Button variant="outline" size="sm" onClick={() => dl("pdf")} disabled={busy !== null}>
+          <IconDownload size={16} /> {busy === "pdf" ? "Lade…" : "PDF herunterladen"}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => dl("csv")} disabled={busy !== null}>
+          <IconDownload size={16} /> {busy === "csv" ? "Lade…" : "CSV herunterladen"}
+        </Button>
       </div>
     </div>
   );

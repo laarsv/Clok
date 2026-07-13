@@ -113,120 +113,133 @@ export default function Dashboard() {
 
   return (
     <Shell>
-      <div className="dashboard">
-        <div className="dashboard-toolbar">
-          <h2>Dashboard</h2>
+      <div className="space-y-6">
+        <div>
+          <div className="eyebrow">Auswertung</div>
+          <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Dashboard</h1>
         </div>
 
-        <section className="card-section dashboard-filter">
-          <div className="filter-presets">
+        <div className="card space-y-4 p-4 sm:p-5">
+          <div className="flex flex-wrap gap-2">
             {PRESETS.map((p) => (
               <button
                 key={p}
-                className={`preset-pill ${preset === p ? "active" : ""}`}
                 onClick={() => setPreset(p)}
+                className={`rounded-full px-3 py-1.5 text-sm font-bold transition ${
+                  preset === p
+                    ? "bg-royal text-paper"
+                    : "border border-ink/15 bg-paper text-ink/70 hover:text-ink"
+                }`}
               >
                 {PRESET_LABELS[p]}
               </button>
             ))}
           </div>
           {preset === "custom" && (
-            <div className="filter-custom">
-              <label>Von
-                <input type="date" value={customStart}
+            <div className="flex flex-wrap gap-4">
+              <label className="block">
+                <span className="field-label">Von</span>
+                <input type="date" className="input sm:w-48" value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)} />
               </label>
-              <label>Bis
-                <input type="date" value={customEnd}
+              <label className="block">
+                <span className="field-label">Bis</span>
+                <input type="date" className="input sm:w-48" value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)} />
               </label>
             </div>
           )}
-          <p className="muted small range-display">
+          <p className="text-xs text-ink/60">
             Zeitraum: {range.start.toLocaleDateString("de-DE")} – {range.end.toLocaleDateString("de-DE")}
           </p>
-        </section>
+        </div>
 
-        {error && <div className="error">{error}</div>}
+        {error && <div className="rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">{error}</div>}
 
-        <div className="team-summary">
-          <div className="summary-tile">
-            <div className="summary-label">Stunden Ist</div>
-            <div className="summary-value">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="card p-4 sm:p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-ink/50">Stunden Ist</div>
+            <div className="mt-1 text-2xl font-black leading-tight tabular-nums">
               {kpis ? fmtHours(kpis.actual_hours) : "—"}
             </div>
-            <div className="summary-meta">
+            <div className="mt-1 text-xs text-ink/60">
               {kpis ? `von ${fmtHours(kpis.target_hours)} Soll` : ""}
             </div>
           </div>
 
-          <div className="summary-tile">
-            <div className="summary-label">Saldo aktuell</div>
-            <div className={`summary-value ${
-              balance && balance.balance_hours > 0.5 ? "positive"
-                : balance && balance.balance_hours < -0.5 ? "negative" : ""
+          <div className="card p-4 sm:p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-ink/50">Saldo aktuell</div>
+            <div className={`mt-1 text-2xl font-black leading-tight tabular-nums ${
+              balance && balance.balance_hours > 0.5 ? "text-royal"
+                : balance && balance.balance_hours < -0.5 ? "text-red-600" : ""
             }`}>
               {balance
                 ? `${balance.balance_hours > 0 ? "+" : ""}${balance.balance_hours.toFixed(1)} h`
                 : "—"}
             </div>
-            <div className="summary-meta">
+            <div className="mt-1 text-xs text-ink/60">
               {balance
                 ? `${fmtHours(balance.actual_hours_to_date)} Ist gegen ${fmtHours(balance.target_hours_to_date)} Soll`
                 : "Stichtag heute"}
             </div>
           </div>
 
-          <div className="summary-tile">
-            <div className="summary-label">Urlaub</div>
-            <div className="summary-value">{kpis ? `${kpis.vacation_days} d` : "—"}</div>
-            <div className="summary-meta">
+          <div className="card p-4 sm:p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-ink/50">Urlaub</div>
+            <div className="mt-1 text-2xl font-black leading-tight tabular-nums">{kpis ? `${kpis.vacation_days} d` : "—"}</div>
+            <div className="mt-1 text-xs text-ink/60">
               {yearData ? `${yearData.vacation_remaining} Tage übrig` : ""}
             </div>
           </div>
 
-          <div className="summary-tile">
-            <div className="summary-label">Krankheit</div>
-            <div className="summary-value">{kpis ? `${kpis.sick_days} d` : "—"}</div>
-            <div className="summary-meta">im Zeitraum</div>
+          <div className="card p-4 sm:p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-ink/50">Krankheit</div>
+            <div className="mt-1 text-2xl font-black leading-tight tabular-nums">{kpis ? `${kpis.sick_days} d` : "—"}</div>
+            <div className="mt-1 text-xs text-ink/60">im Zeitraum</div>
           </div>
         </div>
 
         {chartMonths.length > 0 && (
           <>
-            <section className="card-section">
-              <h3>Saldo-Verlauf</h3>
-              <p className="muted small">
+            <section className="card p-4 sm:p-5">
+              <h2 className="text-base font-black sm:text-lg">Saldo-Verlauf</h2>
+              <p className="mt-0.5 text-xs text-ink/60">
                 Saldo zum Monatsende, kumuliert seit Eintritt. Nur abgeschlossene Monate im Zeitraum.
               </p>
               {balanceChart.values.length > 0 ? (
-                <MiniLineChart values={balanceChart.values} labels={balanceChart.labels} height={160} />
+                <div className="mt-4">
+                  <MiniLineChart values={balanceChart.values} labels={balanceChart.labels} height={160} />
+                </div>
               ) : (
-                <p className="muted small">Im gewählten Zeitraum gibt es noch keine abgeschlossenen Monate.</p>
+                <p className="mt-4 text-sm text-ink/60">Im gewählten Zeitraum gibt es noch keine abgeschlossenen Monate.</p>
               )}
             </section>
 
-            <section className="card-section">
-              <h3>Soll vs. Ist (Stunden)</h3>
-              <MiniBarChart
-                labels={chartLabels}
-                series={[
-                  { name: "Soll", color: "var(--text-muted)", values: chartMonths.map((m) => m.target_hours) },
-                  { name: "Ist", color: "var(--accent)", values: chartMonths.map((m) => m.actual_hours) },
-                ]}
-              />
+            <section className="card p-4 sm:p-5">
+              <h2 className="text-base font-black sm:text-lg">Soll vs. Ist (Stunden)</h2>
+              <div className="mt-4">
+                <MiniBarChart
+                  labels={chartLabels}
+                  series={[
+                    { name: "Soll", color: "var(--text-muted)", values: chartMonths.map((m) => m.target_hours) },
+                    { name: "Ist", color: "var(--accent)", values: chartMonths.map((m) => m.actual_hours) },
+                  ]}
+                />
+              </div>
             </section>
 
-            <section className="card-section">
-              <h3>Abwesenheiten pro Monat</h3>
-              <MiniBarChart
-                labels={chartLabels}
-                series={[
-                  { name: "Urlaub", color: "var(--accent)", values: chartMonths.map((m) => m.vacation_days) },
-                  { name: "Krankheit", color: "var(--error)", values: chartMonths.map((m) => m.sick_days) },
-                  { name: "Sonstiges", color: "var(--warning)", values: chartMonths.map((m) => m.other_absence_days) },
-                ]}
-              />
+            <section className="card p-4 sm:p-5">
+              <h2 className="text-base font-black sm:text-lg">Abwesenheiten pro Monat</h2>
+              <div className="mt-4">
+                <MiniBarChart
+                  labels={chartLabels}
+                  series={[
+                    { name: "Urlaub", color: "var(--accent)", values: chartMonths.map((m) => m.vacation_days) },
+                    { name: "Krankheit", color: "var(--error)", values: chartMonths.map((m) => m.sick_days) },
+                    { name: "Sonstiges", color: "var(--warning)", values: chartMonths.map((m) => m.other_absence_days) },
+                  ]}
+                />
+              </div>
             </section>
           </>
         )}

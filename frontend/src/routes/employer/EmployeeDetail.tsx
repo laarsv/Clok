@@ -12,6 +12,9 @@ import EntriesLog from "../../components/EntriesLog";
 import ImportPanel from "../../components/ImportPanel";
 import StammdatenView from "../../components/StammdatenView";
 import TermsForm from "../../components/TermsForm";
+import Button from "../../components/ui/Button";
+import Modal from "../../components/ui/Modal";
+import { IconChevronRight, IconX } from "../../components/ui/Icons";
 import { useCurrentUser } from "../../auth/CurrentUser";
 import {
   api, WEEKDAY_LABELS,
@@ -126,7 +129,7 @@ export default function EmployeeDetail() {
     return () => window.removeEventListener("keydown", onKey);
   }, [edit, absenceOpen, drill, settingsOpen]);
 
-  if (!employee) return <Shell><div className="placeholder">Lade…</div></Shell>;
+  if (!employee) return <Shell><div className="p-12 text-center text-ink/50">Lade…</div></Shell>;
 
   const offboard = async () => {
     if (!confirm(`${employee.full_name} offboarden? Daten bleiben erhalten.`)) return;
@@ -223,7 +226,7 @@ export default function EmployeeDetail() {
   const initialOt = employee.initial_overtime_hours ?? 0;
   const adjToDate = adjustments.filter((a) => a.effective_date <= today);
   const adjTotal = adjToDate.reduce((s, a) => s + a.hours, 0);
-  const balCls = saldoHours > 0.05 ? "positive" : saldoHours < -0.05 ? "negative" : "";
+  const balCls = saldoHours > 0.05 ? "text-royal" : saldoHours < -0.05 ? "text-red-600" : "";
 
   const annualVac = currentTerms?.annual_vacation_days ?? employee.annual_vacation_days ?? 0;
   const inHireYear = employee.hire_date
@@ -260,15 +263,15 @@ export default function EmployeeDetail() {
 
   const absenceList = (rows: Absence[], emptyText: string) =>
     rows.length ? (
-      <ul className="calc-list-items">
+      <ul className="mt-2 space-y-1 text-sm">
         {rows.map((a) => (
-          <li key={a.id}>
+          <li key={a.id} className="flex items-center justify-between gap-2 border-b border-ink/5 py-1 last:border-b-0">
             <span>{a.start_date} – {a.end_date}{a.note ? ` · ${a.note}` : ""}</span>
-            <span className="meta">{STATUS_LABEL[a.status]}</span>
+            <span className="text-ink/50">{STATUS_LABEL[a.status]}</span>
           </li>
         ))}
       </ul>
-    ) : <p className="muted small">{emptyText}</p>;
+    ) : <p className="text-xs text-ink/60">{emptyText}</p>;
 
   const drillTitle: Record<Exclude<DrillKey, null>, string> = {
     hours: `Stunden – ${monthName}`,
@@ -279,37 +282,38 @@ export default function EmployeeDetail() {
 
   return (
     <Shell>
-      <div className="employee-detail">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="profile-head">
-          <div className="emp-avatar">{initials}</div>
-          <div className="profile-head-id">
-            <h2>{employee.full_name || employee.username}</h2>
-            <span className="muted small">@{employee.username} · {employee.email}</span>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-royal text-lg font-bold text-paper">
+            {initials}
           </div>
-          <span className="spacer" />
-          <span className={`status ${employee.offboarded_at ? "status-rejected" : "status-approved"}`}>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{employee.full_name || employee.username}</h1>
+            <div className="text-sm text-ink/60">@{employee.username} · {employee.email}</div>
+          </div>
+          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${employee.offboarded_at ? "bg-ink/10 text-ink/60" : "bg-royal/10 text-royal"}`}>
             {employee.offboarded_at ? "offboarded" : "aktiv"}
           </span>
-          <button onClick={() => setSettingsOpen(true)}>⚙ Einstellungen</button>
+          <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>⚙ Einstellungen</Button>
         </div>
 
         {employee.onboarding_pending && (
-          <div className="issue warning profile-banner">
-            <span>
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border-l-4 border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
+            <span className="flex-1">
               Onboarding ausstehend – {employee.full_name || employee.username} hat
               die Einladung noch nicht angenommen.
             </span>
-            <button onClick={resendInvite} disabled={busy}>Einladung erneut senden</button>
+            <Button variant="outline" size="sm" onClick={resendInvite} disabled={busy}>Einladung erneut senden</Button>
           </div>
         )}
 
         {/* KPI-Übersicht */}
-        <div className="team-summary">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <KpiTile label="Stunden im Monat" value={fmtHours(monthActual)}
             meta={isSalary ? `von ${fmtHours(monthTarget)} Soll` : "Stundenbasis"}
             onClick={() => setDrill("hours")}>
-            {isSalary && <div className="kpi-bar"><HoursBar actual={monthActual} target={monthTarget} /></div>}
+            {isSalary && <div className="mt-2"><HoursBar actual={monthActual} target={monthTarget} /></div>}
           </KpiTile>
 
           <KpiTile label="Saldo / Überstunden"
@@ -319,7 +323,7 @@ export default function EmployeeDetail() {
             onClick={() => setDrill("saldo")} />
 
           <KpiTile label="Resturlaub" value={`${dayNum(vacRemaining)} Tage`}
-            valueClass={vacRemaining <= 0 ? "negative" : ""}
+            valueClass={vacRemaining <= 0 ? "text-red-600" : ""}
             meta={`von ${dayNum(anspruch)} · ${dayNum(vacApproved)} genommen`}
             onClick={() => setDrill("vacation")} />
 
@@ -329,18 +333,19 @@ export default function EmployeeDetail() {
         </div>
 
         {/* Einträge & Abwesenheiten */}
-        <section className="card-section">
-          <div className="dashboard-toolbar" style={{ marginBottom: "0.8rem" }}>
-            <h3 style={{ margin: 0 }}>Einträge &amp; Abwesenheiten</h3>
-            <span className="spacer" />
-            <button onClick={() => setAbsenceOpen(true)}>+ Abwesenheit</button>
-            <div className="segment-control" role="tablist" aria-label="Ansicht">
-              <button role="tab" aria-selected={entryView === "woche"}
-                className={`segment ${entryView === "woche" ? "active" : ""}`}
-                onClick={() => setEntryView("woche")}>Woche</button>
-              <button role="tab" aria-selected={entryView === "liste"}
-                className={`segment ${entryView === "liste" ? "active" : ""}`}
-                onClick={() => setEntryView("liste")}>Liste</button>
+        <section className="card space-y-4 p-4 sm:p-5">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-base font-black sm:text-lg">Einträge &amp; Abwesenheiten</h2>
+            <div className="ml-auto flex items-center gap-3">
+              <Button size="sm" onClick={() => setAbsenceOpen(true)}>+ Abwesenheit</Button>
+              <div className="inline-flex rounded-lg border border-ink/15 bg-paper p-1" role="tablist" aria-label="Ansicht">
+                <button role="tab" aria-selected={entryView === "woche"}
+                  className={`rounded-md px-3 py-1.5 text-sm font-bold transition ${entryView === "woche" ? "bg-royal text-paper" : "text-ink/60 hover:text-ink"}`}
+                  onClick={() => setEntryView("woche")}>Woche</button>
+                <button role="tab" aria-selected={entryView === "liste"}
+                  className={`rounded-md px-3 py-1.5 text-sm font-bold transition ${entryView === "liste" ? "bg-royal text-paper" : "text-ink/60 hover:text-ink"}`}
+                  onClick={() => setEntryView("liste")}>Liste</button>
+              </div>
             </div>
           </div>
 
@@ -350,41 +355,45 @@ export default function EmployeeDetail() {
 
           {entryView === "woche" && (
             <>
-              <div className="week-toolbar">
-                <button onClick={() => setAnchor(addDays(anchor, -7))}>← Woche</button>
-                <strong>{fmtDe(days[0])} – {fmtDe(days[6])}</strong>
-                <button onClick={() => setAnchor(addDays(anchor, 7))}>Woche →</button>
-                <button onClick={() => setAnchor(new Date())}>Heute</button>
-                <span className="spacer" />
-                <span>Summe: <strong>{fmtHours(total)}</strong></span>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => setAnchor(addDays(anchor, -7))}>← Woche</Button>
+                <strong className="text-sm">{fmtDe(days[0])} – {fmtDe(days[6])}</strong>
+                <Button size="sm" variant="outline" onClick={() => setAnchor(addDays(anchor, 7))}>Woche →</Button>
+                <Button size="sm" variant="ghost" onClick={() => setAnchor(new Date())}>Heute</Button>
+                <span className="ml-auto text-sm">Summe: <strong className="tabular-nums">{fmtHours(total)}</strong></span>
               </div>
 
-              <div className="week-grid">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-7">
                 {days.map((d) => {
                   const k = isoDate(d);
                   const dayEntries = entriesByDay[k] ?? [];
                   const sum = dayEntries.reduce((s, e) => s + (e.net_hours || 0), 0);
                   const holiday = holidays[k];
                   const absence = absenceFor(d);
+                  const dayBorder = holiday
+                    ? "border-amber-300"
+                    : absence
+                      ? (absence.type === "vacation" ? "border-royal/50" : absence.type === "sick" ? "border-red-300" : "border-ink/20")
+                      : "border-ink/10";
                   return (
-                    <div key={k} className={`day ${holiday ? "holiday" : ""} ${absence ? `abs-${absence.type}` : ""}`}>
-                      <div className="day-head">
-                        <strong>{deWeekday(d)} {d.getDate()}.</strong>
-                        {holiday && <span className="badge">{holiday}</span>}
+                    <div key={k} className={`flex min-h-[160px] flex-col rounded-lg border bg-paper p-2 ${dayBorder}`}>
+                      <div className="mb-2 flex flex-col gap-1">
+                        <strong className="text-sm">{deWeekday(d)} {d.getDate()}.</strong>
+                        {holiday && <span className="w-fit rounded bg-ink/10 px-1.5 py-0.5 text-[10px] font-bold text-ink/70">{holiday}</span>}
                         {absence && (
-                          <span className="badge">
+                          <span className="w-fit rounded bg-ink/10 px-1.5 py-0.5 text-[10px] font-bold text-ink/70">
                             {absence.type === "vacation" ? "Urlaub" : absence.type === "sick" ? "Krank" : "Unbezahlt"}
                           </span>
                         )}
                       </div>
                       {dayEntries.map((e) => (
-                        <div key={e.id} className="entry-row">
-                          <span>{e.start_at.slice(11, 16)}–{e.end_at?.slice(11, 16) ?? "—"}</span>
-                          <span>{fmtHours(e.net_hours)}</span>
-                          {e.project && <span className="muted">{e.project}</span>}
+                        <div key={e.id} className="flex flex-wrap items-center gap-x-2 py-0.5 text-xs">
+                          <span className="tabular-nums">{e.start_at.slice(11, 16)}–{e.end_at?.slice(11, 16) ?? "—"}</span>
+                          <span className="tabular-nums font-bold">{fmtHours(e.net_hours)}</span>
+                          {e.project && <span className="text-ink/50">{e.project}</span>}
                         </div>
                       ))}
-                      <div className="day-foot"><span>{fmtHours(sum)}</span></div>
+                      <div className="mt-auto border-t border-ink/10 pt-2 text-right text-xs font-bold tabular-nums">{fmtHours(sum)}</div>
                     </div>
                   );
                 })}
@@ -394,93 +403,73 @@ export default function EmployeeDetail() {
         </section>
 
         {/* Abwesenheit für den MA eintragen (auch rückwirkend) */}
-        {absenceOpen && (
-          <div className="modal-backdrop" onClick={() => setAbsenceOpen(false)}>
-            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ width: 560 }}>
-              <AbsenceCreateForm
-                employeeId={employee.id}
-                employeeName={employee.full_name || employee.username}
-                onSaved={() => { setAbsenceOpen(false); load(); }}
-                onCancel={() => setAbsenceOpen(false)}
-              />
-            </div>
-          </div>
-        )}
+        <Modal open={absenceOpen} onClose={() => setAbsenceOpen(false)} className="sm:max-w-xl">
+          <AbsenceCreateForm
+            employeeId={employee.id}
+            employeeName={employee.full_name || employee.username}
+            onSaved={() => { setAbsenceOpen(false); load(); }}
+            onCancel={() => setAbsenceOpen(false)}
+          />
+        </Modal>
 
         {/* Nachvollziehen-Modal */}
-        {drill && (
-          <div className="modal-backdrop" onClick={() => setDrill(null)}>
-            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ width: 560 }}>
-              <div className="day-detail-head">
-                <div><h3 style={{ margin: 0 }}>{drillTitle[drill]}</h3></div>
-                <button className="modal-close-btn" aria-label="Schließen" onClick={() => setDrill(null)}>×</button>
+        <Modal open={!!drill} onClose={() => setDrill(null)} className="sm:max-w-xl">
+          {drill && (
+            <>
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <h2 className="text-lg font-black">{drillTitle[drill]}</h2>
+                <button className="btn-ghost -mr-2 -mt-1 p-1" aria-label="Schließen" onClick={() => setDrill(null)}>
+                  <IconX size={20} />
+                </button>
               </div>
 
               {drill === "hours" && (
                 <>
-                  <p className="calc-formula">
+                  <p className="text-sm text-ink/60">
                     Soll pro Arbeitstag = Wochenstunden ÷ Arbeitstage. Feiertage
                     (Bundesland) und genehmigte Abwesenheiten zählen nicht zum Soll.
                     Ist = Summe der Netto-Stunden (brutto minus Pausen).
                   </p>
-                  <div className="calc-list">
-                    <div className="calc-row">
-                      <span className="calc-label">Ist-Stunden</span>
-                      <span className="calc-value">{fmtHours(monthActual)}</span>
-                    </div>
-                    <div className="calc-row">
-                      <span className="calc-label">Soll-Stunden</span>
-                      <span className="calc-value">{isSalary ? fmtHours(monthTarget) : "—"}</span>
-                    </div>
-                    <div className="calc-row calc-total">
-                      <span className="calc-label">Differenz</span>
-                      <span className="calc-value">
-                        {isSalary ? signedH(monthActual - monthTarget) : "Stundenbasis"}
-                      </span>
-                    </div>
+                  <div className="mt-2">
+                    <CalcRow label="Ist-Stunden" value={fmtHours(monthActual)} />
+                    <CalcRow label="Soll-Stunden" value={isSalary ? fmtHours(monthTarget) : "—"} />
+                    <CalcRow total label="Differenz" value={isSalary ? signedH(monthActual - monthTarget) : "Stundenbasis"} />
                   </div>
 
-                  <h4 className="drill-section-h">Aktueller Vertrag</h4>
-                  <div className="calc-list">
-                    <div className="calc-row">
-                      <span className="calc-label">Abrechnung</span>
-                      <span className="calc-value">{isSalary ? "Festgehalt" : "Stundenbasis"}</span>
-                    </div>
-                    <div className="calc-row">
-                      <span className="calc-label">Wochenstunden</span>
-                      <span className="calc-value">{currentTerms?.weekly_hours ?? "—"}</span>
-                    </div>
-                    <div className="calc-row">
-                      <span className="calc-label">Arbeitstage</span>
-                      <span className="calc-value">{workDaysLabel}</span>
-                    </div>
+                  <h4 className="mt-4 mb-1 text-xs font-bold uppercase tracking-wider text-ink/50">Aktueller Vertrag</h4>
+                  <div className="mt-2">
+                    <CalcRow label="Abrechnung" value={isSalary ? "Festgehalt" : "Stundenbasis"} />
+                    <CalcRow label="Wochenstunden" value={currentTerms?.weekly_hours ?? "—"} />
+                    <CalcRow label="Arbeitstage" value={workDaysLabel} />
                   </div>
 
                   {year && year.months.length > 0 && (
                     <>
-                      <h4 className="drill-section-h">Monate {yr}</h4>
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Monat</th>
-                            <th style={{ textAlign: "right" }}>Ist</th>
-                            <th style={{ textAlign: "right" }}>Soll</th>
-                            <th style={{ textAlign: "right" }}>Saldo Ende</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {year.months.map((m) => (
-                            <tr key={m.month}>
-                              <td>{monthShort(m.month)}</td>
-                              <td style={{ textAlign: "right" }}>{m.actual_hours.toFixed(1)}</td>
-                              <td style={{ textAlign: "right" }}>{isSalary ? m.target_hours.toFixed(1) : "—"}</td>
-                              <td style={{ textAlign: "right" }}>
-                                {m.balance_at_end == null ? "—" : signedH(m.balance_at_end, 1)}
-                              </td>
+                      <h4 className="mt-4 mb-1 text-xs font-bold uppercase tracking-wider text-ink/50">Monate {yr}</h4>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="border-b border-ink/10 text-left text-xs uppercase tracking-wider text-ink/50">
+                            <tr>
+                              <th className="px-3 py-2">Monat</th>
+                              <th className="px-3 py-2 text-right">Ist</th>
+                              <th className="px-3 py-2 text-right">Soll</th>
+                              <th className="px-3 py-2 text-right">Saldo Ende</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {year.months.map((m) => (
+                              <tr key={m.month} className="border-b border-ink/5 last:border-b-0">
+                                <td className="px-3 py-2">{monthShort(m.month)}</td>
+                                <td className="px-3 py-2 text-right tabular-nums">{m.actual_hours.toFixed(1)}</td>
+                                <td className="px-3 py-2 text-right tabular-nums">{isSalary ? m.target_hours.toFixed(1) : "—"}</td>
+                                <td className="px-3 py-2 text-right tabular-nums">
+                                  {m.balance_at_end == null ? "—" : signedH(m.balance_at_end, 1)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </>
                   )}
                 </>
@@ -489,43 +478,28 @@ export default function EmployeeDetail() {
               {drill === "saldo" && (
                 isSalary ? (
                   <>
-                    <p className="calc-formula">
+                    <p className="text-sm text-ink/60">
                       Saldo = Startwert + alle erfassten Ist-Stunden + manuelle
                       Korrekturen − das aufgelaufene Soll (ab Eintritt bis {balance?.as_of ?? today}).
                     </p>
-                    <div className="calc-list">
-                      <div className="calc-row">
-                        <span className="calc-label">Startwert (Anfangs-Überstunden)</span>
-                        <span className="calc-value">{signedH(initialOt)}</span>
-                      </div>
-                      <div className="calc-row">
-                        <span className="calc-label"><span className="calc-op">+</span>Ist-Stunden gesamt</span>
-                        <span className="calc-value">{fmtHours(istToDate)}</span>
-                      </div>
-                      <div className="calc-row">
-                        <span className="calc-label"><span className="calc-op">+</span>Saldo-Korrekturen</span>
-                        <span className="calc-value">{signedH(adjTotal)}</span>
-                      </div>
-                      <div className="calc-row">
-                        <span className="calc-label"><span className="calc-op">−</span>Soll-Stunden gesamt</span>
-                        <span className="calc-value">{fmtHours(sollToDate)}</span>
-                      </div>
-                      <div className="calc-row calc-total">
-                        <span className="calc-label">= Saldo</span>
-                        <span className={`calc-value ${balCls}`}>{signedH(saldoHours)}</span>
-                      </div>
+                    <div className="mt-2">
+                      <CalcRow label="Startwert (Anfangs-Überstunden)" value={signedH(initialOt)} />
+                      <CalcRow op="+" label="Ist-Stunden gesamt" value={fmtHours(istToDate)} />
+                      <CalcRow op="+" label="Saldo-Korrekturen" value={signedH(adjTotal)} />
+                      <CalcRow op="−" label="Soll-Stunden gesamt" value={fmtHours(sollToDate)} />
+                      <CalcRow total label="= Saldo" value={signedH(saldoHours)} valueClass={balCls} />
                     </div>
 
                     {adjToDate.length > 0 && (
                       <>
-                        <h4 className="drill-section-h">Korrektur-Buchungen</h4>
-                        <ul className="calc-list-items">
+                        <h4 className="mt-4 mb-1 text-xs font-bold uppercase tracking-wider text-ink/50">Korrektur-Buchungen</h4>
+                        <ul className="mt-2 space-y-1 text-sm">
                           {[...adjToDate]
                             .sort((a, b) => (a.effective_date < b.effective_date ? -1 : 1))
                             .map((a) => (
-                              <li key={a.id}>
+                              <li key={a.id} className="flex items-center justify-between gap-2 border-b border-ink/5 py-1 last:border-b-0">
                                 <span>{a.effective_date} · {a.reason}</span>
-                                <span className="calc-value">{signedH(a.hours)}</span>
+                                <span className="tabular-nums">{signedH(a.hours)}</span>
                               </li>
                             ))}
                         </ul>
@@ -534,16 +508,13 @@ export default function EmployeeDetail() {
                   </>
                 ) : (
                   <>
-                    <p className="calc-formula">
+                    <p className="text-sm text-ink/60">
                       {employee.full_name || employee.username} wird auf Stundenbasis
                       abgerechnet. Ein Überstunden-Saldo wird nur bei Festgehalt geführt
                       (Ist gegen Soll). Hier zählt die reine erfasste Zeit.
                     </p>
-                    <div className="calc-list">
-                      <div className="calc-row calc-total">
-                        <span className="calc-label">Ist-Stunden gesamt</span>
-                        <span className="calc-value">{fmtHours(istToDate)}</span>
-                      </div>
+                    <div className="mt-2">
+                      <CalcRow total label="Ist-Stunden gesamt" value={fmtHours(istToDate)} />
                     </div>
                   </>
                 )
@@ -551,252 +522,230 @@ export default function EmployeeDetail() {
 
               {drill === "vacation" && (
                 <>
-                  <p className="calc-formula">
+                  <p className="text-sm text-ink/60">
                     Anspruch = Jahresurlaub aus dem Vertrag{inHireYear ? " + Resturlaub aus dem Eintrittsjahr" : ""}.
                     Abgezogen werden die Werktage aller genehmigten und beantragten
                     Urlaubsanträge des Jahres (Feiertage zählen nicht).
                   </p>
-                  <div className="drill-donut-row">
+                  <div className="mt-3 flex flex-wrap items-center gap-4">
                     <Donut value={vacPlanned} max={anspruch}
                       centerLabel={dayNum(vacRemaining)} centerSub="Tage übrig"
                       color={vacRemaining <= 0 ? "var(--error)" : "var(--accent)"} />
-                    <div className="calc-list" style={{ flex: 1, minWidth: 200 }}>
-                      <div className="calc-row">
-                        <span className="calc-label">Jahresanspruch</span>
-                        <span className="calc-value">{dayNum(annualVac)} Tage</span>
-                      </div>
+                    <div className="min-w-[200px] flex-1">
+                      <CalcRow label="Jahresanspruch" value={`${dayNum(annualVac)} Tage`} />
                       {inHireYear && (
-                        <div className="calc-row">
-                          <span className="calc-label"><span className="calc-op">+</span>Resturlaub Eintrittsjahr</span>
-                          <span className="calc-value">{dayNum(initialVac)} Tage</span>
-                        </div>
+                        <CalcRow op="+" label="Resturlaub Eintrittsjahr" value={`${dayNum(initialVac)} Tage`} />
                       )}
-                      <div className="calc-row">
-                        <span className="calc-label">
-                          <span className="calc-op">−</span>Verplant (genehmigt {dayNum(vacApproved)} + offen {dayNum(vacOpen)})
-                        </span>
-                        <span className="calc-value">{dayNum(vacPlanned)} Tage</span>
-                      </div>
-                      <div className="calc-row calc-total">
-                        <span className="calc-label">= Resturlaub</span>
-                        <span className={`calc-value ${vacRemaining <= 0 ? "negative" : ""}`}>{dayNum(vacRemaining)} Tage</span>
-                      </div>
+                      <CalcRow op="−"
+                        label={`Verplant (genehmigt ${dayNum(vacApproved)} + offen ${dayNum(vacOpen)})`}
+                        value={`${dayNum(vacPlanned)} Tage`} />
+                      <CalcRow total label="= Resturlaub" value={`${dayNum(vacRemaining)} Tage`}
+                        valueClass={vacRemaining <= 0 ? "text-red-600" : ""} />
                     </div>
                   </div>
 
-                  <h4 className="drill-section-h">Urlaubsanträge {yr}</h4>
+                  <h4 className="mt-4 mb-1 text-xs font-bold uppercase tracking-wider text-ink/50">Urlaubsanträge {yr}</h4>
                   {absenceList(vacAbs, `Keine Urlaubsanträge in ${yr}.`)}
                 </>
               )}
 
               {drill === "sick" && (
                 <>
-                  <p className="calc-formula">
+                  <p className="text-sm text-ink/60">
                     Gezählt werden die Werktage in genehmigten Krankmeldungen.
                     Feiertage und arbeitsfreie Tage zählen nicht.
                   </p>
-                  <div className="calc-list">
-                    <div className="calc-row">
-                      <span className="calc-label">Krank-Tage im {monthShort(curMonthNum)}</span>
-                      <span className="calc-value">{dayNum(sickMonth)}</span>
-                    </div>
-                    <div className="calc-row calc-total">
-                      <span className="calc-label">Krank-Tage {yr}</span>
-                      <span className="calc-value">{dayNum(sickTotal)}</span>
-                    </div>
+                  <div className="mt-2">
+                    <CalcRow label={`Krank-Tage im ${monthShort(curMonthNum)}`} value={dayNum(sickMonth)} />
+                    <CalcRow total label={`Krank-Tage ${yr}`} value={dayNum(sickTotal)} />
                   </div>
 
-                  <h4 className="drill-section-h">Krankmeldungen {yr}</h4>
+                  <h4 className="mt-4 mb-1 text-xs font-bold uppercase tracking-wider text-ink/50">Krankmeldungen {yr}</h4>
                   {absenceList(sickAbs, `Keine Krankmeldungen in ${yr}.`)}
                 </>
               )}
-            </div>
-          </div>
-        )}
+            </>
+          )}
+        </Modal>
 
         {/* Einstellungs-Fenster (Slide-over rechts) */}
         {settingsOpen && (
-          <div className="settings-drawer-backdrop" onClick={() => setSettingsOpen(false)}>
-            <aside className="settings-drawer" onClick={(e) => e.stopPropagation()}
+          <div className="fixed inset-0 z-50 flex justify-end bg-ink/50" onClick={() => setSettingsOpen(false)}>
+            <aside className="h-full w-full max-w-xl overflow-y-auto bg-paper p-5 shadow-xl" onClick={(e) => e.stopPropagation()}
               role="dialog" aria-modal="true" aria-label="Einstellungen & Verwaltung">
-              <div className="settings-drawer-head">
-                <h3>Einstellungen &amp; Verwaltung</h3>
-                <span className="spacer" />
-                <button className="modal-close-btn" aria-label="Schließen" onClick={() => setSettingsOpen(false)}>×</button>
+              <div className="mb-4 flex items-center gap-3">
+                <h2 className="text-lg font-black">Einstellungen &amp; Verwaltung</h2>
+                <button className="btn-ghost ml-auto -mr-2 p-1" aria-label="Schließen" onClick={() => setSettingsOpen(false)}>
+                  <IconX size={20} />
+                </button>
               </div>
 
-              <details className="card-section disclosure">
-                <summary className="disclosure-head">
-                  <span className="disclosure-chevron" aria-hidden="true">▸</span>
-                  <h3 style={{ margin: 0 }}>Stammdaten &amp; Historie</h3>
-                  <span className="spacer" />
-                  <span className="muted small">selten benötigt – ausklappen zum Ansehen</span>
-                </summary>
-                <div className="disclosure-body">
-                  <div className="dashboard-toolbar" style={{ marginTop: "0.6rem" }}>
-                    <span className="spacer" />
-                    <button onClick={(e) => { e.preventDefault(); setEdit("master"); }}>
+              <div className="space-y-4">
+                <Disclosure title="Stammdaten & Historie" hint="selten benötigt – ausklappen zum Ansehen">
+                  <div className="flex justify-end">
+                    <Button size="sm" variant="outline" onClick={(e) => { e.preventDefault(); setEdit("master"); }}>
                       Bearbeiten
-                    </button>
+                    </Button>
                   </div>
                   <StammdatenView user={employee} />
 
-                  <h4 className="disclosure-sub-h">Änderungs-Historie</h4>
+                  <h4 className="mt-3 text-xs font-bold uppercase tracking-wider text-ink/50">Änderungs-Historie</h4>
                   <AuditLogViewer employeeId={employee.id} />
-                </div>
-              </details>
+                </Disclosure>
 
-              <details className="card-section disclosure">
-                <summary className="disclosure-head">
-                  <span className="disclosure-chevron" aria-hidden="true">▸</span>
-                  <h3 style={{ margin: 0 }}>Daten importieren</h3>
-                  <span className="spacer" />
-                  <span className="muted small">einmaliger Vorgang beim Onboarding</span>
-                </summary>
-                <div className="disclosure-body">
-                  <p className="muted small">
+                <Disclosure title="Daten importieren" hint="einmaliger Vorgang beim Onboarding">
+                  <p className="text-xs text-ink/60">
                     CSVs für Zeiteinträge und Abwesenheiten können jederzeit
                     nachträglich hochgeladen werden – z. B. Daten aus dem Vorjahr,
                     Korrekturen oder ein Wechsel von einem anderen System.
                   </p>
                   <ImportPanel employeeId={employee.id} />
-                </div>
-              </details>
+                </Disclosure>
 
-              <details className="card-section disclosure">
-                <summary className="disclosure-head">
-                  <span className="disclosure-chevron" aria-hidden="true">▸</span>
-                  <h3 style={{ margin: 0 }}>Vertragsverlauf</h3>
-                  <span className="spacer" />
-                  <span className="muted small">
-                    {currentTerms
-                      ? `aktuell ab ${currentTerms.valid_from} · ${terms.length} Einträge`
-                      : "noch keine Verträge"}
-                  </span>
-                </summary>
-                <div className="disclosure-body">
-                  <div className="dashboard-toolbar" style={{ marginTop: "0.6rem" }}>
-                    <span className="spacer" />
-                    <button onClick={(e) => { e.preventDefault(); setEdit("new-terms"); }}>
+                <Disclosure title="Vertragsverlauf"
+                  hint={currentTerms
+                    ? `aktuell ab ${currentTerms.valid_from} · ${terms.length} Einträge`
+                    : "noch keine Verträge"}>
+                  <div className="flex justify-end">
+                    <Button size="sm" variant="outline" onClick={(e) => { e.preventDefault(); setEdit("new-terms"); }}>
                       + Neuer Vertrag
-                    </button>
+                    </Button>
                   </div>
-                  <p className="muted small">
+                  <p className="text-xs text-ink/60">
                     Jeder Eintrag gilt ab seinem Stichtag bis zum Stichtag des nächsten.
                     Vergangenheits-Berechnungen (Saldo, Resturlaub) bleiben stabil, wenn
                     du einen neuen Vertrag mit zukünftigem Stichtag anlegst.
                   </p>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Gültig ab</th>
-                        <th>Abrechnung</th>
-                        <th>Soll/h-Satz</th>
-                        <th>Wochen-h</th>
-                        <th>Arbeitstage</th>
-                        <th>Urlaub</th>
-                        <th>Notiz</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[...terms].reverse().map((t) => (
-                        <tr key={t.id} className={t.id === currentTerms?.id ? "current-terms" : ""}>
-                          <td>{t.valid_from}{t.id === currentTerms?.id && <span className="badge small" style={{ marginLeft: 6 }}>aktuell</span>}</td>
-                          <td>{t.billing_mode === "hourly" ? "Stundenbasis" : "Festgehalt"}</td>
-                          <td>{t.billing_mode === "hourly" ? `${t.hourly_rate_eur.toFixed(2)} €/h` : "Festgehalt"}</td>
-                          <td>{t.weekly_hours ?? "–"}</td>
-                          <td>{(t.work_days ?? []).join(", ") || "–"}</td>
-                          <td>{t.annual_vacation_days ?? "–"}</td>
-                          <td className="muted small">{t.note ?? ""}</td>
-                          <td>
-                            <button onClick={() => setEdit({ kind: "edit-terms", id: t.id })}>Bearbeiten</button>
-                            {terms.length > 1 && (
-                              <button className="danger" onClick={() => removeTerms(t.id)}>Löschen</button>
-                            )}
-                          </td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-ink/10 text-left text-xs uppercase tracking-wider text-ink/50">
+                        <tr>
+                          <th className="px-3 py-2">Gültig ab</th>
+                          <th className="px-3 py-2">Abrechnung</th>
+                          <th className="px-3 py-2">Soll/h-Satz</th>
+                          <th className="px-3 py-2">Wochen-h</th>
+                          <th className="px-3 py-2">Arbeitstage</th>
+                          <th className="px-3 py-2">Urlaub</th>
+                          <th className="px-3 py-2">Notiz</th>
+                          <th className="px-3 py-2"></th>
                         </tr>
-                      ))}
-                      {terms.length === 0 && (
-                        <tr><td colSpan={8} className="muted">Noch keine Vertragsdaten.</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </details>
+                      </thead>
+                      <tbody>
+                        {[...terms].reverse().map((t) => (
+                          <tr key={t.id} className={`border-b border-ink/5 last:border-b-0 ${t.id === currentTerms?.id ? "bg-royal/5" : ""}`}>
+                            <td className="px-3 py-2">{t.valid_from}{t.id === currentTerms?.id && <span className="ml-1.5 inline-flex items-center rounded-full bg-royal/10 px-2 py-0.5 text-[10px] font-bold text-royal">aktuell</span>}</td>
+                            <td className="px-3 py-2">{t.billing_mode === "hourly" ? "Stundenbasis" : "Festgehalt"}</td>
+                            <td className="px-3 py-2">{t.billing_mode === "hourly" ? `${t.hourly_rate_eur.toFixed(2)} €/h` : "Festgehalt"}</td>
+                            <td className="px-3 py-2 tabular-nums">{t.weekly_hours ?? "–"}</td>
+                            <td className="px-3 py-2">{(t.work_days ?? []).join(", ") || "–"}</td>
+                            <td className="px-3 py-2 tabular-nums">{t.annual_vacation_days ?? "–"}</td>
+                            <td className="px-3 py-2 text-ink/60">{t.note ?? ""}</td>
+                            <td className="px-3 py-2">
+                              <div className="flex flex-wrap gap-2">
+                                <Button size="sm" variant="outline" onClick={() => setEdit({ kind: "edit-terms", id: t.id })}>Bearbeiten</Button>
+                                {terms.length > 1 && (
+                                  <Button size="sm" variant="danger" onClick={() => removeTerms(t.id)}>Löschen</Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {terms.length === 0 && (
+                          <tr><td colSpan={8} className="px-3 py-6 text-center text-ink/50">Noch keine Vertragsdaten.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </Disclosure>
 
-              <details className="card-section disclosure">
-                <summary className="disclosure-head">
-                  <span className="disclosure-chevron" aria-hidden="true">▸</span>
-                  <h3 style={{ margin: 0 }}>Saldo-Korrekturen</h3>
-                  <span className="spacer" />
-                  <span className="muted small">manuelle Buchungen, z.B. Auszahlungen</span>
-                </summary>
-                <div className="disclosure-body">
+                <Disclosure title="Saldo-Korrekturen" hint="manuelle Buchungen, z.B. Auszahlungen">
                   <BalanceAdjustments employeeId={employee.id} />
-                </div>
-              </details>
+                </Disclosure>
 
-              <details className="card-section disclosure">
-                <summary className="disclosure-head">
-                  <span className="disclosure-chevron" aria-hidden="true">▸</span>
-                  <h3 style={{ margin: 0 }}>Stundenzettel-Export</h3>
-                  <span className="spacer" />
-                  <span className="muted small">CSV / PDF pro Monat</span>
-                </summary>
-                <div className="disclosure-body">
+                <Disclosure title="Stundenzettel-Export" hint="CSV / PDF pro Monat">
                   <MonthDownloads employeeId={employee.id} />
-                </div>
-              </details>
+                </Disclosure>
 
-              <div className="danger-zone">
-                <h3>Beschäftigung</h3>
-                <p className="muted small">
-                  Offboarden behält alle Daten und blendet den Mitarbeiter nur aus.
-                  {isAdmin ? " Endgültig löschen entfernt alle Daten unwiderruflich." : ""}
-                </p>
-                <div className="row-actions">
-                  {employee.offboarded_at
-                    ? <button onClick={reactivate} disabled={busy}>Reaktivieren</button>
-                    : <button className="danger" onClick={offboard} disabled={busy}>Offboarden</button>}
-                  {isAdmin && (
-                    <button className="danger" disabled={busy} onClick={hardDelete}>Endgültig löschen</button>
-                  )}
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                  <h3 className="text-base font-black">Beschäftigung</h3>
+                  <p className="mt-1 text-xs text-ink/60">
+                    Offboarden behält alle Daten und blendet den Mitarbeiter nur aus.
+                    {isAdmin ? " Endgültig löschen entfernt alle Daten unwiderruflich." : ""}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {employee.offboarded_at
+                      ? <Button size="sm" variant="outline" onClick={reactivate} disabled={busy}>Reaktivieren</Button>
+                      : <Button size="sm" variant="danger" onClick={offboard} disabled={busy}>Offboarden</Button>}
+                    {isAdmin && (
+                      <Button size="sm" variant="danger" disabled={busy} onClick={hardDelete}>Endgültig löschen</Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </aside>
           </div>
         )}
 
-        {/* Bearbeiten-Dialoge – liegen ÜBER dem Drawer (z-index 100 > 90) */}
-        {edit && (
-          <div className="modal-backdrop" onClick={() => setEdit(null)}>
-            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ width: 640 }}>
-              {edit === "master" && (
-                <EmployeeMasterDataForm
-                  user={employee}
-                  onSaved={(u) => { setEmployee(u); setEdit(null); }}
-                  onCancel={() => setEdit(null)}
-                />
-              )}
-              {edit === "new-terms" && (
-                <TermsForm
-                  onSubmit={submitNewTerms}
-                  onCancel={() => setEdit(null)}
-                />
-              )}
-              {editingTerms && (
-                <TermsForm
-                  initial={editingTerms}
-                  onSubmit={(p) => submitEditTerms(editingTerms.id, p)}
-                  onCancel={() => setEdit(null)}
-                />
-              )}
-            </div>
-          </div>
-        )}
+        {/* Bearbeiten-Dialoge – liegen ÜBER dem Drawer (später im DOM) */}
+        <Modal open={!!edit} onClose={() => setEdit(null)} className="sm:max-w-2xl">
+          {edit === "master" && (
+            <EmployeeMasterDataForm
+              user={employee}
+              onSaved={(u) => { setEmployee(u); setEdit(null); }}
+              onCancel={() => setEdit(null)}
+            />
+          )}
+          {edit === "new-terms" && (
+            <TermsForm
+              onSubmit={submitNewTerms}
+              onCancel={() => setEdit(null)}
+            />
+          )}
+          {editingTerms && (
+            <TermsForm
+              initial={editingTerms}
+              onSubmit={(p) => submitEditTerms(editingTerms.id, p)}
+              onCancel={() => setEdit(null)}
+            />
+          )}
+        </Modal>
       </div>
     </Shell>
+  );
+}
+
+function CalcRow({
+  label, value, op, total = false, valueClass = "",
+}: {
+  label: ReactNode; value: ReactNode; op?: string; total?: boolean; valueClass?: string;
+}) {
+  return (
+    <div className={`flex items-center justify-between gap-2 text-sm ${
+      total ? "mt-1 border-t border-ink/10 pt-2 font-bold" : "border-b border-ink/5 py-2 last:border-b-0"
+    }`}>
+      <span className={total ? "text-ink" : "text-ink/60"}>
+        {op && <span className="mr-1 text-ink/40">{op}</span>}
+        {label}
+      </span>
+      <span className={`whitespace-nowrap tabular-nums ${valueClass}`}>{value}</span>
+    </div>
+  );
+}
+
+function Disclosure({
+  title, hint, children,
+}: {
+  title: string; hint: ReactNode; children: ReactNode;
+}) {
+  return (
+    <details className="group card p-4">
+      <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
+        <IconChevronRight size={16} className="shrink-0 text-ink/50 transition-transform group-open:rotate-90 group-open:text-royal" />
+        <h3 className="text-base font-black">{title}</h3>
+        <span className="ml-auto text-xs text-ink/60">{hint}</span>
+      </summary>
+      <div className="mt-3 space-y-3">{children}</div>
+    </details>
   );
 }
 
@@ -807,12 +756,13 @@ function KpiTile({
   children?: ReactNode; onClick: () => void;
 }) {
   return (
-    <button type="button" className="summary-tile kpi-tile" onClick={onClick}>
-      <div className="summary-label">{label}</div>
-      <div className={`summary-value ${valueClass}`}>{value}</div>
-      {meta && <div className="summary-meta">{meta}</div>}
+    <button type="button" onClick={onClick}
+      className="card group p-4 text-left text-ink transition hover:border-royal/40 hover:shadow-md sm:p-5">
+      <div className="text-xs font-bold uppercase tracking-wider text-ink/50">{label}</div>
+      <div className={`mt-1 text-2xl font-black tabular-nums leading-tight ${valueClass}`}>{value}</div>
+      {meta && <div className="mt-1 text-xs text-ink/60">{meta}</div>}
       {children}
-      <span className="kpi-hint">Details ansehen →</span>
+      <span className="mt-2 block text-xs font-bold text-ink/40 group-hover:text-royal">Details ansehen →</span>
     </button>
   );
 }

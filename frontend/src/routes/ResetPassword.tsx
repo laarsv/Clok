@@ -37,45 +37,68 @@ export default function ResetPassword() {
 
   if (error && !preview) {
     return (
-      <div className="center">
-        <div className="card">
-          <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
-          <div className="error">{error}</div>
-          <Link to="/forgot-password">Neuen Reset-Link anfordern</Link>
+      <div className="flex min-h-screen items-center justify-center px-4 py-10">
+        <div className="card w-full max-w-sm p-6 sm:p-8">
+          <div className="mb-6 text-center">
+            <div className="eyebrow">Arbeitszeiterfassung</div>
+            <h1 className="mt-1 text-4xl font-black tracking-tight text-royal">Clok</h1>
+          </div>
+          <div className="rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">{error}</div>
+          <p className="mt-6 text-center text-sm">
+            <Link to="/forgot-password" className="font-bold text-royal hover:underline">Neuen Reset-Link anfordern</Link>
+          </p>
         </div>
       </div>
     );
   }
-  if (!preview) return <div className="center">Lade…</div>;
+  if (!preview) return <div className="flex min-h-screen items-center justify-center px-4 py-10 text-ink/50">Lade…</div>;
   if (done) {
     return (
-      <div className="center">
-        <div className="card">
-          <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
-          <p>Passwort gesetzt. Du wirst gleich zum Login weitergeleitet.</p>
+      <div className="flex min-h-screen items-center justify-center px-4 py-10">
+        <div className="card w-full max-w-sm p-6 sm:p-8">
+          <div className="mb-6 text-center">
+            <div className="eyebrow">Arbeitszeiterfassung</div>
+            <h1 className="mt-1 text-4xl font-black tracking-tight text-royal">Clok</h1>
+          </div>
+          <p className="text-sm text-ink/70">Passwort gesetzt. Du wirst gleich zum Login weitergeleitet.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="center">
-      <div className="card">
-        <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
-        <h2 style={{ marginTop: 0 }}>Neues Passwort setzen</h2>
-        <p className="muted small">
-          Login-Username: <code>{preview.username}</code> · E-Mail: {preview.email}
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+      <div className="card w-full max-w-sm p-6 sm:p-8">
+        <div className="mb-6 text-center">
+          <div className="eyebrow">Arbeitszeiterfassung</div>
+          <h1 className="mt-1 text-4xl font-black tracking-tight text-royal">Clok</h1>
+        </div>
+        <h2 className="text-base font-black sm:text-lg">Neues Passwort setzen</h2>
+        <p className="mt-1 text-sm text-ink/60">
+          Login-Username: <code className="rounded bg-ink/5 px-1 py-0.5">{preview.username}</code> · E-Mail: {preview.email}
         </p>
-        <label>Neues Passwort<input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus /></label>
-        <label>Wiederholen
-          <input type="password" value={pw2}
-            onChange={(e) => setPw2(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()} />
-        </label>
-        {error && <div className="error">{error}</div>}
-        <button onClick={submit} disabled={busy}>
-          {busy ? "Speichere…" : "Passwort setzen"}
-        </button>
+        <div className="mt-4 space-y-4">
+          <label className="block">
+            <span className="field-label">Neues Passwort</span>
+            <input className="input" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus />
+          </label>
+          <label className="block">
+            <span className="field-label">Wiederholen</span>
+            <input
+              className="input"
+              type="password"
+              value={pw2}
+              onChange={(e) => setPw2(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+            />
+          </label>
+          {error && (
+            <div className="rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">{error}</div>
+          )}
+          <button onClick={submit} disabled={busy} className="btn-primary w-full">
+            {busy ? "Speichere…" : "Passwort setzen"}
+          </button>
+        </div>
       </div>
     </div>
   );

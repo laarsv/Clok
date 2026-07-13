@@ -82,60 +82,68 @@ export default function InviteAccept() {
       : previewStatus === 404 ? "Diese Einladung kennen wir nicht. Bitte den Link prüfen."
       : previewError;
     return (
-      <div className="center">
-        <div className="card">
-          <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
-          <h2 style={{ marginTop: 0 }}>Einladung ungültig</h2>
-          <p className="error">{friendly}</p>
+      <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+        <div className="card p-6 sm:p-8">
+          <h1 className="text-2xl font-black tracking-tight">Einladung ungültig</h1>
+          <p className="mt-4 rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">{friendly}</p>
         </div>
       </div>
     );
   }
 
-  if (!preview) return <div className="center">Lade…</div>;
+  if (!preview) return <div className="p-12 text-center text-ink/50">Lade…</div>;
 
   return (
-    <div className="onboarding-shell">
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
       <OnboardingStepper active={1} />
-      <div className="card onboarding-card">
-        <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
-        <h2>Account einrichten</h2>
-        <p className="muted">
+      <div className="card p-6 sm:p-8">
+        <h1 className="text-2xl font-black tracking-tight">Account einrichten</h1>
+        <p className="mt-2 text-sm text-ink/60">
           Du wurdest eingeladen, dein Unternehmen bei Clok aufzusetzen. Leg
           hier dein Konto an. E-Mail steht fest – sie kommt aus deiner
           Einladung.
         </p>
 
-        <label>E-Mail
-          <input value={preview.email} disabled style={{ opacity: 0.7 }} />
-        </label>
-        <label>Voller Name
-          <input value={fullName} onChange={(e) => setFullName(e.target.value)}
-            placeholder="Vor- und Nachname" />
-        </label>
-        <label>Username
-          <input value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())}
-            placeholder="z. B. anna.mueller" autoComplete="username" />
-        </label>
-        <label>Passwort (mind. 12 Zeichen)
-          <input type="password" value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password" />
-          <span className="muted small">{password.length}/12</span>
-        </label>
-        <label>Passwort wiederholen
-          <input type="password" value={pw2}
-            onChange={(e) => setPw2(e.target.value)}
-            autoComplete="new-password" />
-        </label>
-        <label className="checkbox-row">
-          <input type="checkbox" checked={acceptTerms}
-            onChange={(e) => setAcceptTerms(e.target.checked)} />
-          <span>Ich akzeptiere die Datenschutz- und Nutzungsbedingungen.</span>
-        </label>
+        <div className="mt-6 space-y-4">
+          <label className="block">
+            <span className="field-label">E-Mail</span>
+            <input className="input disabled:opacity-70" value={preview.email} disabled />
+          </label>
+          <label className="block">
+            <span className="field-label">Voller Name</span>
+            <input className="input" value={fullName} onChange={(e) => setFullName(e.target.value)}
+              placeholder="Vor- und Nachname" />
+          </label>
+          <label className="block">
+            <span className="field-label">Username</span>
+            <input className="input" value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())}
+              placeholder="z. B. anna.mueller" autoComplete="username" />
+          </label>
+          <label className="block">
+            <span className="field-label">Passwort (mind. 12 Zeichen)</span>
+            <input className="input" type="password" value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password" />
+            <span className="mt-1 block text-xs text-ink/60">{password.length}/12</span>
+          </label>
+          <label className="block">
+            <span className="field-label">Passwort wiederholen</span>
+            <input className="input" type="password" value={pw2}
+              onChange={(e) => setPw2(e.target.value)}
+              autoComplete="new-password" />
+          </label>
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" checked={acceptTerms}
+              onChange={(e) => setAcceptTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-royal" />
+            <span>Ich akzeptiere die Datenschutz- und Nutzungsbedingungen.</span>
+          </label>
+        </div>
 
-        {submitError && <div className="error">{submitError}</div>}
-        <button onClick={submit} disabled={busy} style={{ marginTop: "0.6rem" }}>
+        {submitError && (
+          <div className="mt-4 rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">{submitError}</div>
+        )}
+        <button onClick={submit} disabled={busy} className="btn-primary mt-6 w-full">
           {busy ? "Lege Konto an…" : "Konto anlegen und weiter"}
         </button>
       </div>

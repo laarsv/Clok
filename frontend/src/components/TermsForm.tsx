@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import WorkDaysPicker from "./WorkDaysPicker";
+import Button from "./ui/Button";
+import Select from "./ui/Select";
 import {
   legalMinVacationDays, type EmploymentTerms, type TermsPayload, type WeekDay,
 } from "../api";
@@ -68,51 +70,66 @@ export default function TermsForm({ initial, defaultValidFrom, onSubmit, onCance
   };
 
   return (
-    <div className="terms-form">
-      <h3>{initial ? "Vertrag bearbeiten" : "Neuer Vertrag ab Stichtag"}</h3>
-      <div className="manual-grid">
-        <label>Stichtag (gilt ab)<input type="date" value={validFrom}
-          onChange={(e) => setValidFrom(e.target.value)} /></label>
-        <label>Abrechnung
-          <select value={billingMode} onChange={(e) => setBillingMode(e.target.value as any)}>
-            <option value="salary">Festgehalt</option>
-            <option value="hourly">Stundenbasis</option>
-          </select>
+    <div>
+      <h3 className="text-lg font-black">{initial ? "Vertrag bearbeiten" : "Neuer Vertrag ab Stichtag"}</h3>
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="field-label">Stichtag (gilt ab)</span>
+          <input className="input" type="date" value={validFrom}
+            onChange={(e) => setValidFrom(e.target.value)} />
         </label>
+        <div>
+          <span className="field-label">Abrechnung</span>
+          <Select
+            value={billingMode}
+            onChange={(v) => setBillingMode(v as any)}
+            options={[
+              { value: "salary", label: "Festgehalt" },
+              { value: "hourly", label: "Stundenbasis" },
+            ]}
+            aria-label="Abrechnung"
+          />
+        </div>
         {billingMode === "hourly" && (
-          <label>Stundensatz (EUR)<input type="number" step="0.01" value={hourlyRate}
-            onChange={(e) => setHourlyRate(parseFloat(e.target.value || "0"))} /></label>
+          <label className="block">
+            <span className="field-label">Stundensatz (EUR)</span>
+            <input className="input" type="number" step="0.01" value={hourlyRate}
+              onChange={(e) => setHourlyRate(parseFloat(e.target.value || "0"))} />
+          </label>
         )}
-        <label>Wochenstunden
-          <input type="number" step="0.5" value={weeklyHours}
+        <label className="block">
+          <span className="field-label">Wochenstunden</span>
+          <input className="input" type="number" step="0.5" value={weeklyHours}
             onChange={(e) => setWeeklyHours(parseFloat(e.target.value || "0"))} />
-          <span className="hint">
+          <span className="mt-1 block text-xs text-ink/60">
             Soll/Monat wird automatisch aus Wochenstunden, Arbeitstagen und
             Feiertagen des Bundeslandes berechnet.
           </span>
         </label>
-        <div className="field full">
+        <div className="sm:col-span-2">
           <span className="field-label">Arbeitstage pro Woche</span>
           <WorkDaysPicker value={workDays} onChange={setWorkDays} />
         </div>
-        <label>Urlaub/Jahr (Tage)
-          <input type="number" value={vacation}
+        <label className="block">
+          <span className="field-label">Urlaub/Jahr (Tage)</span>
+          <input className="input" type="number" value={vacation}
             onChange={(e) => setVacation(parseFloat(e.target.value || "0"))} />
-          <span className={`hint ${vacInvalid ? "hint-error" : ""}`}>
+          <span className={`mt-1 block text-xs ${vacInvalid ? "text-red-600" : "text-ink/60"}`}>
             Mindestens {legalMin} Tage (BUrlG § 3) bei {workDays.length}-Tage-Woche.
           </span>
         </label>
-        <label className="full">Notiz (optional)
-          <input value={note} onChange={(e) => setNote(e.target.value)}
+        <label className="block sm:col-span-2">
+          <span className="field-label">Notiz (optional)</span>
+          <input className="input" value={note} onChange={(e) => setNote(e.target.value)}
             placeholder='z. B. "Gehaltserhöhung 2026"' />
         </label>
       </div>
-      {error && <div className="error">{error}</div>}
-      <div className="row-actions">
-        <button onClick={submit} disabled={busy || vacInvalid}>
+      {error && <div className="mt-3 text-sm text-red-600">{error}</div>}
+      <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="ghost" onClick={onCancel}>Abbrechen</Button>
+        <Button onClick={submit} disabled={busy || vacInvalid}>
           {busy ? "Speichere…" : "Speichern"}
-        </button>
-        <button onClick={onCancel}>Abbrechen</button>
+        </Button>
       </div>
     </div>
   );

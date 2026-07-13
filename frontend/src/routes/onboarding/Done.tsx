@@ -28,22 +28,25 @@ export default function OnboardingDone() {
   }, [navigate, refresh]);
 
   return (
-    <div className="onboarding-shell">
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
       <OnboardingStepper active={5} />
-      <div className="card onboarding-card center-text">
+      <div className="card p-6 text-center sm:p-8">
         {error ? (
           <>
-            <h2>Hm, das hat nicht geklappt</h2>
-            <p className="error">{error}</p>
-            <button onClick={() => { ran.current = false; setError(null); }}>
+            <h1 className="text-2xl font-black tracking-tight">Hm, das hat nicht geklappt</h1>
+            <p className="mt-4 rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">{error}</p>
+            <button
+              className="btn-primary mt-6"
+              onClick={() => { ran.current = false; setError(null); }}
+            >
               Nochmal versuchen
             </button>
           </>
         ) : (
           <>
-            <div className="onboarding-checkmark">✓</div>
-            <h2>Alles eingerichtet</h2>
-            <p className="muted">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-royal text-2xl font-black text-paper">✓</div>
+            <h1 className="mt-4 text-2xl font-black tracking-tight">Alles eingerichtet</h1>
+            <p className="mt-2 text-sm text-ink/60">
               Dein Account ist live. Du wirst gleich ins Team-Dashboard
               weitergeleitet.
             </p>

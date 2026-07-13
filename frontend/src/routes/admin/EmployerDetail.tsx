@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Shell from "../../components/Shell";
+import Button from "../../components/ui/Button";
+import Modal from "../../components/ui/Modal";
 import EmployeeMasterDataForm from "../../components/EmployeeMasterDataForm";
 import StammdatenView from "../../components/StammdatenView";
 import { api, type User } from "../../api";
@@ -36,7 +38,7 @@ export default function EmployerDetail() {
     };
   }, [allUsers, employerId]);
 
-  if (!employer) return <Shell><div className="placeholder">Lade…</div></Shell>;
+  if (!employer) return <Shell><div className="p-12 text-center text-ink/50">Lade…</div></Shell>;
 
   const offboard = async () => {
     if (!confirm(`${employer.full_name || employer.username} offboarden?`)) return;
@@ -81,27 +83,31 @@ export default function EmployerDetail() {
 
   return (
     <Shell>
-      <div className="employer-detail">
-        <div className="dashboard-toolbar">
-          <Link to="/admin" className="muted small">← zurück</Link>
-          <h2 style={{ margin: 0 }}>{employer.full_name || employer.username}</h2>
-          <span className="muted">@{employer.username}</span>
-          <span className="spacer" />
-          {employer.onboarding_pending && (
-            <button onClick={resendInvite} disabled={busy}>Einladung erneut senden</button>
-          )}
-          {employer.offboarded_at
-            ? <button onClick={reactivate} disabled={busy}>Reaktivieren</button>
-            : <button onClick={offboard} disabled={busy} className="danger">Offboarden</button>}
-          <button className="danger" disabled={busy} onClick={hardDelete}>
-            Endgültig löschen
-          </button>
+      <div className="space-y-6">
+        <div>
+          <Link to="/admin" className="text-sm font-bold text-royal hover:underline">← zurück</Link>
+          <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div className="eyebrow">Arbeitgeber</div>
+              <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">{employer.full_name || employer.username}</h1>
+              <div className="mt-1 text-sm text-ink/50">@{employer.username}</div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {employer.onboarding_pending && (
+                <Button variant="outline" onClick={resendInvite} disabled={busy}>Einladung erneut senden</Button>
+              )}
+              {employer.offboarded_at
+                ? <Button variant="outline" onClick={reactivate} disabled={busy}>Reaktivieren</Button>
+                : <Button variant="danger" onClick={offboard} disabled={busy}>Offboarden</Button>}
+              <Button variant="danger" disabled={busy} onClick={hardDelete}>Endgültig löschen</Button>
+            </div>
+          </div>
         </div>
 
-        <div className="team-summary">
-          <div className="summary-tile">
-            <div className="summary-label">Status</div>
-            <div className={`summary-value ${employer.offboarded_at ? "negative" : "positive"}`}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="card p-4 sm:p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-ink/50">Status</div>
+            <div className={`mt-1 text-2xl font-black leading-tight ${employer.offboarded_at ? "text-red-600" : "text-royal"}`}>
               {employer.offboarded_at
                 ? "offboarded"
                 : employer.onboarding_pending
@@ -109,41 +115,38 @@ export default function EmployerDetail() {
                   : "aktiv"}
             </div>
           </div>
-          <div className="summary-tile">
-            <div className="summary-label">Mitarbeiter aktiv</div>
-            <div className="summary-value">{counts.active}</div>
-            <div className="summary-meta">
+          <div className="card p-4 sm:p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-ink/50">Mitarbeiter aktiv</div>
+            <div className="mt-1 text-2xl font-black tabular-nums leading-tight">{counts.active}</div>
+            <div className="mt-1 text-xs text-ink/60">
               {counts.onboardingPending > 0 && `${counts.onboardingPending} Onboarding offen`}
               {counts.onboardingPending === 0 && "alle eingerichtet"}
             </div>
           </div>
-          <div className="summary-tile">
-            <div className="summary-label">Offboarded</div>
-            <div className="summary-value">{counts.offboarded}</div>
-            <div className="summary-meta">noch in den Daten erhalten</div>
+          <div className="card p-4 sm:p-5">
+            <div className="text-xs font-bold uppercase tracking-wider text-ink/50">Offboarded</div>
+            <div className="mt-1 text-2xl font-black tabular-nums leading-tight">{counts.offboarded}</div>
+            <div className="mt-1 text-xs text-ink/60">noch in den Daten erhalten</div>
           </div>
         </div>
 
-        <section className="card-section">
-          <div className="dashboard-toolbar">
-            <h3 style={{ margin: 0 }}>Stammdaten</h3>
-            <span className="spacer" />
-            <button onClick={() => setEditing(true)}>Bearbeiten</button>
+        <section className="card p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-base font-black sm:text-lg">Stammdaten</h2>
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>Bearbeiten</Button>
           </div>
-          <StammdatenView user={employer} />
+          <div className="mt-4">
+            <StammdatenView user={employer} />
+          </div>
         </section>
 
-        {editing && (
-          <div className="modal-backdrop" onClick={() => setEditing(false)}>
-            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ width: 640 }}>
-              <EmployeeMasterDataForm
-                user={employer}
-                onSaved={(u) => { setEmployer(u); setEditing(false); }}
-                onCancel={() => setEditing(false)}
-              />
-            </div>
-          </div>
-        )}
+        <Modal open={editing} onClose={() => setEditing(false)} className="sm:max-w-2xl">
+          <EmployeeMasterDataForm
+            user={employer}
+            onSaved={(u) => { setEmployer(u); setEditing(false); }}
+            onCancel={() => setEditing(false)}
+          />
+        </Modal>
       </div>
     </Shell>
   );

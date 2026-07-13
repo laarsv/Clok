@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Shell from "../../components/Shell";
+import Button from "../../components/ui/Button";
+import Select from "../../components/ui/Select";
 import WorkDaysPicker from "../../components/WorkDaysPicker";
 import ImportPanel from "../../components/ImportPanel";
 import { useCurrentUser } from "../../auth/CurrentUser";
@@ -85,88 +87,126 @@ export default function EmployeeNew() {
 
   return (
     <Shell>
-      <div className="employee-new">
-        <h2>Mitarbeiter anlegen</h2>
-        <p className="muted">
-          Du legst nur die vertraglichen Grunddaten an. Persönliche Daten
-          (Adresse, Geburtsdatum, IBAN, …) füllt der Mitarbeiter selbst aus,
-          nachdem er die Einladungsmail bekommen hat.
-        </p>
+      <div className="space-y-6">
+        <div>
+          <div className="eyebrow">Team</div>
+          <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Mitarbeiter anlegen</h1>
+          <p className="mt-2 max-w-2xl text-sm text-ink/60">
+            Du legst nur die vertraglichen Grunddaten an. Persönliche Daten
+            (Adresse, Geburtsdatum, IBAN, …) füllt der Mitarbeiter selbst aus,
+            nachdem er die Einladungsmail bekommen hat.
+          </p>
+        </div>
 
-        <section className="card-section">
-          <h3>Login &amp; Kontakt</h3>
-          <div className="manual-grid">
-            <label>Username<input value={form.username} onChange={(e) => set("username", e.target.value)} /></label>
-            <label>E-Mail<input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} /></label>
-            <label>Voller Name<input value={form.full_name ?? ""} onChange={(e) => set("full_name", e.target.value)} /></label>
+        <section className="card space-y-4 p-4 sm:p-5">
+          <h2 className="text-base font-black sm:text-lg">Login &amp; Kontakt</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="field-label">Username</span>
+              <input className="input" value={form.username} onChange={(e) => set("username", e.target.value)} />
+            </label>
+            <label className="block">
+              <span className="field-label">E-Mail</span>
+              <input className="input" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
+            </label>
+            <label className="block">
+              <span className="field-label">Voller Name</span>
+              <input className="input" value={form.full_name ?? ""} onChange={(e) => set("full_name", e.target.value)} />
+            </label>
             {isAdmin && (
-              <label>Arbeitgeber
-                <select value={form.supervisor_id ?? ""}
-                  onChange={(e) => set("supervisor_id", e.target.value ? parseInt(e.target.value, 10) : undefined)}>
-                  <option value="">– bitte wählen –</option>
-                  {employers.map((em) => (
-                    <option key={em.id} value={em.id}>{em.full_name || em.username}</option>
-                  ))}
-                </select>
+              <div>
+                <span className="field-label">Arbeitgeber</span>
+                <Select
+                  value={form.supervisor_id != null ? String(form.supervisor_id) : ""}
+                  onChange={(v) => set("supervisor_id", v ? parseInt(v, 10) : undefined)}
+                  options={employers.map((em) => ({ value: String(em.id), label: em.full_name || em.username }))}
+                  placeholder="– bitte wählen –"
+                  aria-label="Arbeitgeber"
+                />
                 {employers.length === 0 && (
-                  <span className="hint hint-error">
+                  <span className="mt-1 block text-xs text-red-600">
                     Es existiert noch kein Arbeitgeber. Lege zuerst einen
                     unter „Arbeitgeber" an.
                   </span>
                 )}
-              </label>
+              </div>
             )}
           </div>
-          <p className="muted small">An die E-Mail-Adresse geht die Einladung mit Link zum Onboarding.</p>
+          <p className="text-xs text-ink/60">An die E-Mail-Adresse geht die Einladung mit Link zum Onboarding.</p>
         </section>
 
-        <section className="card-section">
-          <h3>Beschäftigung</h3>
-          <div className="manual-grid">
-            <label>Eintrittsdatum<input type="date" value={form.hire_date ?? ""} onChange={(e) => set("hire_date", e.target.value)} /></label>
-            <label>Bundesland
-              <select value={form.federal_state ?? ""} onChange={(e) => set("federal_state", (e.target.value || undefined) as FederalState)}>
-                <option value="">– bitte wählen –</option>
-                {FEDERAL_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+        <section className="card space-y-4 p-4 sm:p-5">
+          <h2 className="text-base font-black sm:text-lg">Beschäftigung</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="field-label">Eintrittsdatum</span>
+              <input className="input" type="date" value={form.hire_date ?? ""} onChange={(e) => set("hire_date", e.target.value)} />
             </label>
-            <label>Wochenstunden<input type="number" value={form.weekly_hours ?? 0} onChange={(e) => set("weekly_hours", parseFloat(e.target.value || "0"))} /></label>
-            <div className="field full">
+            <div>
+              <span className="field-label">Bundesland</span>
+              <Select
+                value={form.federal_state ?? ""}
+                onChange={(v) => set("federal_state", (v || undefined) as FederalState)}
+                options={FEDERAL_STATES.map((s) => ({ value: s, label: s }))}
+                placeholder="– bitte wählen –"
+                aria-label="Bundesland"
+              />
+            </div>
+            <label className="block">
+              <span className="field-label">Wochenstunden</span>
+              <input className="input" type="number" value={form.weekly_hours ?? 0} onChange={(e) => set("weekly_hours", parseFloat(e.target.value || "0"))} />
+            </label>
+            <div className="sm:col-span-2">
               <span className="field-label">Arbeitstage pro Woche</span>
               <WorkDaysPicker value={workDays} onChange={(v) => set("work_days", v)} />
             </div>
-            <label>
-              Urlaub/Jahr (Tage)
-              <input type="number" value={form.annual_vacation_days ?? 0}
+            <label className="block">
+              <span className="field-label">Urlaub/Jahr (Tage)</span>
+              <input className="input" type="number" value={form.annual_vacation_days ?? 0}
                 onChange={(e) => set("annual_vacation_days", parseFloat(e.target.value || "0"))} />
-              <span className={`hint ${vacInvalid ? "hint-error" : ""}`}>
+              <span className={`mt-1 block text-xs ${vacInvalid ? "text-red-600" : "text-ink/60"}`}>
                 Mindestens {legalMin} Tage gesetzlich vorgeschrieben (BUrlG § 3) bei
                 {" "}{workDays.length}-Tage-Woche. Mehr ist erlaubt.
               </span>
             </label>
-            <label>Anfangs-Resturlaub<input type="number" step="0.5" value={form.initial_remaining_vacation ?? 0} onChange={(e) => set("initial_remaining_vacation", parseFloat(e.target.value || "0"))} /></label>
-            <label>Anfangs-Überstunden<input type="number" step="0.5" value={form.initial_overtime_hours ?? 0} onChange={(e) => set("initial_overtime_hours", parseFloat(e.target.value || "0"))} /></label>
-            <label>Abrechnung
-              <select value={form.billing_mode} onChange={(e) => set("billing_mode", e.target.value as any)}>
-                <option value="salary">Festgehalt</option>
-                <option value="hourly">Stundenbasis</option>
-              </select>
+            <label className="block">
+              <span className="field-label">Anfangs-Resturlaub</span>
+              <input className="input" type="number" step="0.5" value={form.initial_remaining_vacation ?? 0} onChange={(e) => set("initial_remaining_vacation", parseFloat(e.target.value || "0"))} />
             </label>
+            <label className="block">
+              <span className="field-label">Anfangs-Überstunden</span>
+              <input className="input" type="number" step="0.5" value={form.initial_overtime_hours ?? 0} onChange={(e) => set("initial_overtime_hours", parseFloat(e.target.value || "0"))} />
+            </label>
+            <div>
+              <span className="field-label">Abrechnung</span>
+              <Select
+                value={form.billing_mode ?? "salary"}
+                onChange={(v) => set("billing_mode", v as any)}
+                options={[
+                  { value: "salary", label: "Festgehalt" },
+                  { value: "hourly", label: "Stundenbasis" },
+                ]}
+                aria-label="Abrechnung"
+              />
+            </div>
             {form.billing_mode === "hourly" && (
-              <label>Stundensatz (EUR)<input type="number" step="0.01" value={form.hourly_rate_eur ?? 0} onChange={(e) => set("hourly_rate_eur", parseFloat(e.target.value || "0"))} /></label>
+              <label className="block">
+                <span className="field-label">Stundensatz (EUR)</span>
+                <input className="input" type="number" step="0.01" value={form.hourly_rate_eur ?? 0} onChange={(e) => set("hourly_rate_eur", parseFloat(e.target.value || "0"))} />
+              </label>
             )}
           </div>
           {form.billing_mode === "salary" && (
-            <p className="muted small">
+            <p className="text-xs text-ink/60">
               Soll-Stunden pro Monat ergeben sich automatisch aus Wochen-
               stunden, Arbeitstagen und den Feiertagen des Bundeslandes.
             </p>
           )}
         </section>
 
-        <section className="card-section">
-          <h3>Optional: bestehende Daten importieren</h3>
-          <p className="muted small">
+        <section className="card space-y-4 p-4 sm:p-5">
+          <h2 className="text-base font-black sm:text-lg">Optional: bestehende Daten importieren</h2>
+          <p className="text-xs text-ink/60">
             Werden nach dem Anlegen des Mitarbeiters direkt mit hochgeladen.
             Du kannst später auch jederzeit nachträglich importieren –
             Drill-Down → Import.
@@ -180,15 +220,19 @@ export default function EmployeeNew() {
           />
         </section>
 
-        {error && <div className="error">{error}</div>}
-        {success && <div className="issue">{success}</div>}
-        <div className="row-actions">
-          <button
+        {error && (
+          <div className="rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">{error}</div>
+        )}
+        {success && (
+          <div className="rounded-lg border-l-4 border-royal bg-royal/10 p-3 text-sm text-ink">{success}</div>
+        )}
+        <div className="flex flex-wrap gap-3">
+          <Button
             onClick={submit}
             disabled={busy || vacInvalid || (isAdmin && !form.supervisor_id)}>
             {busy ? "Speichere…" : "Anlegen & Einladung senden"}
-          </button>
-          <button onClick={() => navigate(-1)}>Abbrechen</button>
+          </Button>
+          <Button variant="outline" onClick={() => navigate(-1)}>Abbrechen</Button>
         </div>
       </div>
     </Shell>

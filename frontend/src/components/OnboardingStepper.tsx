@@ -12,18 +12,29 @@ const STEPS: Step[] = [
 ];
 
 export default function OnboardingStepper({ active }: { active: number }) {
+  const last = STEPS.length - 1;
   return (
-    <ol className="stepper" aria-label="Onboarding-Schritte">
-      {STEPS.map((s) => {
-        const cls =
-          s.num < active ? "done" :
-          s.num === active ? "active" : "todo";
+    <ol className="mb-6 flex items-start" aria-label="Onboarding-Schritte">
+      {STEPS.map((s, i) => {
+        const done = s.num < active;
+        const current = s.num === active;
         return (
-          <li key={s.num} className={`stepper-item ${cls}`}>
-            <span className="stepper-bullet">
-              {s.num < active ? "✓" : s.num}
-            </span>
-            <span className="stepper-label">{s.label}</span>
+          <li key={s.num} className={i < last ? "flex-1" : ""}>
+            <div className="flex items-center">
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                  done || current
+                    ? "bg-royal text-paper"
+                    : "border border-ink/20 bg-paper text-ink/50"
+                }`}
+              >
+                {done ? "✓" : s.num}
+              </span>
+              {i < last && (
+                <span className={`mx-2 h-0.5 flex-1 ${done ? "bg-royal" : "bg-ink/15"}`} />
+              )}
+            </div>
+            <span className="mt-1 hidden text-xs text-ink/60 sm:block">{s.label}</span>
           </li>
         );
       })}

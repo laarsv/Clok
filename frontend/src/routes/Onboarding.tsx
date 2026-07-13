@@ -40,22 +40,22 @@ export default function Onboarding() {
 
   if (error && !preview) {
     return (
-      <div className="center">
-        <div className="card">
-          <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
-          <div className="error">{error}</div>
+      <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+        <div className="card p-6 sm:p-8">
+          <div className="rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">
+            {error}
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!preview) return <div className="center">Lade…</div>;
+  if (!preview) return <div className="p-12 text-center text-ink/50">Lade…</div>;
 
   if (done) {
     return (
-      <div className="center">
-        <div className="card">
-          <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
+      <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+        <div className="card p-6 text-center sm:p-8">
           <p>Alles gespeichert. Du wirst gleich zum Login weitergeleitet.</p>
         </div>
       </div>
@@ -63,39 +63,83 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="center">
-      <div className="card" style={{ width: 560 }}>
-        <img src="/clok-logo.png" alt="Clok" className="auth-logo" />
-        <h2 style={{ marginTop: 0 }}>Willkommen!</h2>
-        <p className="muted">
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+      <div className="card p-6 sm:p-8">
+        <h1 className="text-2xl font-black tracking-tight">Willkommen!</h1>
+        <p className="mt-2 text-sm text-ink/60">
           Hi {(preview.full_name || preview.username).split(" ")[0]} – {preview.employer_name ?? "Dein Arbeitgeber"} hat dich
           angelegt. Setz hier dein Passwort und ergänze deine Stammdaten.
         </p>
-        <p className="muted small">
+        <p className="mt-1 text-sm text-ink/60">
           Login-Username: <code>{preview.username}</code> · E-Mail: {preview.email}
         </p>
 
-        <h3 style={{ marginTop: "1.5rem" }}>Passwort</h3>
-        <label>Neues Passwort<input type="password" value={pw} onChange={(e) => setPw(e.target.value)} /></label>
-        <label>Wiederholen<input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} /></label>
-
-        <h3 style={{ marginTop: "1.5rem" }}>Stammdaten</h3>
-        <div className="manual-grid">
-          <label>Voller Name<input value={data.full_name ?? preview.full_name ?? ""} onChange={(e) => set("full_name", e.target.value)} /></label>
-          <label>Geburtsdatum<input type="date" value={data.date_of_birth ?? ""} onChange={(e) => set("date_of_birth", e.target.value)} /></label>
-          <label>Telefon<input value={data.phone ?? ""} onChange={(e) => set("phone", e.target.value)} /></label>
-          <label>SV-Nummer<input value={data.social_security_number ?? ""} onChange={(e) => set("social_security_number", e.target.value)} /></label>
-          <label>IBAN<input value={data.iban ?? ""} onChange={(e) => set("iban", e.target.value)} /></label>
-          <label className="full">Adresse<input value={data.address_line1 ?? ""} onChange={(e) => set("address_line1", e.target.value)} /></label>
-          <label className="full">Adresszusatz<input value={data.address_line2 ?? ""} onChange={(e) => set("address_line2", e.target.value)} /></label>
-          <label>PLZ<input value={data.postal_code ?? ""} onChange={(e) => set("postal_code", e.target.value)} /></label>
-          <label>Ort<input value={data.city ?? ""} onChange={(e) => set("city", e.target.value)} /></label>
-          <label>Notfallkontakt Name<input value={data.emergency_contact_name ?? ""} onChange={(e) => set("emergency_contact_name", e.target.value)} /></label>
-          <label>Notfallkontakt Telefon<input value={data.emergency_contact_phone ?? ""} onChange={(e) => set("emergency_contact_phone", e.target.value)} /></label>
+        <h2 className="mt-6 text-lg font-black tracking-tight">Passwort</h2>
+        <div className="mt-3 space-y-4">
+          <label className="block">
+            <span className="field-label">Neues Passwort</span>
+            <input className="input" type="password" value={pw} onChange={(e) => setPw(e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="field-label">Wiederholen</span>
+            <input className="input" type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+          </label>
         </div>
 
-        {error && <div className="error">{error}</div>}
-        <button onClick={submit} disabled={busy} style={{ marginTop: "1rem" }}>
+        <h2 className="mt-6 text-lg font-black tracking-tight">Stammdaten</h2>
+        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="field-label">Voller Name</span>
+            <input className="input" value={data.full_name ?? preview.full_name ?? ""} onChange={(e) => set("full_name", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="field-label">Geburtsdatum</span>
+            <input className="input" type="date" value={data.date_of_birth ?? ""} onChange={(e) => set("date_of_birth", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="field-label">Telefon</span>
+            <input className="input" value={data.phone ?? ""} onChange={(e) => set("phone", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="field-label">SV-Nummer</span>
+            <input className="input" value={data.social_security_number ?? ""} onChange={(e) => set("social_security_number", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="field-label">IBAN</span>
+            <input className="input" value={data.iban ?? ""} onChange={(e) => set("iban", e.target.value)} />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="field-label">Adresse</span>
+            <input className="input" value={data.address_line1 ?? ""} onChange={(e) => set("address_line1", e.target.value)} />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="field-label">Adresszusatz</span>
+            <input className="input" value={data.address_line2 ?? ""} onChange={(e) => set("address_line2", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="field-label">PLZ</span>
+            <input className="input" value={data.postal_code ?? ""} onChange={(e) => set("postal_code", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="field-label">Ort</span>
+            <input className="input" value={data.city ?? ""} onChange={(e) => set("city", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="field-label">Notfallkontakt Name</span>
+            <input className="input" value={data.emergency_contact_name ?? ""} onChange={(e) => set("emergency_contact_name", e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="field-label">Notfallkontakt Telefon</span>
+            <input className="input" value={data.emergency_contact_phone ?? ""} onChange={(e) => set("emergency_contact_phone", e.target.value)} />
+          </label>
+        </div>
+
+        {error && (
+          <div className="mt-4 rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">
+            {error}
+          </div>
+        )}
+        <button onClick={submit} disabled={busy} className="btn-primary mt-6 w-full">
           {busy ? "Speichere…" : "Konto einrichten"}
         </button>
       </div>

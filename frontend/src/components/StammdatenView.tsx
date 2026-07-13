@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import { WEEKDAY_LABELS, type User, type WeekDay } from "../api";
 
 interface FieldDef {
@@ -100,20 +99,20 @@ function buildSections(user: User): SectionDef[] {
 export default function StammdatenView({ user }: { user: User }) {
   const sections = buildSections(user);
   return (
-    <div className="stamm-view">
+    <div className="space-y-6">
       {sections.map((s) => (
-        <div key={s.title} className="stamm-section">
-          <h4>{s.title}</h4>
-          <dl className="stamm-list">
+        <div key={s.title}>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-ink/50">{s.title}</h4>
+          <dl className="mt-2 divide-y divide-ink/10">
             {s.fields.map((f, i) => (
-              <Fragment key={i}>
-                <dt>{f.label}</dt>
-                <dd>
+              <div key={i} className="grid grid-cols-3 gap-2 py-2">
+                <dt className="text-sm text-ink/60">{f.label}</dt>
+                <dd className="col-span-2 text-sm">
                   {f.value !== null && f.value !== undefined && f.value !== ""
                     ? f.value
-                    : <span className="muted">—</span>}
+                    : <span className="text-ink/40">—</span>}
                 </dd>
-              </Fragment>
+              </div>
             ))}
           </dl>
         </div>

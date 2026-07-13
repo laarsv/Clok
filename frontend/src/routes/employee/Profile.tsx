@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import Shell from "../../components/Shell";
+import Button from "../../components/ui/Button";
+import Modal from "../../components/ui/Modal";
+import { IconChevronRight } from "../../components/ui/Icons";
 import EmployeeMasterDataForm from "../../components/EmployeeMasterDataForm";
 import MonthDownloads from "../../components/MonthDownloads";
 import StammdatenView from "../../components/StammdatenView";
@@ -27,34 +30,34 @@ function TestEmailPanel() {
 
   return (
     <div>
-      <p className="muted small">
+      <p className="text-xs text-ink/60">
         Schickt eine Test-Mail an deine eigene Adresse über die echte
         Resend-Pipeline. Nützlich, um zu prüfen, ob DKIM/SPF und der
         API-Key richtig sitzen.
       </p>
-      <button onClick={send} disabled={busy}>
+      <Button className="mt-3" onClick={send} disabled={busy}>
         {busy ? "Sende…" : "Test-Mail senden"}
-      </button>
-      {error && <div className="error" style={{ marginTop: "0.75rem" }}>{error}</div>}
+      </Button>
+      {error && <div className="mt-3 rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">{error}</div>}
       {result && (
-        <div className={`issue ${result.success ? "" : "warning"}`} style={{ marginTop: "0.75rem" }}>
+        <div className={`mt-3 rounded-lg border-l-4 p-3 text-sm ${result.success ? "border-royal bg-royal/10 text-ink" : "border-amber-500 bg-amber-50 text-amber-900"}`}>
           {result.dev_mode ? (
             <>
               <strong>Dev-Modus aktiv.</strong> Mail wurde nicht versendet,
               sondern ins Backend-Log geschrieben (RESEND_API_KEY ist leer).
-              Inhalt findest du mit <code>docker compose logs backend | grep email-dev-mode</code>.
+              Inhalt findest du mit <code className="rounded bg-ink/10 px-1 py-0.5 text-xs">docker compose logs backend | grep email-dev-mode</code>.
             </>
           ) : result.success ? (
             <>
               <strong>Mail abgeschickt.</strong> Empfänger {result.sent_to},
-              Absender <code>{result.from_address}</code>. Schau ins Postfach –
+              Absender <code className="rounded bg-ink/10 px-1 py-0.5 text-xs">{result.from_address}</code>. Schau ins Postfach –
               wenn nichts ankommt, prüf Spam und das Resend-Dashboard.
             </>
           ) : (
             <>
               <strong>Resend-Fehler.</strong> Die API hat das Senden abgelehnt
               (z. B. Domain nicht verifiziert). Details im Backend-Log:
-              <code>docker compose logs backend | grep Resend</code>.
+              <code className="rounded bg-ink/10 px-1 py-0.5 text-xs">docker compose logs backend | grep Resend</code>.
             </>
           )}
         </div>
@@ -90,26 +93,29 @@ function ChangePasswordPanel() {
 
   return (
     <div>
-      <p className="muted small">
+      <p className="text-xs text-ink/60">
         Du kennst dein aktuelles Passwort? Hier kannst du es ändern. Falls
         nicht, abmelden und auf der Login-Seite „Passwort vergessen?" nutzen.
       </p>
-      <div className="manual-grid">
-        <label>Aktuelles Passwort
-          <input type="password" value={oldPw} onChange={(e) => setOldPw(e.target.value)} />
+      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <label className="block">
+          <span className="field-label">Aktuelles Passwort</span>
+          <input className="input" type="password" value={oldPw} onChange={(e) => setOldPw(e.target.value)} />
         </label>
-        <label>Neues Passwort
-          <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+        <label className="block">
+          <span className="field-label">Neues Passwort</span>
+          <input className="input" type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
         </label>
-        <label>Wiederholen
-          <input type="password" value={newPw2} onChange={(e) => setNewPw2(e.target.value)} />
+        <label className="block">
+          <span className="field-label">Wiederholen</span>
+          <input className="input" type="password" value={newPw2} onChange={(e) => setNewPw2(e.target.value)} />
         </label>
       </div>
-      {error && <div className="error">{error}</div>}
-      {done && <div className="muted">Passwort geändert.</div>}
-      <button onClick={submit} disabled={busy || !oldPw || !newPw}>
+      {error && <div className="mt-3 rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">{error}</div>}
+      {done && <div className="mt-3 text-sm text-royal">Passwort geändert.</div>}
+      <Button className="mt-4" onClick={submit} disabled={busy || !oldPw || !newPw}>
         {busy ? "Speichere…" : "Passwort ändern"}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -157,28 +163,30 @@ export default function Profile() {
 
   return (
     <Shell>
-      <div className="profile">
-        <h2>Profil</h2>
+      <div className="space-y-6">
+        <div>
+          <div className="eyebrow">Konto</div>
+          <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Profil</h1>
+        </div>
 
-        <details className="card-section disclosure" open>
-          <summary className="disclosure-head">
-            <span className="disclosure-chevron" aria-hidden="true">▸</span>
-            <h3 style={{ margin: 0 }}>Stammdaten</h3>
-            <span className="spacer" />
+        <details className="card group p-4 sm:p-5" open>
+          <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+            <IconChevronRight size={18} className="shrink-0 text-ink/40 transition-transform group-open:rotate-90" />
+            <h2 className="text-base font-black sm:text-lg">Stammdaten</h2>
+            <span className="ml-auto" />
             {user.role === "employee" && (
-              <span className="muted small">Identität, Anschrift, IBAN bearbeitbar</span>
+              <span className="text-xs text-ink/60">Identität, Anschrift, IBAN bearbeitbar</span>
             )}
           </summary>
-          <div className="disclosure-body">
-            <div className="dashboard-toolbar" style={{ marginTop: "0.6rem" }}>
-              <span className="spacer" />
-              <button onClick={(e) => { e.preventDefault(); setEditingMaster(true); }}>
+          <div className="mt-4">
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); setEditingMaster(true); }}>
                 Bearbeiten
-              </button>
+              </Button>
             </div>
             <StammdatenView user={user} />
             {user.role === "employee" && (
-              <p className="muted small" style={{ marginTop: "0.8rem" }}>
+              <p className="mt-3 text-xs text-ink/60">
                 Eintrittsdatum, Bundesland und Vertragsdaten (Stunden, Urlaub,
                 Gehalt) ändert dein Arbeitgeber.
               </p>
@@ -186,31 +194,30 @@ export default function Profile() {
           </div>
         </details>
 
-        <details className="card-section disclosure">
-          <summary className="disclosure-head">
-            <span className="disclosure-chevron" aria-hidden="true">▸</span>
-            <h3 style={{ margin: 0 }}>Benachrichtigungen</h3>
-            <span className="spacer" />
-            <span className="muted small">Mail-Erinnerungen ein-/ausschalten</span>
+        <details className="card group p-4 sm:p-5">
+          <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+            <IconChevronRight size={18} className="shrink-0 text-ink/40 transition-transform group-open:rotate-90" />
+            <h2 className="text-base font-black sm:text-lg">Benachrichtigungen</h2>
+            <span className="ml-auto text-xs text-ink/60">Mail-Erinnerungen ein-/ausschalten</span>
           </summary>
-          <div className="disclosure-body">
+          <div className="mt-4">
             {(() => {
               const allowed = TOGGLES_FOR_ROLE[user.role];
               if (allowed.length === 0) {
                 return (
-                  <p className="muted">
+                  <p className="text-sm text-ink/60">
                     Als Admin bekommst du keine Status-Mails. Einladungs-Mails an
                     neue Mitarbeiter werden in jedem Fall verschickt.
                   </p>
                 );
               }
-              if (!settings) return <div className="muted">Lade…</div>;
+              if (!settings) return <div className="text-sm text-ink/60">Lade…</div>;
               return (
-                <ul className="settings-list">
+                <ul className="space-y-2">
                   {allowed.map((key) => (
                     <li key={key}>
-                      <label className="toggle">
-                        <input type="checkbox"
+                      <label className="flex items-center gap-2 text-sm text-ink/70">
+                        <input type="checkbox" className="h-4 w-4 accent-royal"
                           checked={settings[key]}
                           onChange={() => toggle(key)} />
                         <span>{NOTIF_LABEL[key]}</span>
@@ -220,60 +227,53 @@ export default function Profile() {
                 </ul>
               );
             })()}
-            {savedNote && <div className="muted">{savedNote}</div>}
+            {savedNote && <div className="mt-2 text-sm text-royal">{savedNote}</div>}
           </div>
         </details>
 
-        <details className="card-section disclosure">
-          <summary className="disclosure-head">
-            <span className="disclosure-chevron" aria-hidden="true">▸</span>
-            <h3 style={{ margin: 0 }}>Stundenzettel-Export</h3>
-            <span className="spacer" />
-            <span className="muted small">CSV / PDF pro Monat</span>
+        <details className="card group p-4 sm:p-5">
+          <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+            <IconChevronRight size={18} className="shrink-0 text-ink/40 transition-transform group-open:rotate-90" />
+            <h2 className="text-base font-black sm:text-lg">Stundenzettel-Export</h2>
+            <span className="ml-auto text-xs text-ink/60">CSV / PDF pro Monat</span>
           </summary>
-          <div className="disclosure-body">
+          <div className="mt-4">
             <MonthDownloads />
           </div>
         </details>
 
-        <details className="card-section disclosure">
-          <summary className="disclosure-head">
-            <span className="disclosure-chevron" aria-hidden="true">▸</span>
-            <h3 style={{ margin: 0 }}>Passwort ändern</h3>
-            <span className="spacer" />
-            <span className="muted small">aktuelles Passwort erforderlich</span>
+        <details className="card group p-4 sm:p-5">
+          <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+            <IconChevronRight size={18} className="shrink-0 text-ink/40 transition-transform group-open:rotate-90" />
+            <h2 className="text-base font-black sm:text-lg">Passwort ändern</h2>
+            <span className="ml-auto text-xs text-ink/60">aktuelles Passwort erforderlich</span>
           </summary>
-          <div className="disclosure-body">
+          <div className="mt-4">
             <ChangePasswordPanel />
           </div>
         </details>
 
         {(user.role === "admin" || user.role === "employer") && (
-          <details className="card-section disclosure">
-            <summary className="disclosure-head">
-              <span className="disclosure-chevron" aria-hidden="true">▸</span>
-              <h3 style={{ margin: 0 }}>E-Mail-Test</h3>
-              <span className="spacer" />
-              <span className="muted small">Resend-Pipeline prüfen</span>
+          <details className="card group p-4 sm:p-5">
+            <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+              <IconChevronRight size={18} className="shrink-0 text-ink/40 transition-transform group-open:rotate-90" />
+              <h2 className="text-base font-black sm:text-lg">E-Mail-Test</h2>
+              <span className="ml-auto text-xs text-ink/60">Resend-Pipeline prüfen</span>
             </summary>
-            <div className="disclosure-body">
+            <div className="mt-4">
               <TestEmailPanel />
             </div>
           </details>
         )}
 
-        {editingMaster && (
-          <div className="modal-backdrop" onClick={() => setEditingMaster(false)}>
-            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ width: 640 }}>
-              <EmployeeMasterDataForm
-                user={user}
-                selfEdit={true}
-                onSaved={onMasterSaved}
-                onCancel={() => setEditingMaster(false)}
-              />
-            </div>
-          </div>
-        )}
+        <Modal open={editingMaster} onClose={() => setEditingMaster(false)} className="sm:max-w-2xl">
+          <EmployeeMasterDataForm
+            user={user}
+            selfEdit={true}
+            onSaved={onMasterSaved}
+            onCancel={() => setEditingMaster(false)}
+          />
+        </Modal>
       </div>
     </Shell>
   );
