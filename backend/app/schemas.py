@@ -506,6 +506,7 @@ class PeriodKpiOut(BaseModel):
     start: date
     end: date  # inclusive
     actual_hours: float
+    absence_credit_hours: float = 0.0  # Lohnfortzahlung Urlaub/Krankheit im Zeitraum
     target_hours: float
     vacation_days: int
     sick_days: int

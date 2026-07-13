@@ -160,10 +160,10 @@ export default function Dashboard() {
           <div className="card p-4 sm:p-5">
             <div className="text-xs font-bold uppercase tracking-wider text-ink/50">Stunden Ist</div>
             <div className="mt-1 text-2xl font-black leading-tight tabular-nums">
-              {kpis ? fmtHours(kpis.actual_hours) : "—"}
+              {kpis ? fmtHours(kpis.actual_hours + kpis.absence_credit_hours) : "—"}
             </div>
             <div className="mt-1 text-xs text-ink/60">
-              {kpis ? `von ${fmtHours(kpis.target_hours)} Soll` : ""}
+              {kpis ? `von ${fmtHours(kpis.target_hours + kpis.absence_credit_hours)} Soll` : ""}
             </div>
           </div>
 
@@ -179,7 +179,7 @@ export default function Dashboard() {
             </div>
             <div className="mt-1 text-xs text-ink/60">
               {balance
-                ? `${fmtHours(balance.actual_hours_to_date)} Ist gegen ${fmtHours(balance.target_hours_to_date)} Soll`
+                ? `${fmtHours(balance.actual_hours_to_date + balance.absence_credit_hours)} Ist gegen ${fmtHours(balance.target_hours_to_date + balance.absence_credit_hours)} Soll`
                 : "Stichtag heute"}
             </div>
           </div>
@@ -221,8 +221,8 @@ export default function Dashboard() {
                 <MiniBarChart
                   labels={chartLabels}
                   series={[
-                    { name: "Soll", color: "var(--text-muted)", values: chartMonths.map((m) => m.target_hours) },
-                    { name: "Ist", color: "var(--accent)", values: chartMonths.map((m) => m.actual_hours) },
+                    { name: "Soll", color: "var(--text-muted)", values: chartMonths.map((m) => m.target_hours + m.absence_credit_hours) },
+                    { name: "Ist", color: "var(--accent)", values: chartMonths.map((m) => m.actual_hours + m.absence_credit_hours) },
                   ]}
                 />
               </div>

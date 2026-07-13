@@ -8,6 +8,7 @@ import { useCurrentUser } from "../../auth/CurrentUser";
 import {
   deWeekday, endOfMonth, fmtDe, fmtHours, isoDate, startOfMonth,
 } from "../../lib/datetime";
+import { absenceDayCredit } from "../../lib/absenceCredit";
 import { isMissingDay } from "../../lib/missingDays";
 
 const ABSENCE_LABELS: Record<string, string> = {
@@ -76,6 +77,8 @@ export default function Month() {
   while (cells.length % 7 !== 0) cells.push(null);
 
   const total = Object.values(sumByDay).reduce((s, v) => s + v, 0);
+  const monthCredit = cells.reduce(
+    (s, d) => (d ? s + absenceDayCredit(d, absenceForDay(isoDate(d)), user, holidays) : s), 0);
 
   const closeDialog = () => {
     setSelectedDay(null);
@@ -122,7 +125,7 @@ export default function Month() {
           onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>→</button>
         <button className="btn-ghost btn-sm" onClick={() => setAnchor(new Date())}>Heute</button>
         <span className="flex-1" />
-        <span className="text-sm text-ink/60">Summe: <strong className="text-ink tabular-nums">{fmtHours(total)}</strong></span>
+        <span className="text-sm text-ink/60">Summe: <strong className="text-ink tabular-nums">{fmtHours(total + monthCredit)}</strong></span>
       </div>
 
       <div className="grid grid-cols-7 gap-1 sm:gap-2">
@@ -135,6 +138,7 @@ export default function Month() {
           const sum = sumByDay[k] ?? 0;
           const holiday = holidays[k];
           const absence = absenceForDay(k);
+          const dayTotal = sum + absenceDayCredit(d, absence, user, holidays);
           const missing = !!user && isMissingDay({
             date: d, user, hasEntry: sum > 0,
             absences, holidays,
@@ -158,7 +162,7 @@ export default function Month() {
                 </div>
               )}
               {missing && <div className="rounded bg-amber-100 px-1 py-0.5 text-[10px] font-bold text-amber-800">fehlt</div>}
-              {sum > 0 && <div className="mt-auto text-right text-xs font-bold tabular-nums">{fmtHours(sum)}</div>}
+              {dayTotal > 0 && <div className="mt-auto text-right text-xs font-bold tabular-nums">{fmtHours(dayTotal)}</div>}
             </button>
           );
         })}

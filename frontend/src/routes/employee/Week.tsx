@@ -5,6 +5,7 @@ import Modal from "../../components/ui/Modal";
 import { api, type Absence, type TimeEntry } from "../../api";
 import { useCurrentUser } from "../../auth/CurrentUser";
 import { addDays, deWeekday, fmtDe, fmtHours, isoDate, startOfWeek } from "../../lib/datetime";
+import { absenceDayCredit } from "../../lib/absenceCredit";
 import { isMissingDay } from "../../lib/missingDays";
 
 export default function Week() {
@@ -54,6 +55,7 @@ export default function Week() {
   };
 
   const totalNet = entries.reduce((s, e) => s + (e.net_hours || 0), 0);
+  const weekCredit = days.reduce((s, d) => s + absenceDayCredit(d, absenceFor(d), user, holidays), 0);
 
   return (
     <div className="space-y-4">
@@ -67,7 +69,7 @@ export default function Week() {
           onClick={() => setAnchor(addDays(anchor, 7))}>→</button>
         <button className="btn-ghost btn-sm" onClick={() => setAnchor(new Date())}>Heute</button>
         <span className="flex-1" />
-        <span className="text-sm text-ink/60">Summe: <strong className="text-ink tabular-nums">{fmtHours(totalNet)}</strong></span>
+        <span className="text-sm text-ink/60">Summe: <strong className="text-ink tabular-nums">{fmtHours(totalNet + weekCredit)}</strong></span>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
@@ -77,6 +79,8 @@ export default function Week() {
           const sum = dayEntries.reduce((s, e) => s + (e.net_hours || 0), 0);
           const holiday = holidays[k];
           const absence = absenceFor(d);
+          const credit = absenceDayCredit(d, absence, user, holidays);
+          const dayTotal = sum + credit;
           const missing = !!user && isMissingDay({
             date: d, user, hasEntry: dayEntries.length > 0,
             absences, holidays,
@@ -94,7 +98,7 @@ export default function Week() {
                 {absence && (
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${absence.status === "pending" ? "bg-amber-100 text-amber-800" : "bg-royal/10 text-royal"}`}>
                     {absence.type === "vacation" ? "Urlaub" : absence.type === "sick" ? "Krank" : "Unbezahlt"}
-                    {absence.status === "pending" ? " (offen)" : ""}
+                    {absence.status === "pending" ? " (offen)" : credit > 0 ? ` · ${fmtHours(credit)}` : ""}
                   </span>
                 )}
                 {missing && (
@@ -109,7 +113,7 @@ export default function Week() {
                 </div>
               ))}
               <div className="mt-auto flex items-center justify-between border-t border-ink/10 pt-2">
-                <span className="text-sm font-bold tabular-nums">{fmtHours(sum)}</span>
+                <span className="text-sm font-bold tabular-nums">{fmtHours(dayTotal)}</span>
                 <button className="btn-ghost btn-sm" aria-label="Zeit erfassen" onClick={() => setAdding(k)}>+</button>
               </div>
             </div>

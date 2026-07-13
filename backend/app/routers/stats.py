@@ -162,8 +162,10 @@ def period_kpis(
 
     if target.billing_mode == BillingMode.SALARY:
         tgt = target_hours_for_period(db, target, start, end)
+        credit = paid_absence_credit_hours(db, target, start, end)
     else:
         tgt = 0.0
+        credit = 0.0
 
     vac = _absence_days_in_range(db, target.id, (AbsenceType.VACATION,), start, end)
     sick = _absence_days_in_range(db, target.id, (AbsenceType.SICK,), start, end)
@@ -176,6 +178,7 @@ def period_kpis(
     return PeriodKpiOut(
         start=start, end=end,
         actual_hours=round(actual, 2),
+        absence_credit_hours=round(credit, 2),
         target_hours=round(tgt, 2),
         vacation_days=vac, sick_days=sick, other_absence_days=other,
     )

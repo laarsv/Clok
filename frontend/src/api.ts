@@ -781,6 +781,7 @@ export interface PeriodKpiOut {
   start: string;
   end: string;
   actual_hours: number;
+  absence_credit_hours: number; // Lohnfortzahlung Urlaub/Krankheit im Zeitraum
   target_hours: number;
   vacation_days: number;
   sick_days: number;
