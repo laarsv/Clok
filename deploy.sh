@@ -87,4 +87,4 @@ echo
 echo "Erstdeploy? Einmalig den ersten Admin anlegen:"
 echo "  ${DC[*]} exec backend python -m app.cli bootstrap-admin \\"
 echo "    --username <name> --email <mail> --password '<pw>'"
-echo "Caddy: Caddyfile.snippet ins zentrale Caddyfile einbinden (clok.f-lv.de -> clok-api/clok-web)."
+echo "Caddy: Caddyfile.snippet ins zentrale Caddyfile einbinden (clok.vrwb.de -> clok-api/clok-web)."

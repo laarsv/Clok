@@ -83,9 +83,9 @@ Postgres im privaten Netz `internal`).
 
 1. Repo auf den Host ziehen (`/opt/appdata/clok` ist die übliche Stelle).
 2. `.env` mit produktiven Werten anlegen (starkes `SECRET_KEY`, Brevo-Daten,
-   `APP_BASE_URL=https://clok.f-lv.de`).
+   `APP_BASE_URL=https://clok.vrwb.de`).
 3. `Caddyfile.snippet` ins zentrale Caddyfile einbinden und Caddy neu laden
-   (`clok.f-lv.de` → `/api/*` an `clok-api:8000`, sonst `clok-web:80`).
+   (`clok.vrwb.de` → `/api/*` an `clok-api:8000`, sonst `clok-web:80`).
 4. `./deploy.sh` (git pull + `docker compose -f docker-compose.prod.yml up -d --build`;
    legt das Netz `proxy` an, falls es fehlt).
 5. Erstmaligen Admin via `bootstrap-admin` anlegen (siehe oben).
