@@ -2,16 +2,16 @@
 # externen Docker-Netz "proxy" und spricht die Container über ihren Namen an.
 # Caddy übernimmt TLS (automatisches HTTPS) und splittet /api/* aufs Backend,
 # alles andere auf das nginx-gehostete SPA-Frontend.
-# Domain ggf. anpassen.
+# Einrückung mit Tabs (caddy-fmt-konform). Domain ggf. anpassen.
 
 clok.f-lv.de {
-    encode zstd gzip
+	encode zstd gzip
 
-    handle /api/* {
-        reverse_proxy clok-api:8000
-    }
+	handle /api/* {
+		reverse_proxy clok-api:8000
+	}
 
-    handle {
-        reverse_proxy clok-web:80
-    }
+	handle {
+		reverse_proxy clok-web:80
+	}
 }
