@@ -61,4 +61,9 @@ For multi-step tasks, state a brief plan:
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
 
-UI strikt gemäß DESIGN.md
+UI strikt gemäß DESIGN.md. **Marke = VRWB CI v1.0**: Produkt-Lockup `vrwb_clok`
+(zentral in `frontend/src/components/Wordmark.tsx` — nie inline nachbauen): `vrwb`
+Roboto 900 (−4,5 %), `_clok` in Roboto Mono 500 Royal (0,83×, −1 %), Toolname immer
+klein; auf Ink `_clok` in Royal Soft. Favicon `c_` auf Royal (`frontend/public/favicon.svg`).
+Roboto + Roboto Mono self-hosted (kein CDN). **Nie „Clok"/„CLOK" setzen.** Quelle/Details:
+DESIGN.md §1b (Source of Truth: claude.ai-Design-Projekt „VRWB Markenidentität").

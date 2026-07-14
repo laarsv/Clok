@@ -65,3 +65,11 @@
     @apply text-xs font-bold uppercase tracking-wider text-royal;
   }
 }
+
+/* VRWB CI: blinkender Terminal-Cursor der puren Dachmarke `vrwb_`
+   (nur Login-Fußzeile; nie im Standalone-Lockup oder in der Nav). */
+@keyframes vrwb-blink {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0; }
+}
+.wordmark-cursor-blink { animation: vrwb-blink 1.2s steps(1) infinite; }

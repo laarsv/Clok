@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { setToken, type Role, type User } from "../api";
 import { useCurrentUser } from "../auth/CurrentUser";
 import { IconMenu, IconX } from "./ui/Icons";
+import Wordmark from "./Wordmark";
 
 const NAV: Record<Role, { to: string; label: string }[]> = {
   employee: [
@@ -107,12 +108,11 @@ export default function Shell({ children }: { children: ReactNode }) {
     loc.pathname === to || (to !== "/" && loc.pathname.startsWith(to + "/"));
 
   return (
-    <div className="min-h-screen text-ink">
+    <div className="flex min-h-screen flex-col text-ink">
       <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2" aria-label="Clok">
-            <img src="/clok-icon.png" alt="" className="h-8 w-8 rounded-lg" />
-            <span className="text-xl font-black tracking-tight text-royal">Clok</span>
+          <Link to="/" className="flex items-center" aria-label="vrwb_clok">
+            <Wordmark className="text-2xl" />
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
@@ -189,7 +189,16 @@ export default function Shell({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+
+      <footer className="border-t border-ink/10">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-1.5 px-4 py-4 text-xs text-ink/50 sm:px-6">
+          <a href="https://vrwb.de" target="_blank" rel="noreferrer" className="hover:opacity-80">
+            <Wordmark className="text-base" />
+          </a>
+          <span>· Arbeitszeiterfassung</span>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { homeForRole, useCurrentUser } from "../auth/CurrentUser";
 // Fehlercodes aus dem Backend-Redirect (#error=…) → lesbare Hinweise.
 const ERRORS: Record<string, string> = {
   wrong_domain: "Nur Konten der zugelassenen Google-Workspace-Domain dürfen sich anmelden.",
-  no_account: "Für diese Google-Adresse existiert noch kein Clok-Konto. Bitte an deinen Arbeitgeber wenden.",
+  no_account: "Für diese Google-Adresse existiert noch kein Konto. Bitte an deinen Arbeitgeber wenden.",
   email_unverified: "Deine Google-E-Mail ist nicht verifiziert.",
   bad_state: "Die Anmeldung ist abgelaufen. Bitte erneut versuchen.",
   jit_misconfigured: "Automatische Kontoanlage ist nicht korrekt eingerichtet. Bitte an den Admin wenden.",

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
+import Wordmark from "../components/Wordmark";
 
 export default function ResetPassword() {
   const { token } = useParams<{ token: string }>();
@@ -40,8 +41,8 @@ export default function ResetPassword() {
       <div className="flex min-h-screen items-center justify-center px-4 py-10">
         <div className="card w-full max-w-sm p-6 sm:p-8">
           <div className="mb-6 text-center">
-            <div className="eyebrow">Arbeitszeiterfassung</div>
-            <h1 className="mt-1 text-4xl font-black tracking-tight text-royal">Clok</h1>
+            <Wordmark className="text-4xl" />
+            <p className="mt-2 text-sm text-ink/60">Arbeitszeiterfassung</p>
           </div>
           <div className="rounded-lg border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900">{error}</div>
           <p className="mt-6 text-center text-sm">
@@ -57,8 +58,8 @@ export default function ResetPassword() {
       <div className="flex min-h-screen items-center justify-center px-4 py-10">
         <div className="card w-full max-w-sm p-6 sm:p-8">
           <div className="mb-6 text-center">
-            <div className="eyebrow">Arbeitszeiterfassung</div>
-            <h1 className="mt-1 text-4xl font-black tracking-tight text-royal">Clok</h1>
+            <Wordmark className="text-4xl" />
+            <p className="mt-2 text-sm text-ink/60">Arbeitszeiterfassung</p>
           </div>
           <p className="text-sm text-ink/70">Passwort gesetzt. Du wirst gleich zum Login weitergeleitet.</p>
         </div>
@@ -70,8 +71,8 @@ export default function ResetPassword() {
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="card w-full max-w-sm p-6 sm:p-8">
         <div className="mb-6 text-center">
-          <div className="eyebrow">Arbeitszeiterfassung</div>
-          <h1 className="mt-1 text-4xl font-black tracking-tight text-royal">Clok</h1>
+          <Wordmark className="text-4xl" />
+          <p className="mt-2 text-sm text-ink/60">Arbeitszeiterfassung</p>
         </div>
         <h2 className="text-base font-black sm:text-lg">Neues Passwort setzen</h2>
         <p className="mt-1 text-sm text-ink/60">

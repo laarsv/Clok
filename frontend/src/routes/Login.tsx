@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, googleLoginUrl, setToken } from "../api";
 import { homeForRole, useCurrentUser } from "../auth/CurrentUser";
+import Wordmark from "../components/Wordmark";
 
 export default function Login() {
   const { setUser } = useCurrentUser();
@@ -34,11 +35,11 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
       <div className="card w-full max-w-sm p-6 sm:p-8">
         <div className="mb-6 text-center">
-          <div className="eyebrow">Arbeitszeiterfassung</div>
-          <h1 className="mt-1 text-4xl font-black tracking-tight text-royal">Clok</h1>
+          <Wordmark className="text-4xl" />
+          <p className="mt-2 text-sm text-ink/60">Arbeitszeiterfassung</p>
         </div>
 
         <div className="space-y-4">
@@ -94,6 +95,18 @@ export default function Login() {
           </Link>
         </p>
       </div>
+
+      <p className="mt-6 text-center text-xs text-ink/50">
+        ein Werkzeug von{" "}
+        <a
+          href="https://vrwb.de"
+          target="_blank"
+          rel="noreferrer"
+          className="font-black tracking-wordmark text-ink/70 hover:text-ink"
+        >
+          vrwb<span className="text-royal wordmark-cursor-blink">_</span>
+        </a>
+      </p>
     </div>
   );
 }

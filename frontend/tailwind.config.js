@@ -10,6 +10,11 @@ export default {
       },
       fontFamily: {
         sans: ['Roboto', 'system-ui', 'sans-serif'],
+        mono: ['Roboto Mono', 'ui-monospace', 'monospace'],
+      },
+      letterSpacing: {
+        wordmark: '-0.045em', // VRWB CI: Wortmarke Roboto 900, Laufweite −4,5 %
+        toolname: '-0.01em',  // VRWB CI: Toolname in Roboto Mono, Laufweite −1 %
       },
     },
   },

@@ -99,7 +99,7 @@ export default function InviteAccept() {
       <div className="card p-6 sm:p-8">
         <h1 className="text-2xl font-black tracking-tight">Account einrichten</h1>
         <p className="mt-2 text-sm text-ink/60">
-          Du wurdest eingeladen, dein Unternehmen bei Clok aufzusetzen. Leg
+          Du wurdest eingeladen, dein Unternehmen aufzusetzen. Leg
           hier dein Konto an. E-Mail steht fest – sie kommt aus deiner
           Einladung.
         </p>

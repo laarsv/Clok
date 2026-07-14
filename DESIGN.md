@@ -1,8 +1,8 @@
-# Sync — Design-System (Royal-Blau)
+# vrwb_clok — Design-System (Royal-Blau, VRWB CI v1.0)
 
 Eigener Auftritt. Struktur basiert auf dem **Fin.Co-Design-System**, umgefärbt
-auf eine eigenständige Marke: **Royal-Blau statt Mint**. Kein KW-/Fin.Co-Logo,
-eigene Wortmarke „Sync".
+auf eine eigenständige Marke: **Royal-Blau statt Mint**. Kein KW-/Fin.Co-Logo.
+Marke = **VRWB Produkt-Lockup `vrwb_clok`** (VRWB CI v1.0, siehe §1b).
 
 ## 1. Tokens (`tailwind.config.js`)
 
@@ -14,8 +14,31 @@ colors: {
 }
 ```
 
-`<meta name="theme-color" content="#2947c9">`. Schrift: **Roboto**, selbst
-gehostet über `@fontsource/roboto` (300/400/500/700/900). Kein Google-CDN (DSGVO).
+`<meta name="theme-color" content="#2947c9">`. Schrift: **Roboto** (300/400/500/
+700/900) + **Roboto Mono** (500) für den Toolnamen, selbst gehostet über
+`@fontsource/roboto` bzw. `@fontsource/roboto-mono`. Kein Google-CDN (DSGVO).
+
+## 1b. Wortmarke, Produkt-Lockup & Bildmarke — VRWB CI v1.0 (verbindlich)
+
+Quelle (Source of Truth): claude.ai-Design-Projekt **„VRWB Markenidentität"**
+(`VRWB Corporate Identity.dc.html`, per DesignSync erreichbar; das Design-Projekt
+gewinnt). Konvention:
+
+- **Wortmarke** `vrwb` = gesetzter Text, **immer klein**, Roboto **900**, Laufweite
+  **−4,5 %** (`tracking-wordmark`). Cursor `_` in Royal = einziges grafisches Element.
+- **Produkt-Lockup „Standalone" — die Marke dieses Tools** (`components/Wordmark.tsx`,
+  nie inline nachbauen): **`vrwb_clok`** — der Unterstrich wird zum Trenner in Royal,
+  der Toolname hängt direkt dran in **Roboto Mono 500 Royal**, ~0,83× Größe, Laufweite
+  −1 % (`tracking-toolname`). Toolname immer klein, ein Wort. Einsatz: App-Header,
+  Login-Hero, Footer, Browser-Titel. Auf Ink: `vrwb` weiß, `_clok` in **Royal Soft**.
+- **Blink** (`.wordmark-cursor-blink`, 1.2 s steps) nur für den Cursor der puren
+  Dachmarken-Wortmarke `vrwb_` (kleine Zeile auf der Login-Seite) — nie im Standalone-
+  Lockup (dort ist `_` Trenner, kein Cursor) und nie in der App-Nav.
+- **Bildmarke/Favicon**: Anfangsbuchstabe + Cursor (`c_`) weiß/royal-soft auf Royal,
+  abgerundetes Quadrat mit Radius ≈ 23 % der Kante (`frontend/public/favicon.svg`).
+  Wortmarke und Bildmarke nie nebeneinander doppeln.
+- **Nie „Clok"/„CLOK" setzen** (die Marke ist `vrwb_clok`), nicht sperren/stauchen,
+  keine Schatten/Verläufe/Outlines.
 
 ## 2. Kontrast-Regel — WICHTIG (invertiert ggü. Mint/Gold)
 

@@ -1,6 +1,6 @@
 {
-  "name": "Clok",
-  "short_name": "Clok",
+  "name": "vrwb_clok",
+  "short_name": "vrwb_clok",
   "description": "Selbst-gehostete Arbeitszeiterfassung",
   "lang": "de",
   "dir": "ltr",

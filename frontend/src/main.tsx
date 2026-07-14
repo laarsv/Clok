@@ -6,6 +6,7 @@ import "@fontsource/roboto/latin-400.css";
 import "@fontsource/roboto/latin-500.css";
 import "@fontsource/roboto/latin-700.css";
 import "@fontsource/roboto/latin-900.css";
+import "@fontsource/roboto-mono/latin-500.css"; // Toolname im Produkt-Lockup (VRWB CI)
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
