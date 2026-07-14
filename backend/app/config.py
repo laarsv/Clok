@@ -15,10 +15,10 @@ class Settings(BaseSettings):
     postgres_host: str = "db"
     postgres_port: int = 5432
 
-    # Resend / Mailing
-    resend_api_key: str = ""
-    resend_from_email: str = "clok@mail.example.com"
-    resend_reply_to: str = ""
+    # Brevo / Mailing
+    brevo_api_key: str = ""
+    email_from: str = "Clok <clok@mail.example.com>"
+    email_reply_to: str = ""
     app_base_url: str = "https://clok.example.com"
 
     # Onboarding
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
 
     @property
     def email_dev_mode(self) -> bool:
-        return not self.resend_api_key.strip()
+        return not self.brevo_api_key.strip()
 
     class Config:
         env_file = ".env"

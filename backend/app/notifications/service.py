@@ -1,5 +1,5 @@
 """Service-Layer für Mailversand: lädt Templates, prüft User-Settings,
-schreibt Dedup-Log und ruft den Resend-Wrapper.
+schreibt Dedup-Log und ruft den Brevo-Wrapper.
 
 Eine Funktion: notify(kind, recipient, ctx, period_key=None).
 
@@ -18,7 +18,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy.orm import Session
 
 from app.models import NotificationLog, NotificationSettings, User
-from app.notifications import resend
+from app.notifications import brevo
 
 log = logging.getLogger(__name__)
 
@@ -173,7 +173,7 @@ def notify(
     period_key: Optional[str] = None,
 ) -> bool:
     """Verschickt eine Notification-Mail. Wirft NIE eine Exception nach
-    außen – jeder Fehler (Template, Render, Resend, DB) wird geloggt
+    außen – jeder Fehler (Template, Render, Versand, DB) wird geloggt
     und zu False reduziert. Mail-Versand darf nie eine User-Aktion
     abbrechen."""
     try:
@@ -206,7 +206,7 @@ def notify(
         text = _env.get_template(f"{template_base}.txt.j2").render(**full_ctx)
         html = _env.get_template(f"{template_base}.html.j2").render(**full_ctx)
 
-        result = resend.send(to=recipient.email, subject=subject, html=html, text=text)
+        result = brevo.send(to=recipient.email, subject=subject, html=html, text=text)
 
         if result.ok and period_key:
             db.add(NotificationLog(user_id=recipient.id, kind=kind.value, period_key=period_key))

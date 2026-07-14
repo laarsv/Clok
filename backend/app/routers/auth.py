@@ -12,7 +12,7 @@ from app.auth import authenticate_user, create_access_token, get_current_user, h
 from app.config import get_settings
 from app.database import get_db
 from app.models import Role, User
-from app.notifications import resend
+from app.notifications import brevo
 from app.notifications.service import NotificationKind, notify
 from app.permissions import require_active_user, require_role
 from app.schemas import Token, UserOut, UserUpdate
@@ -221,7 +221,7 @@ def send_test_email(
     user: User = Depends(require_role(Role.ADMIN, Role.EMPLOYER)),
 ):
     """Schickt eine Test-Mail an die eigene Adresse, durchläuft die echte
-    Resend-Pipeline. Verrät, ob das System gerade im Dev-Modus läuft
+    Brevo-Pipeline. Verrät, ob das System gerade im Dev-Modus läuft
     oder live versendet."""
     settings = get_settings()
     first_name = (user.full_name or user.username).split()[0]
@@ -229,7 +229,7 @@ def send_test_email(
         f"Hi {first_name},\n\n"
         f"das ist eine Test-Mail von deinem Clok-System.\n"
         f"Wenn du sie liest, ist der Mailversand richtig konfiguriert.\n\n"
-        f"Absender: {settings.resend_from_email}\n"
+        f"Absender: {settings.email_from}\n"
         f"App-URL: {settings.app_base_url}\n\n"
         f"– Clok\n"
     )
@@ -238,11 +238,11 @@ def send_test_email(
         f"<p>das ist eine Test-Mail von deinem Clok-System. "
         f"Wenn du sie liest, ist der Mailversand richtig konfiguriert.</p>"
         f"<p style='color:#888;font-size:14px;'>"
-        f"Absender: <code>{settings.resend_from_email}</code><br>"
+        f"Absender: <code>{settings.email_from}</code><br>"
         f"App-URL: <code>{settings.app_base_url}</code></p>"
         f"<p>– Clok</p>"
     )
-    result = resend.send(
+    result = brevo.send(
         to=user.email,
         subject="Clok – Test-Mail",
         html=html,
@@ -252,7 +252,7 @@ def send_test_email(
         dev_mode=result.dev_mode,
         success=result.ok,
         sent_to=user.email,
-        from_address=settings.resend_from_email,
+        from_address=settings.email_from,
         message_id=result.message_id,
         status_code=result.status_code,
         error_name=result.error_name,

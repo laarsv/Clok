@@ -29,7 +29,7 @@ from app.database import get_db
 from app.models import (
     BillingMode, Company, EmployerInvite, OnboardingStatus, Role, User,
 )
-from app.notifications import resend
+from app.notifications import brevo
 from app.notifications.service import NotificationKind, notify, render_template
 from app.onboarding_tokens import hash_invite_token
 from app.schemas import (
@@ -139,7 +139,7 @@ def _send_welcome_mail(employer: User, company: Company) -> None:
         "company_name": company.name,
         "link": f"{settings.app_base_url.rstrip('/')}/employer",
     })
-    resend.send(to=employer.email, subject=subject, html=html, text=text)
+    brevo.send(to=employer.email, subject=subject, html=html, text=text)
 
 
 # ---------- Public (Token-basiert) ----------

@@ -55,14 +55,14 @@ def cmd_send_test_email(
     to: str = typer.Option(..., "--to", help="Empfänger-Adresse"),
     subject: str = typer.Option("Clok – Test-Mail", "--subject"),
 ):
-    """Schickt eine Test-Mail über den Resend-Wrapper.
-    Nutzt RESEND_API_KEY aus der Container-.env. Im Dev-Modus wird die
+    """Schickt eine Test-Mail über den Brevo-Wrapper.
+    Nutzt BREVO_API_KEY aus der Container-.env. Im Dev-Modus wird die
     Mail nur ins Log geschrieben."""
-    from app.notifications import resend
+    from app.notifications import brevo
     settings = get_settings()
     text = (
         "Test-Mail von Clok (CLI)\n\n"
-        f"Absender: {settings.resend_from_email}\n"
+        f"Absender: {settings.email_from}\n"
         f"App-URL: {settings.app_base_url}\n\n"
         "Wenn du diese Mail liest, ist der Mailversand richtig konfiguriert.\n\n"
         "– Clok\n"
@@ -70,14 +70,14 @@ def cmd_send_test_email(
     html = (
         f"<p><strong>Test-Mail von Clok (CLI)</strong></p>"
         f"<p style='color:#888;font-size:14px;'>"
-        f"Absender: <code>{settings.resend_from_email}</code><br>"
+        f"Absender: <code>{settings.email_from}</code><br>"
         f"App-URL: <code>{settings.app_base_url}</code></p>"
         f"<p>Wenn du diese Mail liest, ist der Mailversand richtig konfiguriert.</p>"
         f"<p>– Clok</p>"
     )
-    result = resend.send(to=to, subject=subject, html=html, text=text)
+    result = brevo.send(to=to, subject=subject, html=html, text=text)
     if result.dev_mode:
-        typer.echo("Dev-Modus aktiv (RESEND_API_KEY leer). Mail wurde nur ins Backend-Log geschrieben.")
+        typer.echo("Dev-Modus aktiv (BREVO_API_KEY leer). Mail wurde nur ins Backend-Log geschrieben.")
         return
     if result.ok:
         typer.echo(f"OK – an {to} verschickt. message_id={result.message_id}")

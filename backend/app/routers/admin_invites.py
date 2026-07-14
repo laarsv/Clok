@@ -10,7 +10,7 @@ Vier Endpoints:
 
 Klartext-Token wird ausschließlich in der Create-Response (und in der
 Resend-Response, falls rotiert) zurückgegeben. In der DB liegt nur der
-SHA-256-Hash. Der Versand passiert direkt über `resend.send()` – die
+SHA-256-Hash. Der Versand passiert direkt über `brevo.send()` – die
 allgemeine `notify()`-Pipeline scheidet aus, weil der Empfänger noch
 keinen User-Datensatz hat.
 """
@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.database import get_db
 from app.models import EmployerInvite, Role, User
-from app.notifications import resend
+from app.notifications import brevo
 from app.notifications.service import render_template
 from app.onboarding_tokens import generate_invite_token, hash_invite_token
 from app.permissions import require_role
@@ -88,7 +88,7 @@ def _send_invite_mail(
         "link": link,
         "valid_days": valid_days,
     })
-    resend.send(to=recipient_email, subject=subject, html=html, text=text)
+    brevo.send(to=recipient_email, subject=subject, html=html, text=text)
 
 
 @router.post("", response_model=EmployerInviteCreatedOut,

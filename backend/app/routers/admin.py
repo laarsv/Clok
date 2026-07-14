@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.database import get_db
 from app.models import Role, User
-from app.notifications import resend
+from app.notifications import brevo
 from app.permissions import require_role
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -33,7 +33,7 @@ class TestEmailOut(BaseModel):
 def _build_test_body(settings, requested_by: str) -> tuple[str, str]:
     text = (
         f"Test-Mail von Clok\n\n"
-        f"Absender: {settings.resend_from_email}\n"
+        f"Absender: {settings.email_from}\n"
         f"App-URL: {settings.app_base_url}\n"
         f"Ausgelöst von: {requested_by}\n\n"
         f"Wenn du diese Mail liest, ist der Mailversand richtig konfiguriert.\n\n"
@@ -42,7 +42,7 @@ def _build_test_body(settings, requested_by: str) -> tuple[str, str]:
     html = (
         f"<p><strong>Test-Mail von Clok</strong></p>"
         f"<p style='color:#888;font-size:14px;'>"
-        f"Absender: <code>{settings.resend_from_email}</code><br>"
+        f"Absender: <code>{settings.email_from}</code><br>"
         f"App-URL: <code>{settings.app_base_url}</code><br>"
         f"Ausgelöst von: <code>{requested_by}</code></p>"
         f"<p>Wenn du diese Mail liest, ist der Mailversand richtig konfiguriert.</p>"
@@ -58,14 +58,14 @@ def admin_test_email(
     db: Session = Depends(get_db),
 ):
     """Schickt eine Test-Mail an die übergebene Adresse über die echte
-    Resend-Pipeline. Liefert Resend-Message-ID bei Erfolg, sonst die
+    Brevo-Pipeline. Liefert Brevo-Message-ID bei Erfolg, sonst die
     strukturierte Fehlermeldung der API."""
     settings = get_settings()
     requested_by = f"{actor.username} <{actor.email}>"
     text, html = _build_test_body(settings, requested_by)
     subject = payload.subject or "Clok – Test-Mail"
 
-    result = resend.send(to=payload.to, subject=subject, html=html, text=text)
+    result = brevo.send(to=payload.to, subject=subject, html=html, text=text)
 
     if not result.ok and not result.dev_mode:
         # Fehler an den Aufrufer durchreichen, aber nicht 500 – die Diagnose-
@@ -78,7 +78,7 @@ def admin_test_email(
         dev_mode=result.dev_mode,
         success=result.ok,
         sent_to=payload.to,
-        from_address=settings.resend_from_email,
+        from_address=settings.email_from,
         message_id=result.message_id,
         status_code=result.status_code,
         error_name=result.error_name,
