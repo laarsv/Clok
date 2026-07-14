@@ -111,9 +111,10 @@ export default function Shell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col text-ink">
       <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2" aria-label="vrwb_clok">
+          <Link to="/" className="flex items-center gap-3" aria-label="vrwb_clok">
             <img src="/logo-signature.svg" alt="" className="h-9 w-auto" />
-            <span className="font-mono text-xl font-medium tracking-toolname text-royal">clok</span>
+            <span className="h-8 w-px bg-ink/15" aria-hidden="true" />
+            <Wordmark className="text-2xl" />
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
