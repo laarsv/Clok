@@ -102,12 +102,13 @@ per Google anmelden. Leerer `GOOGLE_CLIENT_ID` ⇒ Feature aus.
 Claims prüfen: `email_verified` + Workspace-Domain `hd`/E-Mail == `GOOGLE_ALLOWED_DOMAIN`)
 → Clok-JWT, zurück ins SPA (`/auth/google#token=…`).
 
-**Provisionierung:** Bestehende Konten werden per E-Mail verknüpft (`google_sub`
-gespeichert). Ist `GOOGLE_JIT_SUPERVISOR_EMAIL` gesetzt, werden **neue** Nutzer der
-Domain automatisch als **Mitarbeiter** dieses Arbeitgebers angelegt (Rolle employee,
-`billing_mode=hourly` als Default, aktiv, Login nur via Google) – der AG verfeinert
-den Vertrag danach in der UI. Ohne konfigurierten Supervisor werden unbekannte
-Nutzer abgewiesen (keine verwaisten Konten).
+**Provisionierung** (`GOOGLE_JIT_ROLE`): Bestehende Konten werden per E-Mail
+verknüpft (`google_sub` gespeichert, Rolle bleibt). Für **neue** Nutzer der Domain:
+- `employer` → als **Arbeitgeber** (kein Supervisor, direkt aktiv, kein Wizard). Hinweis: Arbeitgeber erfassen in Clok keine eigene Zeit.
+- `employee` → als **Mitarbeiter** unter `GOOGLE_JIT_SUPERVISOR_EMAIL` (`billing_mode=hourly` als Default; AG verfeinert den Vertrag in der UI).
+- leer → **aus**: unbekannte Nutzer werden abgewiesen (keine verwaisten Konten).
+
+In allen Fällen: Login nur via Google (kein Passwort).
 
 **Google Cloud Console** (einmalig): OAuth-Client-ID (Typ *Web application*)
 anlegen, autorisierte Redirect-URI `https://clok.vrwb.de/api/auth/google/callback`,
@@ -119,7 +120,8 @@ Consent-Screen *Internal* (wenn die Domain euer Workspace ist), Scopes
 | `GOOGLE_CLIENT_ID`             | OAuth-Client-ID; leer = Google-Login aus             |
 | `GOOGLE_CLIENT_SECRET`         | OAuth-Client-Secret                                  |
 | `GOOGLE_ALLOWED_DOMAIN`        | erlaubte Workspace-Domain (z. B. `koenigswege.com`)  |
-| `GOOGLE_JIT_SUPERVISOR_EMAIL`  | Arbeitgeber für Auto-Anlage; leer = keine Auto-Anlage |
+| `GOOGLE_JIT_ROLE`              | Auto-Anlage: `employer` / `employee` / leer (aus)    |
+| `GOOGLE_JIT_SUPERVISOR_EMAIL`  | nur bei `employee`: Arbeitgeber der neuen MA         |
 
 ## E-Mail-Setup (Brevo)
 

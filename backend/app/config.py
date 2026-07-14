@@ -26,9 +26,13 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     # Nur Accounts dieser Workspace-Domain dürfen sich per Google anmelden.
     google_allowed_domain: str = "koenigswege.com"
-    # JIT: neu per Google auftauchende Nutzer werden als Mitarbeiter dieses
-    # Arbeitgebers (Login-E-Mail) angelegt. Leer ⇒ keine Auto-Anlage (unbekannte
-    # Nutzer werden abgewiesen).
+    # JIT-Provisionierung neuer Google-Nutzer der Domain:
+    #   "employer" → als Arbeitgeber (kein Supervisor, direkt aktiv)
+    #   "employee" → als Mitarbeiter unter GOOGLE_JIT_SUPERVISOR_EMAIL
+    #   ""         → aus: unbekannte Nutzer werden abgewiesen
+    google_jit_role: str = ""
+    # Nur für google_jit_role="employee": Arbeitgeber (Login-E-Mail), unter den
+    # neue Mitarbeiter gehängt werden.
     google_jit_supervisor_email: str = ""
 
     # Onboarding

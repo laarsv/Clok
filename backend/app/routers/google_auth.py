@@ -146,38 +146,57 @@ def resolve_or_create_user(db: Session, claims: dict, settings) -> User:
             user.is_active = True  # Google-verifiziert ⇒ Konto freischalten
         db.flush()
         return user
-    # 3) JIT: neuen Mitarbeiter anlegen (nur mit konfiguriertem Supervisor)
-    sup_email = settings.google_jit_supervisor_email.strip().lower()
-    if not sup_email:
-        raise GoogleAuthError("no_account", "Für diese Adresse existiert noch kein Clok-Konto.")
-    supervisor = (
-        db.query(User)
-        .filter(User.email == sup_email, User.role == Role.EMPLOYER)
-        .first()
-    )
-    if supervisor is None:
-        log.error("GOOGLE_JIT_SUPERVISOR_EMAIL=%s ist kein Arbeitgeber-Konto", sup_email)
-        raise GoogleAuthError("jit_misconfigured", "Automatische Kontoanlage ist nicht korrekt konfiguriert.")
+    # 3) JIT: neuen Nutzer anlegen – Rolle je nach GOOGLE_JIT_ROLE.
+    jit_role = settings.google_jit_role.strip().lower()
 
-    user = User(
-        username=_unique_username(db, email.split("@", 1)[0]),
-        email=email,
-        full_name=claims.get("name") or email.split("@", 1)[0],
-        role=Role.EMPLOYEE,
-        supervisor_id=supervisor.id,
-        google_sub=sub,
-        is_active=True,
-        password_hash=None,
-        billing_mode=BillingMode.HOURLY,  # sicherer Default; AG verfeinert in der UI
-        work_days=["mon", "tue", "wed", "thu", "fri"],
-        federal_state=supervisor.federal_state,
-        hire_date=date.today(),
-    )
-    db.add(user)
-    db.flush()
-    create_initial_terms(db, user, valid_from=user.hire_date, creator_id=supervisor.id)
-    log.info("JIT-Google-Nutzer angelegt: %s (supervisor_id=%s)", email, supervisor.id)
-    return user
+    if jit_role == "employer":
+        user = User(
+            username=_unique_username(db, email.split("@", 1)[0]),
+            email=email,
+            full_name=claims.get("name") or email.split("@", 1)[0],
+            role=Role.EMPLOYER,
+            google_sub=sub,
+            is_active=True,
+            password_hash=None,
+            billing_mode=BillingMode.SALARY,  # Platzhalter (AG erfasst keine eigene Zeit)
+            # onboarding_status default ACTIVE ⇒ direkt aufs Dashboard, kein Wizard
+        )
+        db.add(user)
+        db.flush()
+        log.info("JIT-Google-Arbeitgeber angelegt: %s", email)
+        return user
+
+    if jit_role == "employee":
+        sup_email = settings.google_jit_supervisor_email.strip().lower()
+        supervisor = (
+            db.query(User).filter(User.email == sup_email, User.role == Role.EMPLOYER).first()
+            if sup_email else None
+        )
+        if supervisor is None:
+            log.error("google_jit_role=employee, aber GOOGLE_JIT_SUPERVISOR_EMAIL=%r ist kein Arbeitgeber", sup_email)
+            raise GoogleAuthError("jit_misconfigured", "Automatische Kontoanlage ist nicht korrekt konfiguriert.")
+        user = User(
+            username=_unique_username(db, email.split("@", 1)[0]),
+            email=email,
+            full_name=claims.get("name") or email.split("@", 1)[0],
+            role=Role.EMPLOYEE,
+            supervisor_id=supervisor.id,
+            google_sub=sub,
+            is_active=True,
+            password_hash=None,
+            billing_mode=BillingMode.HOURLY,  # sicherer Default; AG verfeinert in der UI
+            work_days=["mon", "tue", "wed", "thu", "fri"],
+            federal_state=supervisor.federal_state,
+            hire_date=date.today(),
+        )
+        db.add(user)
+        db.flush()
+        create_initial_terms(db, user, valid_from=user.hire_date, creator_id=supervisor.id)
+        log.info("JIT-Google-Mitarbeiter angelegt: %s (supervisor_id=%s)", email, supervisor.id)
+        return user
+
+    # JIT aus ⇒ unbekannte Nutzer abweisen (keine Auto-Anlage).
+    raise GoogleAuthError("no_account", "Für diese Adresse existiert noch kein Clok-Konto.")
 
 
 @router.get("/callback")
