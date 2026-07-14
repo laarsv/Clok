@@ -1,6 +1,6 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { setToken, type Role } from "../api";
+import { setToken, type Role, type User } from "../api";
 import { useCurrentUser } from "../auth/CurrentUser";
 import { IconMenu, IconX } from "./ui/Icons";
 
@@ -10,7 +10,6 @@ const NAV: Record<Role, { to: string; label: string }[]> = {
     { to: "/me/absences", label: "Abwesenheiten" },
     { to: "/dashboard", label: "Dashboard" },
     { to: "/feedback", label: "Feedback" },
-    { to: "/me/profile", label: "Profil" },
   ],
   employer: [
     { to: "/employer", label: "Team" },
@@ -18,15 +17,71 @@ const NAV: Record<Role, { to: string; label: string }[]> = {
     { to: "/employer/calendar", label: "Kalender" },
     { to: "/employer/projects", label: "Projekte" },
     { to: "/feedback", label: "Feedback" },
-    { to: "/me/profile", label: "Profil" },
   ],
   admin: [
     { to: "/admin", label: "Arbeitgeber" },
     { to: "/admin/invites", label: "Einladungen" },
     { to: "/admin/feedback", label: "Feedback" },
-    { to: "/me/profile", label: "Profil" },
   ],
 };
+
+function initials(user: User): string {
+  const name = (user.full_name || user.username || user.email || "?").trim();
+  const parts = name.split(/[\s.@_-]+/).filter(Boolean);
+  const chars = parts.length >= 2 ? parts[0][0] + parts[1][0] : name.slice(0, 2);
+  return chars.toUpperCase();
+}
+
+/** Runde Profil-Bubble oben rechts (Desktop): Initialen → Dropdown mit
+ *  Name/E-Mail, Profil-Link und Abmelden. Schließt bei Klick außerhalb. */
+function ProfilBubble({ user, onLogout }: { user: User; onLogout: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Profil-Menü"
+        title={user.full_name || user.username}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-royal text-sm font-black text-paper outline-none transition hover:opacity-90 focus:ring-2 focus:ring-royal/40"
+      >
+        {initials(user)}
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 z-50 mt-2 w-56 rounded-lg border border-ink/10 bg-paper py-1 shadow-lg">
+          <div className="border-b border-ink/10 px-4 py-2">
+            <div className="truncate text-sm font-bold">{user.full_name || user.username}</div>
+            {user.email && <div className="truncate text-xs text-ink/50">{user.email}</div>}
+          </div>
+          <Link
+            to="/me/profile"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2 text-sm font-medium text-ink hover:bg-royal/10"
+          >
+            Profil
+          </Link>
+          <button
+            onClick={onLogout}
+            className="w-full border-t border-ink/10 px-4 py-2 text-left text-sm font-medium text-ink hover:bg-royal/10"
+          >
+            Abmelden
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Shell({ children }: { children: ReactNode }) {
   const { user, setUser } = useCurrentUser();
@@ -74,11 +129,8 @@ export default function Shell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <div className="hidden items-center gap-3 md:flex">
-            <span className="max-w-[14rem] truncate text-sm text-ink/70">
-              {user.full_name || user.username}
-            </span>
-            <button onClick={logout} className="btn-outline btn-sm">Logout</button>
+          <div className="hidden items-center md:flex">
+            <ProfilBubble user={user} onLogout={logout} />
           </div>
 
           <button
@@ -121,6 +173,14 @@ export default function Shell({ children }: { children: ReactNode }) {
                   {it.label}
                 </Link>
               ))}
+              <Link
+                to="/me/profile"
+                className={`block px-4 py-3 text-sm font-bold transition ${
+                  isActive("/me/profile") ? "bg-royal/10 text-royal" : "text-ink hover:bg-ink/5"
+                }`}
+              >
+                Profil
+              </Link>
             </nav>
             <div className="border-t border-ink/10 p-3">
               <button onClick={logout} className="btn-danger w-full">Logout</button>
