@@ -75,6 +75,9 @@ class User(Base):
     username = Column(String(64), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=True)  # NULL bis Self-Service-Onboarding
+    # Stabile Google-Account-ID (OIDC "sub") für Login via Google. NULL, solange
+    # der Nutzer sich noch nie per Google angemeldet hat.
+    google_sub = Column(String(64), nullable=True, unique=True, index=True)
     full_name = Column(String(128))
     role = Column(
         SAEnum(Role, name="user_role", values_callable=_enum_values),

@@ -92,6 +92,35 @@ Postgres im privaten Netz `internal`).
 
 Migrationen laufen automatisch beim Backend-Start (`alembic upgrade head`).
 
+## Google-Login (OAuth, optional)
+
+Zusätzlich zum Passwort-Login können sich Nutzer einer Google-Workspace-Domain
+per Google anmelden. Leerer `GOOGLE_CLIENT_ID` ⇒ Feature aus.
+
+**Ablauf:** Login-Seite → „Mit Google anmelden" → `GET /api/auth/google/login`
+(Redirect zu Google) → `GET /api/auth/google/callback` (Code→Token, ID-Token-
+Claims prüfen: `email_verified` + Workspace-Domain `hd`/E-Mail == `GOOGLE_ALLOWED_DOMAIN`)
+→ Clok-JWT, zurück ins SPA (`/auth/google#token=…`).
+
+**Provisionierung:** Bestehende Konten werden per E-Mail verknüpft (`google_sub`
+gespeichert). Ist `GOOGLE_JIT_SUPERVISOR_EMAIL` gesetzt, werden **neue** Nutzer der
+Domain automatisch als **Mitarbeiter** dieses Arbeitgebers angelegt (Rolle employee,
+`billing_mode=hourly` als Default, aktiv, Login nur via Google) – der AG verfeinert
+den Vertrag danach in der UI. Ohne konfigurierten Supervisor werden unbekannte
+Nutzer abgewiesen (keine verwaisten Konten).
+
+**Google Cloud Console** (einmalig): OAuth-Client-ID (Typ *Web application*)
+anlegen, autorisierte Redirect-URI `https://clok.vrwb.de/api/auth/google/callback`,
+Consent-Screen *Internal* (wenn die Domain euer Workspace ist), Scopes
+`openid email profile`. Client-ID/Secret + Domain + JIT-Supervisor in `.env`:
+
+| Variable                       | Bedeutung                                            |
+| ------------------------------ | ---------------------------------------------------- |
+| `GOOGLE_CLIENT_ID`             | OAuth-Client-ID; leer = Google-Login aus             |
+| `GOOGLE_CLIENT_SECRET`         | OAuth-Client-Secret                                  |
+| `GOOGLE_ALLOWED_DOMAIN`        | erlaubte Workspace-Domain (z. B. `koenigswege.com`)  |
+| `GOOGLE_JIT_SUPERVISOR_EMAIL`  | Arbeitgeber für Auto-Anlage; leer = keine Auto-Anlage |
+
 ## E-Mail-Setup (Brevo)
 
 Mail-Versand läuft über die [Brevo](https://brevo.com) Transactional-API.

@@ -9,6 +9,9 @@ export function setToken(t: string | null) {
   else localStorage.removeItem("token");
 }
 
+// Voller Seiten-Redirect zum Google-OAuth-Start (kein fetch – der Server leitet weiter).
+export const googleLoginUrl = `${BASE}/auth/google/login`;
+
 async function _uploadCsv(
   path: string,
   file: File,
