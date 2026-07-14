@@ -1,0 +1,48 @@
+name: clok-prod
+
+# Hetzner-Deploy im House-Style: kein Host-Port, Anbindung über das externe
+# Docker-Netz "proxy", in dem der zentrale Caddy die Container per Namen
+# anspricht (siehe Caddyfile.snippet). Postgres bleibt im privaten Netz
+# "internal" und ist von außen/anderen Tools nicht erreichbar.
+# Migrationen laufen automatisch beim Backend-Start (alembic upgrade head).
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: clok-db
+    env_file: .env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks: [internal]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: clok-api
+    depends_on:
+      db: { condition: service_healthy }
+    env_file: .env
+    expose:
+      - "8000"
+    networks: [internal, proxy]
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: clok-web
+    depends_on: [backend]
+    networks: [proxy]
+    restart: unless-stopped
+
+volumes:
+  db_data:
+
+networks:
+  proxy:
+    external: true
+  internal:

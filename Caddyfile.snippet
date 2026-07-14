@@ -1,0 +1,17 @@
+# In das zentrale Caddyfile auf dem Hetzner-Host einfügen. Caddy läuft im
+# externen Docker-Netz "proxy" und spricht die Container über ihren Namen an.
+# Caddy übernimmt TLS (automatisches HTTPS) und splittet /api/* aufs Backend,
+# alles andere auf das nginx-gehostete SPA-Frontend.
+# Domain ggf. anpassen.
+
+clok.f-lv.de {
+    encode zstd gzip
+
+    handle /api/* {
+        reverse_proxy clok-api:8000
+    }
+
+    handle {
+        reverse_proxy clok-web:80
+    }
+}

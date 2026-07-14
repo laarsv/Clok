@@ -1,22 +1,23 @@
 #!/usr/bin/env bash
-# Clok – Deploy auf dem Homelab-LXC (übliche Stelle: /opt/appdata/clok).
+# Clok – Deploy auf dem Hetzner-Host (übliche Stelle: /opt/appdata/clok).
 # Holt den aktuellen Stand, baut die Container neu und startet sie.
 #
-# Migrationen laufen automatisch beim Backend-Start (app.main führt
-# "alembic upgrade head" aus) – müssen hier also NICHT extra ausgeführt
-# werden. NPM proxyt über das externe Netz proxy-net direkt auf den
-# Frontend-Container; es gibt keine Host-Port-Mappings.
+# Voraussetzungen: git-Checkout, gefüllte .env, externes Docker-Netz "proxy"
+# (gemeinsam mit dem zentralen Caddy), Caddyfile.snippet ins zentrale
+# Caddyfile eingebunden. Migrationen laufen automatisch beim Backend-Start
+# (app.main führt "alembic upgrade head" aus).
 set -euo pipefail
 
 # Immer im Repo-Root arbeiten, egal von wo aufgerufen.
 cd "$(dirname "$0")"
 
 PULL=1
-PROXY_NET="proxy-net"
+COMPOSE="docker-compose.prod.yml"
+PROXY_NET="proxy"
 
 usage() {
   cat <<'EOF'
-Clok Deploy
+Clok Deploy (Hetzner)
 
 Verwendung: ./deploy.sh [Optionen]
 
@@ -24,8 +25,8 @@ Optionen:
   --no-pull   Kein 'git pull' – den aktuell ausgecheckten Stand deployen
   -h, --help  Diese Hilfe
 
-Ablauf: git pull (optional) -> proxy-net sicherstellen -> docker compose
-up -d --build -> Status & Backend-Logs -> alte Images aufräumen.
+Ablauf: git pull (optional) -> proxy-Netz sicherstellen -> docker compose
+-f docker-compose.prod.yml up -d --build -> Status & Backend-Logs -> Aufräumen.
 EOF
 }
 
@@ -43,14 +44,14 @@ die() { printf '\033[1;31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 # --- Docker / Compose vorhanden? ---
 command -v docker >/dev/null 2>&1 || die "docker ist nicht installiert."
 if docker compose version >/dev/null 2>&1; then
-  DC=(docker compose)
+  DC=(docker compose -f "$COMPOSE")
 elif command -v docker-compose >/dev/null 2>&1; then
-  DC=(docker-compose)
+  DC=(docker-compose -f "$COMPOSE")
 else
   die "Weder 'docker compose' noch 'docker-compose' gefunden."
 fi
 
-# --- .env vorhanden? (Compose braucht sie für die ${VAR}-Ersetzung) ---
+# --- .env vorhanden? (Compose braucht sie für env_file + ${VAR}-Ersetzung) ---
 [ -f .env ] || die ".env fehlt. Einmalig anlegen: cp .env.example .env (und Werte setzen)."
 
 # --- Aktuellen Stand holen ---
@@ -61,7 +62,7 @@ else
   log "git pull übersprungen"
 fi
 
-# --- proxy-net (externes NPM-Netz) sicherstellen ---
+# --- proxy-Netz (gemeinsam mit dem zentralen Caddy) sicherstellen ---
 if ! docker network inspect "$PROXY_NET" >/dev/null 2>&1; then
   log "Externes Netz '$PROXY_NET' fehlt – wird angelegt"
   docker network create "$PROXY_NET" >/dev/null
@@ -86,4 +87,4 @@ echo
 echo "Erstdeploy? Einmalig den ersten Admin anlegen:"
 echo "  ${DC[*]} exec backend python -m app.cli bootstrap-admin \\"
 echo "    --username <name> --email <mail> --password '<pw>'"
-echo "NPM: clok.example.com -> http://clok-frontend-1:80 (proxy-net)"
+echo "Caddy: Caddyfile.snippet ins zentrale Caddyfile einbinden (clok.f-lv.de -> clok-api/clok-web)."
