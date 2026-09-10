@@ -32,6 +32,7 @@ from app.absences import remaining_vacation_days, working_days_in_range
 from app.database import SessionLocal
 from app.holidays_de import is_holiday
 from app.models import EmployerInvite, Role, TimeEntry, User
+from app.feedback_delivery import job_feedback_delivery
 from app.notifications.service import NotificationKind, notify
 
 log = logging.getLogger(__name__)
@@ -281,6 +282,8 @@ def start_scheduler() -> None:
     sched.add_job(job_employer_invite_expired_digest,
                   CronTrigger(hour=8, minute=0),
                   id="employer_invite_expired_digest")
+    sched.add_job(job_feedback_delivery, "interval", minutes=1,
+                  id="central_feedback_delivery", max_instances=1, coalesce=True)
     sched.start()
     _scheduler = sched
     job_ids = [j.id for j in sched.get_jobs()]

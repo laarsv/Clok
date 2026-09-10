@@ -361,6 +361,11 @@ class Feedback(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     decided_at = Column(DateTime, nullable=True)
     decided_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    central_delivery_status = Column(String(20), default="pending", nullable=False)
+    central_delivery_error = Column(String(500), nullable=True)
+    central_delivery_attempts = Column(Integer, default=0, nullable=False)
+    central_next_attempt_at = Column(DateTime, nullable=True)
+    central_delivered_at = Column(DateTime, nullable=True)
 
 
 class AuditAction(str, Enum):

@@ -254,6 +254,10 @@ verlassen.
   ist der zentrale Helper für historisch korrekte Berechnungen.
 - Mail-Wrapper `backend/app/notifications/brevo.py` – Provider
   austauschbar, Templates in `backend/app/emails/*.j2`.
+- Feedback bleibt in der vorhandenen `feedback`-Tabelle und wird mit eigener
+  Quellenkennung idempotent an die zentrale VRWB-Admin-Inbox übertragen.
+  Fehlgeschlagene Übertragungen werden minütlich erneut versucht; der zentrale
+  Bearbeitungsstatus wird nicht nach vrwb_clok zurückgespielt.
 - Frontend-Routing rollenbasiert (`/me`, `/employer`, `/admin`),
   `RoleGuard` prüft pro Route.
 

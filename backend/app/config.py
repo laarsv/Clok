@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     email_from: str = "Clok <clok@mail.example.com>"
     email_reply_to: str = ""
     app_base_url: str = "https://clok.example.com"
+    vrwb_admin_feedback_url: str = ""
+    vrwb_admin_feedback_token: str = ""
 
     # Google OAuth (Login via Google Workspace). Leer ⇒ Google-Login deaktiviert.
     google_client_id: str = ""
