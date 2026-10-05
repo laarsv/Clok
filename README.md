@@ -273,6 +273,21 @@ verlassen.
 - Frontend-Routing rollenbasiert (`/me`, `/employer`, `/admin`),
   `RoleGuard` prüft pro Route.
 
+## Tests
+
+```bash
+# Backend: pytest mit SQLite im Speicher, kein Postgres nötig (Python 3.11 oder 3.12)
+cd backend
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements-dev.txt
+python -m pytest
+
+# Frontend: Typprüfung + Build (es gibt noch keine Frontend-Tests)
+cd ../frontend
+npm install
+npm run build
+```
+
 ## CSV-Import
 
 Format und Beispiele: [`docs/import-format.md`](docs/import-format.md).
