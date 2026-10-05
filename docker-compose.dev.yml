@@ -1,0 +1,21 @@
+# Lokale Entwicklung: Host-Ports statt Reverse-Proxy-Netz.
+# Wird zusammen mit docker-compose.yml verwendet (Docker Compose >= 2.24):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#
+# Frontend: http://localhost:8080 · API-Docs: http://localhost:8000/docs
+# Die Ports sind nur auf dem eigenen Rechner (127.0.0.1) erreichbar.
+
+services:
+  backend:
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  frontend:
+    ports:
+      - "127.0.0.1:8080:80"
+    # Das externe Netz "proxy-net" aus docker-compose.yml wird lokal nicht gebraucht.
+    networks: !override
+      - internal
+
+networks:
+  proxy: !reset null

@@ -1,3 +1,7 @@
+# Basis-Compose: Frontend hängt am externen Reverse-Proxy-Netz "proxy-net",
+# es werden keine Host-Ports veröffentlicht. Für den lokalen Betrieb zusätzlich
+# docker-compose.dev.yml verwenden (Host-Ports, kein externes Netz):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 # Der Netz-Alias "clok-api" am Backend ist der Upstream-Name in
 # frontend/nginx.conf (identisch mit dem container_name in docker-compose.prod.yml).
 
@@ -37,6 +41,13 @@ services:
       EMAIL_FROM: ${EMAIL_FROM}
       EMAIL_REPLY_TO: ${EMAIL_REPLY_TO}
       APP_BASE_URL: ${APP_BASE_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_ALLOWED_DOMAIN: ${GOOGLE_ALLOWED_DOMAIN:-}
+      GOOGLE_JIT_ROLE: ${GOOGLE_JIT_ROLE:-}
+      GOOGLE_JIT_SUPERVISOR_EMAIL: ${GOOGLE_JIT_SUPERVISOR_EMAIL:-}
+      EMPLOYER_INVITE_TTL_DAYS: ${EMPLOYER_INVITE_TTL_DAYS:-14}
+      PUBLIC_SIGNUP_ENABLED: ${PUBLIC_SIGNUP_ENABLED:-false}
     networks:
       internal:
         aliases: [clok-api]
