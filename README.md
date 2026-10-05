@@ -2,8 +2,8 @@
 
 Selbst-gehostete Arbeitszeiterfassung nach deutschem Recht (ArbZG-konform),
 für Mehrnutzer-Setups mit Rollen **Admin / Arbeitgeber / Mitarbeiter**.
-Entwickelt für lokale Nutzung auf dem MacBook (mit Claude Code) und
-produktiv auf Proxmox/Docker im Homelab.
+Selbst gehostet mit Docker Compose: lokal zum Entwickeln und Ausprobieren,
+produktiv auf einem eigenen Server hinter einem Reverse-Proxy.
 
 ## Features
 
@@ -60,12 +60,14 @@ produktiv auf Proxmox/Docker im Homelab.
 
 ## Schnellstart (lokal)
 
+Voraussetzung: Docker mit Compose ≥ 2.24.
+
 ```bash
 cp .env.example .env
 # SECRET_KEY: openssl rand -hex 32
 # BREVO_API_KEY kann erst mal leer bleiben → Dev-Modus, Mails landen nur im Log
 
-docker compose up --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 # Beim ersten Start einmalig den ersten Admin anlegen:
 docker compose exec backend python -m app.cli bootstrap-admin \
@@ -73,22 +75,32 @@ docker compose exec backend python -m app.cli bootstrap-admin \
 ```
 
 Frontend: http://localhost:8080 · API-Docs: http://localhost:8000/docs
+(die Ports sind nur auf dem eigenen Rechner erreichbar).
 
-## Deployment Hetzner (Docker Compose + zentraler Caddy)
+`docker-compose.dev.yml` ergänzt `docker-compose.yml` um die Host-Ports und
+lässt das externe Reverse-Proxy-Netz weg. Allein genutzt ist
+`docker-compose.yml` für den Betrieb hinter einem Reverse-Proxy gedacht
+(Frontend im externen Docker-Netz `proxy-net`, keine Host-Ports).
 
-Läuft im House-Style neben den anderen Tools: gemeinsames externes Docker-Netz
-`proxy`, ein zentraler Caddy terminiert TLS und routet per Container-Namen.
-Deploy-Target ist `docker-compose.prod.yml` (Container `clok-api`/`clok-web`,
-Postgres im privaten Netz `internal`).
+## Produktivbetrieb (Docker Compose hinter einem Reverse-Proxy)
 
-1. Repo auf den Host ziehen (`/opt/appdata/clok` ist die übliche Stelle).
+Für den Betrieb auf einem eigenen Server gibt es `docker-compose.prod.yml`:
+kein Host-Port, Anbindung über ein externes Docker-Netz `proxy`, in dem ein
+Reverse-Proxy läuft. Der Proxy terminiert TLS und routet per Container-Namen:
+`clok-web` (nginx, Port 80), `clok-api` (Backend, Port 8000). Postgres
+(`clok-db`) bleibt im privaten Netz `internal`. Das Frontend erreicht das
+Backend unter dem Namen `clok-api` (siehe `frontend/nginx.conf`).
+
+1. Repo auf den Server holen.
 2. `.env` mit produktiven Werten anlegen (starkes `SECRET_KEY`, Brevo-Daten,
-   `APP_BASE_URL=https://clok.vrwb.de`).
-3. `Caddyfile.snippet` ins zentrale Caddyfile einbinden und Caddy neu laden
-   (`clok.vrwb.de` → `/api/*` an `clok-api:8000`, sonst `clok-web:80`).
+   `APP_BASE_URL=https://clok.example.com`).
+3. Den Reverse-Proxy konfigurieren: `Caddyfile.snippet` ist ein Beispiel für
+   Caddy (Domain anpassen): `/api/*` an `clok-api:8000`, alles andere an
+   `clok-web:80`. Bei einem anderen Proxy entsprechend.
 4. `./deploy.sh` (git pull + `docker compose -f docker-compose.prod.yml up -d --build`;
    legt das Netz `proxy` an, falls es fehlt).
-5. Erstmaligen Admin via `bootstrap-admin` anlegen (siehe oben).
+5. Erstmaligen Admin anlegen:
+   `docker compose -f docker-compose.prod.yml exec backend python -m app.cli bootstrap-admin --username … --email … --password '…'`
 
 Migrationen laufen automatisch beim Backend-Start (`alembic upgrade head`).
 
@@ -111,7 +123,7 @@ verknüpft (`google_sub` gespeichert, Rolle bleibt). Für **neue** Nutzer der Do
 In allen Fällen: Login nur via Google (kein Passwort).
 
 **Google Cloud Console** (einmalig): OAuth-Client-ID (Typ *Web application*)
-anlegen, autorisierte Redirect-URI `https://clok.vrwb.de/api/auth/google/callback`,
+anlegen, autorisierte Redirect-URI `https://clok.example.com/api/auth/google/callback`,
 Consent-Screen *Internal* (wenn die Domain euer Workspace ist), Scopes
 `openid email profile`. Client-ID/Secret + Domain + JIT-Supervisor in `.env`:
 
@@ -119,7 +131,7 @@ Consent-Screen *Internal* (wenn die Domain euer Workspace ist), Scopes
 | ------------------------------ | ---------------------------------------------------- |
 | `GOOGLE_CLIENT_ID`             | OAuth-Client-ID; leer = Google-Login aus             |
 | `GOOGLE_CLIENT_SECRET`         | OAuth-Client-Secret                                  |
-| `GOOGLE_ALLOWED_DOMAIN`        | erlaubte Workspace-Domain (z. B. `koenigswege.com`)  |
+| `GOOGLE_ALLOWED_DOMAIN`        | erlaubte Workspace-Domain (z. B. `example.com`)      |
 | `GOOGLE_JIT_ROLE`              | Auto-Anlage: `employer` / `employee` / leer (aus)    |
 | `GOOGLE_JIT_SUPERVISOR_EMAIL`  | nur bei `employee`: Arbeitgeber der neuen MA         |
 
@@ -147,7 +159,7 @@ eine authentifizierte Domain (DKIM/SPF) freigeschaltet sein.
 | Variable          | Bedeutung                                             |
 | ----------------- | ----------------------------------------------------- |
 | `BREVO_API_KEY`   | Brevo-Schlüssel (`xkeysib-…`); leer = Dev-Modus       |
-| `EMAIL_FROM`      | Absender, `clok@f-lv.de` oder `Clok <clok@f-lv.de>`   |
+| `EMAIL_FROM`      | Absender, `clok@mail.example.com` oder `Clok <clok@mail.example.com>` |
 | `EMAIL_REPLY_TO`  | Optional: Reply-To-Adresse                            |
 | `APP_BASE_URL`    | Basis-URL für Mail-Links                              |
 
