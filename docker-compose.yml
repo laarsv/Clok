@@ -1,3 +1,6 @@
+# Der Netz-Alias "clok-api" am Backend ist der Upstream-Name in
+# frontend/nginx.conf (identisch mit dem container_name in docker-compose.prod.yml).
+
 services:
   db:
     image: postgres:16-alpine
@@ -34,7 +37,9 @@ services:
       EMAIL_FROM: ${EMAIL_FROM}
       EMAIL_REPLY_TO: ${EMAIL_REPLY_TO}
       APP_BASE_URL: ${APP_BASE_URL}
-    networks: [internal]
+    networks:
+      internal:
+        aliases: [clok-api]
 
   frontend:
     build:
