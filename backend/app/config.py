@@ -1,5 +1,8 @@
 """Application configuration loaded from environment variables."""
 from functools import lru_cache
+from typing import Literal
+
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
 
@@ -15,8 +18,17 @@ class Settings(BaseSettings):
     postgres_host: str = "db"
     postgres_port: int = 5432
 
-    # Brevo / Mailing
-    brevo_api_key: str = ""
+    # Mailversand per SMTP. Mail gilt als eingerichtet, sobald Host, Nutzer und
+    # Passwort gesetzt sind, sonst läuft das Backend im Dev-Modus (nur Log).
+    # Port 587 = STARTTLS, Port 465 = TLS von Anfang an (SMTP_SECURITY=auto wählt
+    # nach Port). Viele Hoster sperren ausgehend 25 und 465, dann 587 nehmen.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: SecretStr = SecretStr("")
+    smtp_security: Literal["auto", "starttls", "ssl"] = "auto"
+    # Absender: reine Adresse oder "Name <adresse>"; leer = SMTP_USER. Der Hoster
+    # erlaubt meist nur eigene Adressen.
     email_from: str = "Clok <clok@mail.example.com>"
     email_reply_to: str = ""
     app_base_url: str = "https://clok.example.com"
@@ -50,7 +62,16 @@ class Settings(BaseSettings):
 
     @property
     def email_dev_mode(self) -> bool:
-        return not self.brevo_api_key.strip()
+        return not (
+            self.smtp_host.strip()
+            and self.smtp_user.strip()
+            and self.smtp_password.get_secret_value()
+        )
+
+    @property
+    def mail_from(self) -> str:
+        """Absender; leer = SMTP_USER."""
+        return self.email_from.strip() or self.smtp_user.strip()
 
     @property
     def google_oauth_enabled(self) -> bool:

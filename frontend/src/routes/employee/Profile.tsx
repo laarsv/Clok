@@ -31,9 +31,9 @@ function TestEmailPanel() {
   return (
     <div>
       <p className="text-xs text-ink/60">
-        Schickt eine Test-Mail an deine eigene Adresse über die echte
-        Resend-Pipeline. Nützlich, um zu prüfen, ob DKIM/SPF und der
-        API-Key richtig sitzen.
+        Schickt eine Test-Mail an deine eigene Adresse über den echten
+        SMTP-Versandweg. Nützlich, um zu prüfen, ob Zugangsdaten und
+        SPF/DKIM richtig sitzen.
       </p>
       <Button className="mt-3" onClick={send} disabled={busy}>
         {busy ? "Sende…" : "Test-Mail senden"}
@@ -44,20 +44,21 @@ function TestEmailPanel() {
           {result.dev_mode ? (
             <>
               <strong>Dev-Modus aktiv.</strong> Mail wurde nicht versendet,
-              sondern ins Backend-Log geschrieben (RESEND_API_KEY ist leer).
+              sondern ins Backend-Log geschrieben (SMTP ist nicht konfiguriert).
               Inhalt findest du mit <code className="rounded bg-ink/10 px-1 py-0.5 text-xs">docker compose logs backend | grep email-dev-mode</code>.
             </>
           ) : result.success ? (
             <>
               <strong>Mail abgeschickt.</strong> Empfänger {result.sent_to},
               Absender <code className="rounded bg-ink/10 px-1 py-0.5 text-xs">{result.from_address}</code>. Schau ins Postfach –
-              wenn nichts ankommt, prüf Spam und das Resend-Dashboard.
+              wenn nichts ankommt, prüf den Spam-Ordner.
             </>
           ) : (
             <>
-              <strong>Resend-Fehler.</strong> Die API hat das Senden abgelehnt
-              (z. B. Domain nicht verifiziert). Details im Backend-Log:
-              <code className="rounded bg-ink/10 px-1 py-0.5 text-xs">docker compose logs backend | grep Resend</code>.
+              <strong>Versandfehler.</strong> Der Mailserver hat das Senden abgelehnt
+              oder war nicht erreichbar (z. B. falsche Zugangsdaten, Absender nicht
+              erlaubt). Details im Backend-Log:
+              <code className="rounded bg-ink/10 px-1 py-0.5 text-xs">docker compose logs backend | grep SMTP</code>.
             </>
           )}
         </div>
@@ -260,7 +261,7 @@ export default function Profile() {
             <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
               <IconChevronRight size={18} className="shrink-0 text-ink/40 transition-transform group-open:rotate-90" />
               <h2 className="text-base font-black sm:text-lg">E-Mail-Test</h2>
-              <span className="ml-auto text-xs text-ink/60">Resend-Pipeline prüfen</span>
+              <span className="ml-auto text-xs text-ink/60">Mailversand prüfen</span>
             </summary>
             <div className="mt-4">
               <TestEmailPanel />

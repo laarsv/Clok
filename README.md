@@ -41,7 +41,7 @@ produktiv auf einem eigenen Server hinter einem Reverse-Proxy.
   Felder am User-Datensatz.
 - **Offboarding ohne Datenverlust**: `offboarded_at` als Soft-Delete-
   Marker, Hard-Delete nur durch Admin nach 10 Jahren.
-- **E-Mails via Brevo**: Antrags-/Entscheidungs-Mails, Krankmeldung,
+- **E-Mails via SMTP**: Antrags-/Entscheidungs-Mails, Krankmeldung,
   Reminders. Pro User abschaltbar pro Notification-Typ.
 - **CSV-Export pro Monat** (DATEV-Vorbereitung).
 
@@ -52,7 +52,7 @@ produktiv auf einem eigenen Server hinter einem Reverse-Proxy.
 | Backend    | FastAPI + SQLAlchemy 2 + Pydantic 2      |
 | Auth       | JWT (python-jose, bcrypt)                |
 | DB         | PostgreSQL 16, Alembic-Migrationen       |
-| Mail       | Brevo (Transactional-API), Jinja2-Templates |
+| Mail       | SMTP (smtplib, STARTTLS), Jinja2-Templates |
 | Scheduler  | APScheduler im Backend-Prozess           |
 | Frontend   | React 18 + Vite + TS + react-router-dom  |
 | Webserver  | Nginx (statisches Frontend, API-Proxy)   |
@@ -65,7 +65,7 @@ Voraussetzung: Docker mit Compose ≥ 2.24.
 ```bash
 cp .env.example .env
 # SECRET_KEY: openssl rand -hex 32
-# BREVO_API_KEY kann erst mal leer bleiben → Dev-Modus, Mails landen nur im Log
+# SMTP_HOST/SMTP_USER/SMTP_PASSWORD können erst mal leer bleiben → Dev-Modus, Mails landen nur im Log
 
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
@@ -92,7 +92,7 @@ Reverse-Proxy läuft. Der Proxy terminiert TLS und routet per Container-Namen:
 Backend unter dem Namen `clok-api` (siehe `frontend/nginx.conf`).
 
 1. Repo auf den Server holen.
-2. `.env` mit produktiven Werten anlegen (starkes `SECRET_KEY`, Brevo-Daten,
+2. `.env` mit produktiven Werten anlegen (starkes `SECRET_KEY`, `SMTP_*`-Zugangsdaten,
    `APP_BASE_URL=https://clok.example.com`).
 3. Den Reverse-Proxy konfigurieren: `Caddyfile.snippet` ist ein Beispiel für
    Caddy (Domain anpassen): `/api/*` an `clok-api:8000`, alles andere an
@@ -135,31 +135,40 @@ Consent-Screen *Internal* (wenn die Domain euer Workspace ist), Scopes
 | `GOOGLE_JIT_ROLE`              | Auto-Anlage: `employer` / `employee` / leer (aus)    |
 | `GOOGLE_JIT_SUPERVISOR_EMAIL`  | nur bei `employee`: Arbeitgeber der neuen MA         |
 
-## E-Mail-Setup (Brevo)
+## E-Mail-Setup (SMTP)
 
-Mail-Versand läuft über die [Brevo](https://brevo.com) Transactional-API.
-Solange `BREVO_API_KEY` leer ist, läuft das Backend im **Dev-Modus**: Mails
-werden strukturiert geloggt, **nicht** versendet.
+Mail-Versand läuft über einen beliebigen SMTP-Server (Standardbibliothek
+`smtplib`, keine zusätzliche Abhängigkeit). Mail gilt als eingerichtet, sobald
+`SMTP_HOST`, `SMTP_USER` und `SMTP_PASSWORD` gesetzt sind. Fehlt eine davon,
+läuft das Backend im **Dev-Modus**: Mails werden strukturiert geloggt (mit
+Empfänger und Text, damit man Links lokal aus dem Log nehmen kann), **nicht**
+versendet. Im Produktivbetrieb sollte der Dev-Modus deshalb nie aktiv sein.
 
-Der Absender (`EMAIL_FROM`) muss in Brevo als verifizierter Absender bzw. über
-eine authentifizierte Domain (DKIM/SPF) freigeschaltet sein.
+Standard ist Port 587 mit STARTTLS. Zertifikat und Hostname des Servers werden
+geprüft. Port 465 (TLS von Anfang an) wird bei `SMTP_SECURITY=auto` automatisch
+als `ssl` behandelt; viele Hoster sperren ausgehend 25 und 465, dann 587 nehmen.
 
 ### Schritte für die produktive Aktivierung
 
-1. **Brevo-Account anlegen**, unter *Senders, Domains & Dedicated IPs* die
-   Domain hinzufügen.
-2. **DKIM + SPF (+ DMARC)** als DNS-Einträge beim DNS-Provider eintragen.
-3. Domain-/Absender-Status muss „verified" sein, sonst lehnt Brevo den
-   Versand ab.
-4. **API-Key** unter *SMTP & API → API Keys* erzeugen, in `.env` als
-   `BREVO_API_KEY=xkeysib-…` eintragen, Container neu starten.
+1. **Postfach oder SMTP-Zugang** beim Mail-Anbieter anlegen. Der Zugang darf in
+   der Regel nur Adressen der eigenen Domain als Absender verwenden.
+2. **SPF, DKIM (und DMARC)** der Absender-Domain beim DNS-Provider bzw. Mail-
+   Anbieter einrichten, sonst landen Mails leicht im Spam.
+3. `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` und `EMAIL_FROM` in `.env`
+   eintragen, Container neu starten (`SMTP_PASSWORD` ist ein Geheimnis und
+   gehört nie ins Repo).
+4. Mit dem Test-Workflow unten prüfen.
 
 ### Variablen
 
 | Variable          | Bedeutung                                             |
 | ----------------- | ----------------------------------------------------- |
-| `BREVO_API_KEY`   | Brevo-Schlüssel (`xkeysib-…`); leer = Dev-Modus       |
-| `EMAIL_FROM`      | Absender, `clok@mail.example.com` oder `Clok <clok@mail.example.com>` |
+| `SMTP_HOST`       | SMTP-Server; leer = Dev-Modus                         |
+| `SMTP_PORT`       | Port, Default `587`                                   |
+| `SMTP_USER`       | Benutzername (meist die Absenderadresse)              |
+| `SMTP_PASSWORD`   | Passwort; leer = Dev-Modus                            |
+| `SMTP_SECURITY`   | `auto` (Default: Port 465 → `ssl`, sonst `starttls`), `starttls` oder `ssl` |
+| `EMAIL_FROM`      | Absender, `clok@mail.example.com` oder `Clok <clok@mail.example.com>`; leer = `SMTP_USER` |
 | `EMAIL_REPLY_TO`  | Optional: Reply-To-Adresse                            |
 | `APP_BASE_URL`    | Basis-URL für Mail-Links                              |
 
@@ -174,11 +183,13 @@ docker compose exec backend python -m app.cli send-test-email --to lars@example.
 ```
 
 Mögliche Ausgaben:
-- `OK – an lars@example.com verschickt. message_id=<uuid>` – Mail bei
-  Brevo angenommen, Message-ID lässt sich im Brevo-Dashboard prüfen.
-- `Dev-Modus aktiv …` – `BREVO_API_KEY` nicht gesetzt.
-- `FEHLER 4xx <name>: <message>` – Brevo hat abgelehnt, Text aus der
-  API-Response.
+- `OK – an lars@example.com verschickt. message_id=<…>` – Mail vom
+  SMTP-Server angenommen (die Message-ID steht im Kopf der Mail). Das heißt
+  noch nicht, dass sie im Postfach ankommt: Spam-Ordner und SPF/DKIM prüfen.
+- `Dev-Modus aktiv …` – `SMTP_HOST`, `SMTP_USER` oder `SMTP_PASSWORD` fehlt.
+- `FEHLER <SMTP-Code> <Fehlerart>: <Text>` – Server hat abgelehnt oder war
+  nicht erreichbar, Text aus der Server-Antwort (z. B. Anmeldung abgelehnt,
+  Absender nicht erlaubt).
 
 **2. Admin-Endpoint** `POST /api/admin/test-email` (Rolle Admin):
 
@@ -201,14 +212,14 @@ eigene E-Mail-Adresse.
 
 ### Fehler-Diagnose
 
-Bei jedem Brevo-Fehler (4xx/5xx) loggt der Wrapper den vollen
-Response-Body als `logger.error`:
+Bei einem Fehler loggt der Wrapper nur die Fehlerart und den SMTP-Code, nie
+Empfänger, Betreff, Text oder Passwort:
 
 ```bash
-docker compose logs backend | grep "Brevo"
+docker compose logs backend | grep "SMTP-Versand fehlgeschlagen"
 ```
 
-Im Erfolgsfall: `Brevo ok messageId=<id> to=… subject=…`.
+Im Erfolgsfall: `Mail versendet (message_id=<id>)`.
 
 ### Trigger im Überblick
 
@@ -264,8 +275,8 @@ verlassen.
   mit pytest-Tests in `backend/tests/`.
 - Vertragsverlauf in `backend/app/terms.py` – `terms_at(user, d)`
   ist der zentrale Helper für historisch korrekte Berechnungen.
-- Mail-Wrapper `backend/app/notifications/brevo.py` – Provider
-  austauschbar, Templates in `backend/app/emails/*.j2`.
+- Mail-Wrapper `backend/app/notifications/mail.py` (SMTP, nur
+  Standardbibliothek), Templates in `backend/app/emails/*.j2`.
 - Feedback bleibt in der vorhandenen `feedback`-Tabelle und wird mit eigener
   Quellenkennung idempotent an die zentrale VRWB-Admin-Inbox übertragen.
   Fehlgeschlagene Übertragungen werden minütlich erneut versucht; der zentrale
